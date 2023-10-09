@@ -35,12 +35,8 @@ public class TestBPMNParserSimple {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -52,8 +48,8 @@ public class TestBPMNParserSimple {
 		try {
 			model = BPMNParser.parseModel(bpmnInputStream, "UTF-8");
 			Assert.assertNotNull(model);
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | SAXException e) {
+			Assert.fail(e.getMessage());
 		}
 
 		// ZWISCHENTEST
@@ -109,12 +105,8 @@ public class TestBPMNParserSimple {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -175,12 +167,8 @@ public class TestBPMNParserSimple {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -252,12 +240,8 @@ public class TestBPMNParserSimple {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -315,15 +299,11 @@ public class TestBPMNParserSimple {
 		InputStream inputStream = getClass().getResourceAsStream("/bpmn/simple.bpmn");
 
 		BPMNModel model1 = null;
-		BPMNModel model2 = null;
+		BPMNModel model2;
 		try {
 			model1 = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model1);
 
@@ -336,8 +316,9 @@ public class TestBPMNParserSimple {
 		try {
 			model2 = BPMNParser.parseModel(bpmnInputStream, "UTF-8");
 			Assert.assertNotNull(model1);
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | SAXException e) {
+			Assert.fail(e.getMessage());
+                        return;
 		}
 
 		// compare models

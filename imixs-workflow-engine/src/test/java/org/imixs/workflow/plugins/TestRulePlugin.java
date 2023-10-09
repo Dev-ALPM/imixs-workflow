@@ -14,7 +14,6 @@ import org.imixs.workflow.engine.plugins.RulePlugin;
 import org.imixs.workflow.exceptions.PluginException;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -36,7 +35,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies the evaluation of a simple script.
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -88,7 +86,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies the evaluation of a simple script unsing the json objects.
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -155,7 +152,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies if in case of isValid==false a PluginExeption is thrown
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test(expected = PluginException.class)
@@ -195,8 +191,6 @@ public class TestRulePlugin {
 	 * and evalues the data contained in the Exception. There for the script adds an
 	 * errorCode and a errorMessage
 	 * 
-	 * @throws ScriptException
-	 * @throws PluginException
 	 */
 	@Test
 	public void testComplexPluginException()  {
@@ -247,7 +241,6 @@ public class TestRulePlugin {
 	 * This test verifies the follUp behavior. If set then keyFollowUp and
 	 * numNextActivity should be overwritten by the RulePlugin
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -271,7 +264,7 @@ public class TestRulePlugin {
 
 		Assert.assertEquals("1", sFllowUp);
 
-		Assert.assertEquals(followUp, 3);
+		Assert.assertEquals(3, followUp);
 
 	}
 
@@ -282,7 +275,6 @@ public class TestRulePlugin {
 	/**
 	 * only to evaluate some behavior
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -335,7 +327,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies the BigDecimal support of the RulePlugin
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -370,7 +361,6 @@ public class TestRulePlugin {
 	 * This test tests if a the properties of an activity entity can be evaluated by
 	 * a script
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -399,7 +389,6 @@ public class TestRulePlugin {
 	/**
 	 * This test tests if a a scipt can inject new properties into the current activity entity 
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -429,7 +418,6 @@ public class TestRulePlugin {
 	 * This test test if a the properties of an activity entity can be evaluated by
 	 * a script
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -461,7 +449,6 @@ public class TestRulePlugin {
 	 * This test test if a the properties of an workitem entity can be evaluated by
 	 * a script
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -488,6 +475,7 @@ public class TestRulePlugin {
 	
 	/**
 	 * Same test as before but using the deprected item $processid
+         * @throws org.imixs.workflow.exceptions.PluginException
 	 */
 	@Test
 	public void testSimpleWorkitemScriptWithDeprecatedField() throws  PluginException {
@@ -515,7 +503,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies the isValid case for date fields
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -550,7 +537,7 @@ public class TestRulePlugin {
 
 		try {
 			// run plugin
-			adocumentContext = rulePlugin.run(adocumentContext, adocumentActivity);
+			rulePlugin.run(adocumentContext, adocumentActivity);
 
 			Assert.fail();
 		} catch (PluginException pe) {
@@ -591,6 +578,7 @@ public class TestRulePlugin {
 		     var errorMessage='Bitte geben Sie den Betrag an! ';
 		  }
 	 * </code>
+         * @throws org.imixs.workflow.exceptions.PluginException
 	 */
 	@Test
 	public void testIsValidTwoFields() throws  PluginException {
@@ -620,7 +608,7 @@ public class TestRulePlugin {
 		adocumentActivity.replaceItemValue("txtBusinessRUle", script);
 		try {
 			// run plugin
-			adocumentContext = rulePlugin.run(adocumentContext, adocumentActivity);
+			rulePlugin.run(adocumentContext, adocumentActivity);
 
 			Assert.fail();
 		} catch (PluginException e) {
@@ -635,7 +623,7 @@ public class TestRulePlugin {
 		adocumentActivity.replaceItemValue("txtBusinessRUle", script);
 		try {
 			// run plugin
-			adocumentContext = rulePlugin.run(adocumentContext, adocumentActivity);
+			rulePlugin.run(adocumentContext, adocumentActivity);
 
 			Assert.fail();
 		} catch (PluginException e) {
@@ -650,7 +638,7 @@ public class TestRulePlugin {
 		adocumentActivity.replaceItemValue("txtBusinessRUle", script);
 		try {
 			// run plugin
-			adocumentContext = rulePlugin.run(adocumentContext, adocumentActivity);
+			rulePlugin.run(adocumentContext, adocumentActivity);
 
 			Assert.fail();
 		} catch (PluginException e) {
@@ -673,6 +661,7 @@ public class TestRulePlugin {
 	 * following script should not throw an exception because of the fact that the
 	 * errorCode is undefined.
 	 * 
+         * @throws org.imixs.workflow.exceptions.PluginException
 	 * @see issue #108
 	 * 
 	 */
@@ -697,7 +686,7 @@ public class TestRulePlugin {
 		} catch (PluginException pe) {
 			// PluginException expected
 			logger.info(pe.getMessage());
-			Assert.assertEquals(pe.getErrorCode(), RulePlugin.VALIDATION_ERROR);
+			Assert.assertEquals(RulePlugin.VALIDATION_ERROR, pe.getErrorCode());
 
 			Object[] errorParams = pe.getErrorParameters();
 
@@ -723,7 +712,7 @@ public class TestRulePlugin {
 		} catch (PluginException pe) {
 			// PluginException expected
 			logger.info(pe.getMessage());
-			Assert.assertEquals(pe.getErrorCode(), "SOME_ERROR");
+			Assert.assertEquals("SOME_ERROR", pe.getErrorCode());
 			Object[] errorParams = pe.getErrorParameters();
 			Assert.assertTrue(errorParams == null);
 
@@ -740,7 +729,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies a json result object
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -770,7 +758,6 @@ public class TestRulePlugin {
 	 * This test verifies the follUp behavior. If set then keyFollowUp and
 	 * numNextActivity should be overwritten by the RulePlugin
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -794,7 +781,7 @@ public class TestRulePlugin {
 
 		Assert.assertEquals("1", sFllowUp);
 
-		Assert.assertEquals(followUp, 3);
+		Assert.assertEquals(3, followUp);
 
 	}
 
@@ -803,7 +790,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies setting a new value via the result object
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test
@@ -831,7 +817,6 @@ public class TestRulePlugin {
 	/**
 	 * This test verifies setting a new value list via the result object
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@SuppressWarnings("unchecked")
@@ -851,7 +836,7 @@ public class TestRulePlugin {
 		adocumentContext = rulePlugin.run(adocumentContext, adocumentActivity);
 		Assert.assertNotNull(adocumentContext);
 
-		List<String> newdata = adocumentContext.getItemValue("some_item");
+		List<String> newdata = adocumentContext.getItemValueList("some_item", String.class);
 
 		Assert.assertEquals(2, newdata.size());
 		Assert.assertEquals("Hello World", newdata.get(0));
@@ -863,7 +848,6 @@ public class TestRulePlugin {
 	 * This test verifies setting a new value list via the result object as an JSON
 	 * object
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@SuppressWarnings("unchecked")
@@ -888,7 +872,7 @@ public class TestRulePlugin {
 		Assert.assertEquals("Hello World", singelItem);
 
 		// test multivalue
-		List<String> multiItem = adocumentContext.getItemValue("multi_item");
+		List<String> multiItem = adocumentContext.getItemValueList("multi_item", String.class);
 		Assert.assertEquals(2, multiItem.size());
 		Assert.assertEquals("Hello World", multiItem.get(0));
 		Assert.assertEquals("Hello Imixs", multiItem.get(1));
@@ -900,7 +884,6 @@ public class TestRulePlugin {
 	/**
 	 * This test tests if an activity ItemCollection can be updated by the script
 	 * 
-	 * @throws ScriptException
 	 * @throws PluginException
 	 */
 	@Test

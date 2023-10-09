@@ -93,14 +93,8 @@ public class RuleEngineNashornConverter {
         String regex = "workitem\\['[._\\w]+'\\]";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(script);
-        if (matcher.find()) {
-            return true;
-        }
-    
-
-
         // default to GaalVM
-        return false;
+        return matcher.find();
     }
 
     /**
@@ -108,7 +102,7 @@ public class RuleEngineNashornConverter {
      * dialect.
      * 
      * @param script
-     * @param documentContext
+     * @param workitem
      * @param event
      * @return
      */

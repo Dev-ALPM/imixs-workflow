@@ -1,7 +1,7 @@
 package org.imixs.workflow.plugins;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -69,7 +69,7 @@ public class TestOwnerPluginProcessEntity {
 		// prepare data
 		documentContext = new ItemCollection().model(WorkflowMockEnvironment.DEFAULT_MODEL_VERSION).task(100).event(10);
 		logger.info("[TestOwnerPluginProcessEntity] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -85,7 +85,7 @@ public class TestOwnerPluginProcessEntity {
 	 ***/
 	@Test
 	public void testOwnerNoUpdate() throws ModelException {
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(OwnerPlugin.OWNER, list);
@@ -178,7 +178,7 @@ public class TestOwnerPluginProcessEntity {
 	public void testOwnerfromProcessEntityAndActivityEntity() throws ModelException {
 
 		// set some old values
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(OwnerPlugin.OWNER, list);

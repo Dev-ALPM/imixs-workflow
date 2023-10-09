@@ -108,8 +108,11 @@ public class VersionPlugin extends AbstractPlugin {
      * isProcssingVersion(). The attribute will be removed after a version was
      * processed.
      * 
+     * @param adocumentContext
+     * @param adocumentActivity
      * @throws PluginException
      */
+    @Override
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection adocumentActivity)
             throws PluginException {
         boolean debug = logger.isLoggable(Level.FINE);
@@ -181,13 +184,9 @@ public class VersionPlugin extends AbstractPlugin {
                 documentContext.removeItem("$WorkItemIDRef");
             }
 
-        } catch (AccessDeniedException e) {
+        } catch (AccessDeniedException | ProcessingErrorException e) {
             throw new PluginException(e.getErrorContext(), e.getErrorCode(), e.getMessage(), e);
-        } catch (ProcessingErrorException e) {
-            throw new PluginException(e.getErrorContext(), e.getErrorCode(), e.getMessage(), e);
-        } catch (QueryException e) {
-            throw new PluginException(e.getErrorContext(), e.getErrorCode(), e.getMessage(), e);
-        } catch (ModelException e) {
+        } catch (QueryException | ModelException e) {
             throw new PluginException(e.getErrorContext(), e.getErrorCode(), e.getMessage(), e);
         }
 
@@ -200,8 +199,7 @@ public class VersionPlugin extends AbstractPlugin {
     /**
      * returns true in case a new version is created based on the currentWorkitem
      * 
-     * @param documentContext
-     * @param documentActivity
+     * @param adocumentContext
      * @return
      */
     public static boolean isProcssingVersion(ItemCollection adocumentContext) {
@@ -220,7 +218,6 @@ public class VersionPlugin extends AbstractPlugin {
      * @return new version of the source ItemCollection
      * 
      * @throws PluginException
-     * @throws Exception
      */
     public ItemCollection createVersion(ItemCollection sourceItemCollection) throws PluginException {
         ItemCollection itemColNewVersion = new ItemCollection();

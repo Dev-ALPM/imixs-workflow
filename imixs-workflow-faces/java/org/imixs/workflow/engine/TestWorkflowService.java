@@ -4,7 +4,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.WorkflowKernel;
@@ -97,7 +96,7 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(100);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("");
 		members.add("manfred");
@@ -127,7 +126,7 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(100);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("alex");
 		workitem.replaceItemValue("nammteam", "tom");
@@ -168,7 +167,7 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(300);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("alex");
 		workitem.replaceItemValue("nammteam", "tom");
@@ -209,7 +208,7 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(300);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("alex");
 		workitem.replaceItemValue("nammteam", "tom");

@@ -36,34 +36,31 @@ public class TestWorkflowKernelModels {
 	private static final Logger logger = Logger.getLogger(TestWorkflowKernelModels.class.getName());
 
 	@Before
-	public void setup() throws PluginException, ModelException, ParseException, ParserConfigurationException,
-			SAXException, IOException {
+	public void setup() {
 
-		ctx = Mockito.mock(SessionContext.class);
-		// simulate SessionContext ctx.getCallerPrincipal().getName()
-		Principal principal = Mockito.mock(Principal.class);
-		when(principal.getName()).thenReturn("manfred");
-		when(ctx.getCallerPrincipal()).thenReturn(principal);
-
-		workflowContext = Mockito.mock(WorkflowContext.class);
-
-		// MokWorkflowContext ctx = new MokWorkflowContext();
-		kernel = new WorkflowKernel(workflowContext);
-
-		MokPlugin mokPlugin = new MokPlugin();
-		kernel.registerPlugin(mokPlugin);
-
-		logger.fine("init mocks completed");
+            try {
+                ctx = Mockito.mock(SessionContext.class);
+                // simulate SessionContext ctx.getCallerPrincipal().getName()
+                Principal principal = Mockito.mock(Principal.class);
+                when(principal.getName()).thenReturn("manfred");
+                when(ctx.getCallerPrincipal()).thenReturn(principal);
+                
+                workflowContext = Mockito.mock(WorkflowContext.class);
+                
+                // MokWorkflowContext ctx = new MokWorkflowContext();
+                kernel = new WorkflowKernel(workflowContext);
+                
+                MokPlugin mokPlugin = new MokPlugin();
+                kernel.registerPlugin(mokPlugin);
+                
+                logger.fine("init mocks completed");
+            } catch (PluginException e) {
+                Assert.fail(e.getMessage());
+            }
 	}
 
 	/**
 	 * Simple test
-	 * 
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws ParseException
-	 * @throws ModelException
 	 */
 	@Test
 	@Category(org.imixs.workflow.WorkflowKernel.class)
@@ -89,21 +86,14 @@ public class TestWorkflowKernelModels {
 			Assert.assertEquals("workitemarchive", itemCollection.getItemValueString("type"));
 			Assert.assertEquals(1100, itemCollection.getTaskID());
 
-		} catch (Exception e) {
-			Assert.fail();
-			e.printStackTrace();
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | PluginException | SAXException e) {
+			Assert.fail(e.getMessage());
 		}
 
 	}
 
 	/**
 	 * ticket.bpmn test
-	 * 
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws ParseException
-	 * @throws ModelException
 	 */
 	@Test
 	@Category(org.imixs.workflow.WorkflowKernel.class)
@@ -131,9 +121,8 @@ public class TestWorkflowKernelModels {
 			Assert.assertEquals("in Progress", itemCollection.getItemValueString("txtworkflowstatus"));
 			Assert.assertEquals("Ticket", itemCollection.getItemValueString("txtworkflowgroup"));
 
-		} catch (Exception e) {
-			Assert.fail();
-			e.printStackTrace();
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | PluginException | SAXException e) {
+			Assert.fail(e.getMessage());
 		}
 
 	}
@@ -143,11 +132,6 @@ public class TestWorkflowKernelModels {
 	 * 
 	 * Here we have two conditions: both to a task.
 	 * 
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws ParseException
-	 * @throws ModelException
 	 */
 	@Test
 	@Category(org.imixs.workflow.WorkflowKernel.class)
@@ -183,10 +167,8 @@ public class TestWorkflowKernelModels {
 
 			Assert.assertEquals(1100, itemCollection.getTaskID());
 
-		} catch (Exception e) {
-			Assert.fail();
-			e.printStackTrace();
-
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | PluginException | SAXException e) {
+			Assert.fail(e.getMessage());
 		}
 
 	}
@@ -196,11 +178,6 @@ public class TestWorkflowKernelModels {
 	 * 
 	 * Here we have two conditions: one to a task, the other to a event.
 	 * 
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws ParseException
-	 * @throws ModelException
 	 */
 	@Test
 	@Category(org.imixs.workflow.WorkflowKernel.class)
@@ -233,10 +210,8 @@ public class TestWorkflowKernelModels {
 
 			Assert.assertEquals(1200, itemCollection.getTaskID());
 
-		} catch (Exception e) {
-			Assert.fail();
-			e.printStackTrace();
-
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | PluginException | SAXException e) {
+			Assert.fail(e.getMessage());
 		}
 
 	}
@@ -246,11 +221,6 @@ public class TestWorkflowKernelModels {
 	 * 
 	 * Here we have two conditions: both to a task.
 	 * 
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws ParseException
-	 * @throws ModelException
 	 */
 	@Test
 	@Category(org.imixs.workflow.WorkflowKernel.class)
@@ -293,10 +263,8 @@ public class TestWorkflowKernelModels {
 			Assert.assertEquals(version.getUniqueID(),
 					itemCollection.getItemValueString(WorkflowKernel.UNIQUEIDVERSIONS));
 
-		} catch (Exception e) {
-			Assert.fail();
-			e.printStackTrace();
-
+		} catch (IOException | ParseException | ParserConfigurationException | ModelException | PluginException | SAXException e) {
+			Assert.fail(e.getMessage());
 		}
 
 	}
@@ -307,11 +275,6 @@ public class TestWorkflowKernelModels {
 	 * This model is invalid as a outcome of the split-event is evaluated to 'false'
 	 * and no follow-up event is defined!
 	 * 
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws ParseException
-	 * @throws ModelException
 	 */
 	@Test
 	@Category(org.imixs.workflow.WorkflowKernel.class)
@@ -320,9 +283,8 @@ public class TestWorkflowKernelModels {
 		// provide a mock modelManger class
 		try {
 			when(workflowContext.getModelManager()).thenReturn(new MokModelManager("/bpmn/split_event1_invalid.bpmn"));
-		} catch (ModelException | ParseException | ParserConfigurationException | SAXException | IOException e1) {
-			e1.printStackTrace();
-			Assert.fail();
+		} catch (ModelException | ParseException | ParserConfigurationException | SAXException | IOException e) {
+			Assert.fail(e.getMessage());
 		}
 
 		// test Condition 1
@@ -334,14 +296,13 @@ public class TestWorkflowKernelModels {
 
 		// model exception expected!
 		try {
-			itemCollection = kernel.process(itemCollection);
+			kernel.process(itemCollection);
 			Assert.fail();
 		} catch (ModelException e) {
 			// expected behavior
 		} catch (PluginException e) {
 			// not expected
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 	}

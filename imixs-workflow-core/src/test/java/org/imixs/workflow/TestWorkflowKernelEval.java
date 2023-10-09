@@ -45,16 +45,15 @@ public class TestWorkflowKernelEval {
 		long lLoadTime = System.currentTimeMillis();
 		InputStream inputStream = getClass().getResourceAsStream(MODEL_PATH);
 		
-		BPMNModel model=null;
 		try {
 			logger.info("loading model: " + MODEL_PATH + "....");
-			model = BPMNParser.parseModel(inputStream, "UTF-8");
+			BPMNModel model = BPMNParser.parseModel(inputStream, "UTF-8");
 
 			ruleContext.getModelManager().addModel(model);
 			
 			logger.log(Level.FINE, "...loadModel processing time={0}ms", System.currentTimeMillis() - lLoadTime);
 		} catch (ModelException | ParseException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+			Assert.fail(e.getMessage());
 		}
 
 		// test model...
@@ -77,8 +76,7 @@ public class TestWorkflowKernelEval {
 			Assert.assertEquals(10, workitem.getEventID());
 			Assert.assertEquals(100, workitem.getTaskID());
 		} catch (PluginException | ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 	}
 	
@@ -99,8 +97,7 @@ public class TestWorkflowKernelEval {
 			Assert.assertEquals(10, workitem.getEventID());
 			Assert.assertEquals(100, workitem.getTaskID());
 		} catch (PluginException | ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 	}
 

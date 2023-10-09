@@ -4,7 +4,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -56,14 +55,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 		try {
 			splitAndJoinPlugin.init(workflowMockEnvironment.getWorkflowContext());
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 
 		// prepare test workitem
 		documentContext = new ItemCollection();
 		logger.info("[TestSplitAndJoinPluginDeprecatedItemTag] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -89,14 +87,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 20);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		Assert.assertNotNull(documentContext);
 
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 
 		Assert.assertEquals(1, workitemRefList.size());
 
@@ -117,7 +114,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 		logger.log(Level.INFO, "Created Subprocess UniqueID={0}", subprocess.getUniqueID());
 
 		// test if the field namTeam is available
-		List<String> team = subprocess.getItemValue("namTeam");
+		List<String> team = subprocess.getItemValueList("namTeam", String.class);
 		Assert.assertEquals(2, team.size());
 		Assert.assertTrue(team.contains("manfred"));
 		Assert.assertTrue(team.contains("anna"));
@@ -137,14 +134,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 60);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		Assert.assertNotNull(documentContext);
 
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 
 		Assert.assertEquals(1, workitemRefList.size());
 
@@ -161,7 +157,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 		logger.log(Level.INFO, "Created Subprocess UniqueID={0}", subprocess.getUniqueID());
 
 		// test if the field namTeam is available
-		List<String> team = subprocess.getItemValue("_sub_Team");
+		List<String> team = subprocess.getItemValueList("_sub_Team", String.class);
 		Assert.assertEquals(2, team.size());
 		Assert.assertTrue(team.contains("manfred"));
 		Assert.assertTrue(team.contains("anna"));
@@ -181,7 +177,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 		byte[] empty = { 0 };
 		FileData fileData = new FileData("test1.txt", empty, "application/xml", null);
 
-		List<Object> textlist = new ArrayList<Object>();
+		List<Object> textlist = new ArrayList<>();
 		textlist.add("\n\n\n\n hello world");
 		fileData.setAttribute("text", textlist);
 		documentContext.addFileData(fileData);
@@ -190,14 +186,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 61);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		Assert.assertNotNull(documentContext);
 
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 
 		Assert.assertEquals(1, workitemRefList.size());
 
@@ -214,7 +209,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 		logger.log(Level.INFO, "Created Subprocess UniqueID={0}", subprocess.getUniqueID());
 
 		// test if the field namTeam is available
-		List<String> team = subprocess.getItemValue("_sub_Team");
+		List<String> team = subprocess.getItemValueList("_sub_Team", String.class);
 		Assert.assertEquals(2, team.size());
 		Assert.assertTrue(team.contains("manfred"));
 		Assert.assertTrue(team.contains("anna"));
@@ -243,14 +238,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 30);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		Assert.assertNotNull(documentContext);
 
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 
 		// two subprocesses should be created...
 		Assert.assertEquals(2, workitemRefList.size());
@@ -316,13 +310,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 20);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 		Assert.assertNotNull(documentContext);
 
 		// now load the subprocess
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 		String subprocessUniqueid = workitemRefList.get(0);
 		ItemCollection subprocess = workflowMockEnvironment.getDocumentService().load(subprocessUniqueid);
 
@@ -341,7 +335,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 50);
 			splitAndJoinPlugin.run(subprocess, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -373,15 +367,14 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 20);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		Assert.assertNotNull(documentContext);
 
 		// load the new subprocess....
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 		Assert.assertEquals(1, workitemRefList.size());
 		String subprocessUniqueid = workitemRefList.get(0);
 		ItemCollection subprocess = workflowMockEnvironment.getDocumentService().load(subprocessUniqueid);
@@ -395,8 +388,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentContext.replaceItemValue("namTeam", "Walter");
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -425,14 +417,13 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 			documentActivity = workflowMockEnvironment.getModel().getEvent(100, 70);
 			splitAndJoinPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 		Assert.assertNotNull(documentContext);
 
 		// load the new subprocess....
-		List<String> workitemRefList = documentContext.getItemValue(SplitAndJoinPlugin.LINK_PROPERTY);
+		List<String> workitemRefList = documentContext.getItemValueList(SplitAndJoinPlugin.LINK_PROPERTY, String.class);
 		Assert.assertEquals(1, workitemRefList.size());
 		String subprocessUniqueid = workitemRefList.get(0);
 		ItemCollection subprocess = workflowMockEnvironment.getDocumentService().load(subprocessUniqueid);
@@ -442,7 +433,7 @@ public class TestSplitAndJoinPluginDeprecatedItemTag {
 		Assert.assertEquals("", subprocess.getItemValueString("$snapshotid"));
 
 		// test the deprecated LIst
-		List<String> workitemRefListDeprecated = documentContext.getItemValue("txtworkitemref");
+		List<String> workitemRefListDeprecated = documentContext.getItemValueList("txtworkitemref", String.class);
 		Assert.assertEquals(workitemRefList, workitemRefListDeprecated);
 
 	}

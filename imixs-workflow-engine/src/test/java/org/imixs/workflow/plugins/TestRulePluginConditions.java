@@ -1,5 +1,6 @@
 package org.imixs.workflow.plugins;
 
+import java.util.logging.Logger;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.engine.ModelPluginMock;
 import org.imixs.workflow.engine.WorkflowMockEnvironment;
@@ -24,7 +25,8 @@ import org.junit.Assert;
 public class TestRulePluginConditions {
 	protected ResultPlugin resultPlugin = null;
 	public static final String DEFAULT_MODEL_VERSION = "1.0.0";
-	
+	private static final Logger logger = Logger.getLogger(TestRulePluginConditions.class.getName());
+        
 	WorkflowMockEnvironment workflowMockEnvironment;
 
 	@Before
@@ -40,13 +42,13 @@ public class TestRulePluginConditions {
 			resultPlugin.init(workflowMockEnvironment.getWorkflowService());
 		} catch (PluginException e) {
 
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 		try {
 			workflowMockEnvironment.getModelService().addModel(new ModelPluginMock(workflowMockEnvironment.getModel(),
 					"org.imixs.workflow.engine.plugins.ApplicationPlugin","org.imixs.workflow.engine.plugins.RulePlugin"));
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 	}
 	
@@ -54,6 +56,7 @@ public class TestRulePluginConditions {
 	/**
 	 * This test simulates a workflowService process call.
 	 * 
+	 * @throws org.imixs.workflow.exceptions.PluginException
 	 * @throws ProcessingErrorException
 	 * @throws AccessDeniedException
 	 * @throws ModelException

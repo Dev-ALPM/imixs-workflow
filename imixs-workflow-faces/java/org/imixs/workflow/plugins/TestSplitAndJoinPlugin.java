@@ -1,9 +1,9 @@
 package org.imixs.workflow.plugins;
 
+import java.util.ArrayList;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -62,7 +62,7 @@ public class TestSplitAndJoinPlugin {
 		// prepare test workitem
 		documentContext = new ItemCollection();
 		logger.info("[TestSplitAndJoinPlugin] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);

@@ -33,6 +33,7 @@ public class TestWorkflowScheduler {
 	 * 
 	 * @throws ProcessingErrorException
 	 * @throws AccessDeniedException
+         * @throws org.imixs.workflow.exceptions.PluginException
 	 * 
 	 */
 	@Test

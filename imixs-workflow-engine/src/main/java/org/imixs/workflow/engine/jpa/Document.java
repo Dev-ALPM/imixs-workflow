@@ -88,7 +88,7 @@ public class Document implements java.io.Serializable {
     private String type;
     private Calendar created;
     private Calendar modified;
-    private Map<String, List<Object>> data;
+    private Map<String, List<?>> data;
     private boolean pending;
 
     /**
@@ -202,6 +202,7 @@ public class Document implements java.io.Serializable {
     /**
      * Set the time of last modification. This attribute is automatically
      * synchronized with the item '$modified'.
+     * @param modified
      */
     public void setModified(Calendar modified) {
         this.modified = modified;
@@ -216,7 +217,7 @@ public class Document implements java.io.Serializable {
      */
     @Lob
     @Basic(fetch = FetchType.EAGER)
-    public Map<String, List<Object>> getData() {
+    public Map<String, List<?>> getData() {
         return data;
     }
 
@@ -227,10 +228,10 @@ public class Document implements java.io.Serializable {
      * point of time (see setModified) independent from the value of the item
      * $modified. The item $modified will be updated by the DocumentService on read.
      * 
-     * @param data
+     * @param itemCol
      * @throws InvalidAccessException if $modified is missing
      */
-    public void setData(Map<String, List<Object>> itemCol) {
+    public void setData(Map<String, List<?>> itemCol) {
         this.data = itemCol;
     }
 

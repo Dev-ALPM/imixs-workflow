@@ -104,8 +104,7 @@ public class ImixsJSONParser {
      * </code>
      * 
      * 
-     * @param requestBodyStream
-     * @param encoding          - default encoding use to parse the stream
+     * @param jsonDataStream
      * @return a workitem
      * @throws ParseException
      * @throws UnsupportedEncodingException
@@ -120,7 +119,7 @@ public class ImixsJSONParser {
         }
 
         JsonParser parser = Json.createParser(jsonDataStream);
-        Event event = null;
+        Event event;
         while (true) {
 
             try {
@@ -147,7 +146,7 @@ public class ImixsJSONParser {
                                     (int) location.getStreamOffset());
                         } else {
                             // create result List
-                            result = new ArrayList<ItemCollection>();
+                            result = new ArrayList<>();
                         }
                     }
 
@@ -157,7 +156,7 @@ public class ImixsJSONParser {
                         parseDocument(parser, document);
                         // late init of collection?
                         if (result == null) {
-                            result = new ArrayList<ItemCollection>();
+                            result = new ArrayList<>();
                         }
                         result.add(document);
                     }
@@ -212,8 +211,7 @@ public class ImixsJSONParser {
     private static void parseItem(JsonParser parser, ItemCollection document) {
         Object itemValue = null;
         String itemName = null;
-        boolean isItem = true;
-        while (isItem) {
+        while (true) {
             try {
                 Event event = parser.next(); // START_OBJECT
                 if (event.name().equals(Event.KEY_NAME.toString())) {
@@ -226,13 +224,12 @@ public class ImixsJSONParser {
                     }
                     if (VALUE_ELEMENT.equals(jsonkey)) {
                         // parser.next();
-                        itemValue = parseValue(parser, document);
+                        itemValue = parseValue(parser);
                         continue;
                     }
                 }
                 // END of Object?
                 if (event.name().equals(Event.END_OBJECT.toString())) {
-                    isItem = false;
                     // add item...?
                     if (itemName != null && itemValue != null) {
                         document.setItemValue(itemName, itemValue);
@@ -250,12 +247,12 @@ public class ImixsJSONParser {
     			"value":{"@type":"xs:boolean","$":"true"},
      * </code>
      **/
-    private static List<Object> parseValue(JsonParser parser, ItemCollection document) {
+    private static List<Object> parseValue(JsonParser parser) {
         String type = null;
         String stringValue = null;
         Object value = null;
         Boolean isarray = false;
-        List<Object> valueList = new ArrayList<Object>();
+        List<Object> valueList = new ArrayList<>();
         while (true) {
             try {
                 Event event = parser.next(); // START_OBJECT
@@ -284,13 +281,13 @@ public class ImixsJSONParser {
 
                     // convert value to Object Type
                     if ("xs:boolean".equalsIgnoreCase(type)) {
-                        value = Boolean.parseBoolean(stringValue);
+                        value = Boolean.valueOf(stringValue);
                     }
                     if ("xs:integer".equalsIgnoreCase(type) || "xs:int".equalsIgnoreCase(type)) {
-                        value = Integer.parseInt(stringValue);
+                        value = Integer.valueOf(stringValue);
                     }
                     if ("xs:long".equalsIgnoreCase(type)) {
-                        value = Long.parseLong(stringValue);
+                        value = Long.valueOf(stringValue);
                     }
                     if ("xs:float".equalsIgnoreCase(type)) {
                         value = Float.valueOf(stringValue);

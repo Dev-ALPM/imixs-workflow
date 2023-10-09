@@ -58,7 +58,7 @@ import jakarta.faces.event.ExceptionQueuedEventContext;
  */
 public class ViewExpiredExceptionHandler extends ExceptionHandlerWrapper {
 
-    private ExceptionHandler wrapped;
+    private final ExceptionHandler wrapped;
 
     @SuppressWarnings("deprecation")
     public ViewExpiredExceptionHandler(ExceptionHandler wrapped) {
@@ -76,8 +76,7 @@ public class ViewExpiredExceptionHandler extends ExceptionHandlerWrapper {
             ExceptionQueuedEvent event = i.next();
             ExceptionQueuedEventContext context = (ExceptionQueuedEventContext) event.getSource();
             Throwable t = context.getException();
-            if (t instanceof ViewExpiredException) {
-                ViewExpiredException vee = (ViewExpiredException) t;
+            if (t instanceof ViewExpiredException vee) {
                 FacesContext fc = FacesContext.getCurrentInstance();
                 Map<String, Object> requestMap = fc.getExternalContext().getRequestMap();
                 NavigationHandler nav = fc.getApplication().getNavigationHandler();

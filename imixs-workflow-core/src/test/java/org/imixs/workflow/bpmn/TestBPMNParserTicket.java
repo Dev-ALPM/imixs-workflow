@@ -11,7 +11,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.exceptions.ModelException;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -24,7 +23,6 @@ import org.junit.Assert;
  */
 public class TestBPMNParserTicket {
 
-	@SuppressWarnings("rawtypes")
 	@Test
 	public void testSimple() throws ParseException,
 			ParserConfigurationException, SAXException, IOException, ModelException {
@@ -37,12 +35,8 @@ public class TestBPMNParserTicket {
 		BPMNModel model = null;
 		try { 
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -55,7 +49,7 @@ public class TestBPMNParserTicket {
 				profile.getItemValueString("type"));
 		Assert.assertEquals(VERSION,
 				profile.getItemValueString("$ModelVersion"));
-		List plugins = profile.getItemValue("txtplugins");
+		List<String> plugins = profile.getItemValueList("txtplugins", String.class);
 		Assert.assertNotNull(plugins);
 		Assert.assertEquals(4, plugins.size());
 		Assert.assertEquals("org.imixs.workflow.plugins.AccessPlugin",plugins.get(0));
@@ -144,14 +138,13 @@ public class TestBPMNParserTicket {
 		// Test Owner
 		Assert.assertTrue(activity.getItemValueBoolean("keyupdateacl"));
 
-		List owners = activity.getItemValue("keyownershipfields");
+		List<String> owners = activity.getItemValueList("keyownershipfields", String.class);
 		Assert.assertNotNull(owners);
 		Assert.assertEquals(2, owners.size());
 		Assert.assertTrue(owners.contains("namTeam"));
 		Assert.assertTrue(owners.contains("namManager"));
 	}
 
-	@Ignore
 	@Test(expected = ParseException.class)
 	public void testCorrupted() throws ParseException,
 			ParserConfigurationException, SAXException, IOException {
@@ -162,12 +155,8 @@ public class TestBPMNParserTicket {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 
 		Assert.assertNull(model);

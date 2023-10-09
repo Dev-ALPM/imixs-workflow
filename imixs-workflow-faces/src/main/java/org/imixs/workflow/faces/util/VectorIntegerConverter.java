@@ -28,52 +28,13 @@
 
 package org.imixs.workflow.faces.util;
 
-import java.util.ListIterator;
-import java.util.Vector;
-
-import jakarta.faces.component.UIComponent;
-import jakarta.faces.context.FacesContext;
-import jakarta.faces.convert.Converter;
-import jakarta.faces.convert.ConverterException;
+import jakarta.faces.convert.FacesConverter;
 
 /**
- * Converts a vector of integer values into a string an vice versa. 
+ * For backward compatibility
+ * @see org.imixs.workflow.faces.util.ListIntegerConverter}
  */
-
-@SuppressWarnings("rawtypes")
-public class VectorIntegerConverter implements Converter {
-
-    String separator = "\n";
-
-    @SuppressWarnings({ "unchecked" })
-    public Object getAsObject(FacesContext context, UIComponent component, String value) throws ConverterException {
-
-        Vector v = new Vector();
-        String[] tokens = value.split(separator);
-        for (int i = 0; i < tokens.length; i++) {
-            String sValue = tokens[i].trim();
-            Integer intValue = new Integer(sValue);
-            v.addElement(intValue);
-        }
-
-        return v;
-
-    }
-
-    public String getAsString(FacesContext context, UIComponent component, Object value) throws ConverterException {
-
-        String s = "";
-        Vector vValues = (Vector) value;
-        ListIterator li = vValues.listIterator();
-        while (li.hasNext()) {
-            if (li.hasPrevious()) {
-                s += "" + separator;
-            }
-            s += li.next();
-        }
-
-        return s;
-
-    }
+@FacesConverter(value = "org.imixs.VectorIntegerConverter")
+public class VectorIntegerConverter extends ListIntegerConverter {
 
 }

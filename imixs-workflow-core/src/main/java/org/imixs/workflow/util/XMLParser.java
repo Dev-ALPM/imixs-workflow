@@ -30,7 +30,6 @@ package org.imixs.workflow.util;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,13 +41,8 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.exceptions.PluginException;
 import org.w3c.dom.Document;
@@ -75,7 +69,7 @@ public class XMLParser {
      * This method parses a xml tag for attributes. The method returns a Map with
      * all attributes found in the content string
      * 
-     * e.g. <item data="abc" value="def" />
+     * e.g. {@code<item data="abc" value="def" />}
      * 
      * returns Map: {field=a, number=1}
      * 
@@ -83,8 +77,7 @@ public class XMLParser {
      * @return
      */
     public static Map<String, String> findAttributes(String content) {
-        Map<String, String> result = new HashMap<String, String>();
-        Pattern p = null;
+        Map<String, String> result = new HashMap<>();
         // short version of [A-Za-z0-9\-]
         // Pattern p =
         // Pattern.compile("([\\w\\-]+)=\"*((?<=\")[^\"]+(?=\")|([^\\s]+))\"*");
@@ -93,7 +86,7 @@ public class XMLParser {
         // Pattern p =
         // Pattern.compile("(\\S+)=[\"']?((?:.(?![\"']?\\s+(?:\\S+)=|[>\"']))+.)[\"']?");
 
-        p = Pattern.compile("(\\S+)\\s*=\\s*[\"']?((?:.(?![\"']?\\s+(?:\\S+)=|[>\"']))?[^\"']*)[\"']?");
+        Pattern p = Pattern.compile("(\\S+)\\s*=\\s*[\"']?((?:.(?![\"']?\\s+(?:\\S+)=|[>\"']))?[^\"']*)[\"']?");
 
         Matcher m = p.matcher(content);
         while (m.find()) {
@@ -107,11 +100,12 @@ public class XMLParser {
      * This method parses a xml tag for a single named attribute. The method returns
      * the value of the attribute found in the content string
      * 
-     * e.g. <item data="abc" />
+     * e.g. {@code<item data="abc" />}
      * 
      * returns "abc"
      * 
      * @param content
+     * @param name
      * @return
      */
     public static String findAttribute(String content, String name) {
@@ -139,7 +133,7 @@ public class XMLParser {
      * @return
      */
     public static List<String> findTags(String content, String tag) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         String regex = "<(?i)(" + tag + ")" + // matches the tag itself
                 "([^<]+)" + // then anything in between the opening and closing
@@ -169,7 +163,7 @@ public class XMLParser {
      * @return
      */
     public static List<String> findNoEmptyTags(String content, String tag) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         String regex = "<" + tag + ".*>((.|\n)*?)<\\/" + tag + ">";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(content);
@@ -194,7 +188,7 @@ public class XMLParser {
      * @return
      */
     public static List<String> findTagValues(String content, String tag) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         List<String> tags = findTags(content, tag);
 
         for (String singleTag : tags) {
@@ -224,7 +218,7 @@ public class XMLParser {
      */
     public static String findTagValue(String content, String tag) {
         List<String> tags = findTags(content, tag);
-        if (tags.size() > 0) {
+        if (!tags.isEmpty()) {
             // only first tag...
             content = tags.get(0);
         }
@@ -273,7 +267,7 @@ public class XMLParser {
     public static String findTagValueOld(String content, String tag) {
         // opening tag can contain optional attributes
         List<String> tags = findTags(content, tag);
-        if (tags.size() > 0) {
+        if (!tags.isEmpty()) {
             // only first tag...
             content = tags.get(0);
         }
@@ -306,7 +300,8 @@ public class XMLParser {
      * }
      * </pre>
      * 
-     * @param evalItemCollection
+     * @param xmlContent
+     * @return 
      * @throws PluginException
      */
     public static ItemCollection parseItemStructure(String xmlContent) throws PluginException {
@@ -336,7 +331,9 @@ public class XMLParser {
      * <p>
      * Returns an ItemCollection with 3 items (modelversion, task and event)
      * 
-     * @param evalItemCollection
+     * @param xmlContent
+     * @param tag
+     * @return 
      * @throws PluginException
      */
     public static ItemCollection parseTag(String xmlContent, String tag) throws PluginException {
@@ -422,26 +419,6 @@ public class XMLParser {
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * @see https://stackoverflow.com/questions/3300839/get-a-nodes-inner-xml-as-string-in-java-dom?noredirect=1#comment90136258_42456679
-     */
-    @SuppressWarnings("unused")
-    @Deprecated
-    private static String oldinnerXml(Node node) throws TransformerFactoryConfigurationError, TransformerException {
-        long l = System.currentTimeMillis();
-        StringWriter writer = new StringWriter();
-        String xml = null;
-        Transformer transformer;
-        transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        transformer.transform(new DOMSource(node), new StreamResult(writer));
-        // now we remove the outer tag....
-        xml = writer.toString();
-        xml = xml.substring(xml.indexOf(">") + 1, xml.lastIndexOf("</"));
-        System.out.println(" ....time= " + (System.currentTimeMillis() - l));
-        return xml;
     }
 
 }

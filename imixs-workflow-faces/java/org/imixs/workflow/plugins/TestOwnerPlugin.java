@@ -1,7 +1,7 @@
 package org.imixs.workflow.plugins;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -50,7 +50,7 @@ public class TestOwnerPlugin  {
 		// prepare data
 		documentContext = new ItemCollection().model( WorkflowMockEnvironment.DEFAULT_MODEL_VERSION).task(100).event(10);
 		logger.info("[TestOwnerPlugin] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -67,7 +67,7 @@ public class TestOwnerPlugin  {
 		
 		
 
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("sam");
 		list.add("joe");
 		documentActivity.replaceItemValue("namOwnershipNames", list);
@@ -98,7 +98,7 @@ public class TestOwnerPlugin  {
 		documentActivity.replaceItemValue("keyupdateAcl", true);
 		documentActivity.replaceItemValue("numNextProcessID", 100);
 		
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("sam");
 		list.add("joe");
 		documentActivity.replaceItemValue("namOwnershipNames", list);

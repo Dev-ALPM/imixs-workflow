@@ -25,14 +25,6 @@
 			<artifactId>imixs-workflow-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
-		<!-- JUnit Test dependencies -->
-		<dependency>
-			<groupId>javax.mail</groupId>
-			<artifactId>mail</artifactId>
-			<version>1.4</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 </project>

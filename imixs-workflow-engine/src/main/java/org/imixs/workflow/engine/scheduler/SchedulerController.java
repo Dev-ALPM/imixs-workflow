@@ -28,7 +28,6 @@
 
 package org.imixs.workflow.engine.scheduler;
 
-import java.io.Serializable;
 import java.text.ParseException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -57,7 +56,7 @@ import org.imixs.workflow.exceptions.AccessDeniedException;
 
 @Named
 @RequestScoped
-public class SchedulerController implements Serializable {
+public class SchedulerController {
 
     private ItemCollection configuration = null;
     private String name;
@@ -65,8 +64,6 @@ public class SchedulerController implements Serializable {
 
     @Inject
     private SchedulerService schedulerService;
-
-    private static final long serialVersionUID = 1L;
 
     private static final Logger logger = Logger.getLogger(SchedulerController.class.getName());
 
@@ -134,10 +131,8 @@ public class SchedulerController implements Serializable {
     /**
      * starts the timer service
      * 
-     * @return
      * @throws ParseException
      * @throws AccessDeniedException
-     * @throws Exception
      */
     public void startScheduler() throws AccessDeniedException, ParseException {
         configuration = schedulerService.start(getConfiguration());
@@ -158,6 +153,7 @@ public class SchedulerController implements Serializable {
      * 
      * converts time (in milliseconds) to human-readable format "<dd:>hh:mm:ss"
      * 
+     * @param duration
      * @return
      */
     public String millisToShortDHMS(int duration) {
@@ -165,7 +161,7 @@ public class SchedulerController implements Serializable {
         if (debug) {
             logger.log(Level.FINEST, "......confert ms {0}", duration);
         }
-        String res = "";
+        String res;
         long days = TimeUnit.MILLISECONDS.toDays(duration);
         long hours = TimeUnit.MILLISECONDS.toHours(duration)
                 - TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(duration));

@@ -33,7 +33,10 @@ import java.io.FileOutputStream;
 import java.io.StringWriter;
 import java.util.logging.Logger;
 import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
+import java.io.IOException;
+import javax.xml.transform.TransformerException;
 import org.imixs.workflow.FileData;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.exceptions.PluginException;
@@ -81,7 +84,10 @@ public class ReportPlugin extends AbstractPlugin {
      * document. The Query Statement will not be evaluated
      * <p>
      * 
+     * @param adocumentContext
+     * @param adocumentActivity
      */
+    @Override
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection adocumentActivity)
             throws PluginException {
 
@@ -161,20 +167,14 @@ public class ReportPlugin extends AbstractPlugin {
             }
             // write to filesystem
             if ("2".equals(reportTarget)) {
-                FileOutputStream fos = null;
-                try {
-                    fos = new FileOutputStream(reportFilePath);
+                try (FileOutputStream fos = new FileOutputStream(reportFilePath)) {
                     fos.write(outputStream.toByteArray());
                     fos.flush();
-                } finally {
-                    if (fos != null) {
-                        fos.close();
-                    }
                 }
             }
 
             return adocumentContext;
-        } catch (Exception e) {
+        } catch (JAXBException | IOException | TransformerException e) {
             // report undefined
             throw new PluginException(ReportPlugin.class.getSimpleName(), INVALID_REPORT_DEFINITION,
                     "Unable to process report '" + reportName + "' ", new Object[] { reportName });

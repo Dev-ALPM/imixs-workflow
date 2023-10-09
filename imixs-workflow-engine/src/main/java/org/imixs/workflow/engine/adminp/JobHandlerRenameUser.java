@@ -108,7 +108,7 @@ public class JobHandlerRenameUser implements JobHandler {
     /**
      * This method creates a new AdminP Job to rename userId in workitems.
      * 
-     * @throws QueryException
+     * @param adminp
      * @throws AccessDeniedException
      */
     @Override
@@ -243,17 +243,17 @@ public class JobHandlerRenameUser implements JobHandler {
 
         // Verify Fields
 
-        if (updateList(entity.getItemValue(WorkflowService.READACCESS), from, to, replace))
+        if (updateList(entity.getItemValueList(WorkflowService.READACCESS, String.class), from, to, replace))
             bUpdate = true;
 
-        if (updateList(entity.getItemValue(WorkflowService.WRITEACCESS), from, to, replace))
+        if (updateList(entity.getItemValueList(WorkflowService.WRITEACCESS, String.class), from, to, replace))
             bUpdate = true;
 
-        if (updateList(entity.getItemValue(OwnerPlugin.OWNER), from, to, replace))
+        if (updateList(entity.getItemValueList(OwnerPlugin.OWNER, String.class), from, to, replace))
             bUpdate = true;
 
         // support deprecated field
-        if (updateList(entity.getItemValue("namOwner"), from, to, replace))
+        if (updateList(entity.getItemValueList("namOwner", String.class), from, to, replace))
             bUpdate = true;
 
         // !! We do not replace the creator!! - see issue #350
@@ -281,8 +281,7 @@ public class JobHandlerRenameUser implements JobHandler {
      * @param replace
      * @return true if the list was modified.
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private boolean updateList(List list, String from, String to, boolean replace) {
+    private boolean updateList(List<String> list, String from, String to, boolean replace) {
 
         boolean update = false;
 

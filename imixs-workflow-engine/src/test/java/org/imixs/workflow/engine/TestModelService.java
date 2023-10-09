@@ -1,10 +1,9 @@
 package org.imixs.workflow.engine;
 
+import java.util.logging.Logger;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.Model;
 import org.imixs.workflow.exceptions.ModelException;
-import org.imixs.workflow.exceptions.PluginException;
-import org.junit.Before;
 import org.junit.Test;
 
 import org.junit.Assert;
@@ -19,15 +18,8 @@ import org.junit.Assert;
  * @author rsoika
  */
 public class TestModelService extends WorkflowMockEnvironment {
-	public static final String DEFAULT_MODEL_VERSION = "1.0.0";
-
-	// @Spy
-	// protected ModelService modelService;
-
-	@Before
-	public void setUp() throws PluginException, ModelException {
-
-	}
+    
+        private final static Logger logger = Logger.getLogger(TestModelService.class.getName());
 
 	/**
 	 * This test validates the getDataObject method of the modelSerivce.
@@ -48,7 +40,7 @@ public class TestModelService extends WorkflowMockEnvironment {
 
 		Assert.assertNotNull(event);
 
-		ModelService modelService = new ModelService();
+//		ModelService modelService = new ModelService();
 		String data = modelService.getDataObject(event, "MyObject");
 
 		Assert.assertNotNull(data);
@@ -77,7 +69,7 @@ public class TestModelService extends WorkflowMockEnvironment {
 		try {
 			amodel = modelService.getModelByWorkitem(workitem);
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -110,7 +102,7 @@ public class TestModelService extends WorkflowMockEnvironment {
 			amodel = modelService.getModelByWorkitem(workitem);
 			
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 		Assert.assertNotNull(amodel);
@@ -121,11 +113,10 @@ public class TestModelService extends WorkflowMockEnvironment {
 	
 	/**
 	 * This deprecated model version
-	 * 
-	 * 
+         * @throws org.imixs.workflow.exceptions.ModelException Test expected
 	 */
-	@Test
-	public void testNoMatchModelVersion() {
+	@Test(expected = ModelException.class)
+	public void testNoMatchModelVersion() throws ModelException {
 		this.setModelPath("/bpmn/TestWorkflowService.bpmn");
 		this.loadModel();
 
@@ -135,17 +126,8 @@ public class TestModelService extends WorkflowMockEnvironment {
 		workitem.setTaskID(100);
 		workitem.setEventID(10);
 		workitem.replaceItemValue("$WorkflowGroup", "Invoice");
-		
 
-		Model amodel = null;
-		try {
-			amodel = modelService.getModelByWorkitem(workitem);
-			Assert.fail();
-		} catch (ModelException e) {
-			// expected
-			e.printStackTrace();
-		}
-		Assert.assertNull(amodel);
+		modelService.getModelByWorkitem(workitem);
 	}
 
 }

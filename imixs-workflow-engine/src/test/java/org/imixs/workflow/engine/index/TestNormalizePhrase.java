@@ -30,13 +30,12 @@ public class TestNormalizePhrase {
 
 	/**
 	 * Test "Lukas Podolski"
+	 * @throws org.imixs.workflow.exceptions.PluginException
 	 */
 	@Test
 	public void test1() throws PluginException {
 		String searchTerm = "Lukas Podolski";
-		String result = null;
-		
-			result = schemaService.normalizeSearchTerm(searchTerm);
+		String result = schemaService.normalizeSearchTerm(searchTerm);
 			logger.log(Level.INFO, "{0}  -->  {1}", new Object[]{searchTerm, result});
 	
 
@@ -49,13 +48,12 @@ public class TestNormalizePhrase {
 	
 	/**
 	 * Test "Europe/Berlin"
+	 * @throws org.imixs.workflow.exceptions.PluginException
 	 */
 	@Test
 	public void test2() throws PluginException {
 		String searchTerm = "Europe/Berlin";
-		String result = null;
-		
-			result = schemaService.normalizeSearchTerm(searchTerm);
+		String result = schemaService.normalizeSearchTerm(searchTerm);
 			logger.log(Level.INFO, "{0}  -->  {1}", new Object[]{searchTerm, result});
 		
 
@@ -66,13 +64,12 @@ public class TestNormalizePhrase {
 	
 	/**
 	 * Test "rs/82550/201618"
+	 * @throws org.imixs.workflow.exceptions.PluginException
 	 */
 	@Test
 	public void test3() throws PluginException {
 		String searchTerm = "rs/82550/201618";
-		String result = null;
-		
-			result = schemaService.normalizeSearchTerm(searchTerm);
+		String result = schemaService.normalizeSearchTerm(searchTerm);
 			logger.log(Level.INFO, "{0}  -->  {1}", new Object[]{searchTerm, result});
 		
 
@@ -83,13 +80,12 @@ public class TestNormalizePhrase {
 	
 	/**
 	 * Test "rs-82550/201618"
+	 * @throws org.imixs.workflow.exceptions.PluginException
 	 */
 	@Test
 	public void test4() throws PluginException {
 		String searchTerm = "rs-82550/201618";
-		String result = null;
-		
-			result = schemaService.normalizeSearchTerm(searchTerm);
+		String result = schemaService.normalizeSearchTerm(searchTerm);
 			logger.log(Level.INFO, "{0}  -->  {1}", new Object[]{searchTerm, result});
 		
 		Assert.assertEquals("rs\\-82550\\/201618", result);

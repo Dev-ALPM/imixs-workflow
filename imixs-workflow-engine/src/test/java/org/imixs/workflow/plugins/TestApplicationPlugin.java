@@ -1,6 +1,7 @@
 package org.imixs.workflow.plugins;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -45,14 +46,13 @@ public class TestApplicationPlugin  {
 		try {
 			applicationPlugin.init(workflowMockEnvironment.getWorkflowService());
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 
 		// prepare data
 		documentContext = new ItemCollection().model("1.0.0").task(100);
 		logger.info("[TestApplicationPlugin] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -73,16 +73,14 @@ public class TestApplicationPlugin  {
 		try {
 			applicationPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+                        logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		try {
 			applicationPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) { 
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 

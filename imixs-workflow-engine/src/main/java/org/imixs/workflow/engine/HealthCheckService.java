@@ -81,12 +81,12 @@ public class HealthCheckService implements HealthCheck {
      */
     @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder builder = null;
-        int modelCount = 0;
+        HealthCheckResponseBuilder builder;
+        int modelCount;
         int groupCount = 0;
         boolean failure = false;
-        boolean databaseFailure = false;
-        boolean indexFailure = false;
+        boolean databaseFailure;
+        boolean indexFailure;
         try {
             modelCount = setupService.getModelVersionCount();
             groupCount = setupService.getModelGroupCount();

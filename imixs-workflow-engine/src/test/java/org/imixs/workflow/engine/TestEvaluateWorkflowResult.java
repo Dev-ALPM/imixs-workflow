@@ -35,7 +35,6 @@ public class TestEvaluateWorkflowResult {
     /**
      * This test evaluates a event result
      * 
-     * @throws PluginException
      */
     @Test
     public void testEvaluateWorkflowResult() {
@@ -51,7 +50,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertEquals("some data", result.getItemValueString("comment"));
             Assert.assertEquals("true", result.getItemValueString("comment.ignore"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -65,7 +64,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertEquals("", result.getItemValueString("comment"));
             Assert.assertEquals("true", result.getItemValueString("comment.ignore"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
     }
@@ -73,7 +72,6 @@ public class TestEvaluateWorkflowResult {
     /**
      * This test evaluates a event result
      * 
-     * @throws PluginException
      */
     @Test
     public void testEvaluateWorkflowResultNumbers() {
@@ -88,7 +86,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(result.hasItem("count"));
             Assert.assertEquals(55, result.getItemValueInteger("count"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -101,7 +99,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(result.hasItem("count"));
             Assert.assertEquals(55.11, result.getItemValueDouble("count"),0);
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -114,7 +112,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(result.hasItem("count"));
             Assert.assertEquals(0.0, result.getItemValueDouble("count"),0);
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -127,7 +125,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(result.hasItem("count"));
             Assert.assertEquals(0, result.getItemValueInteger("count"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -137,7 +135,6 @@ public class TestEvaluateWorkflowResult {
      * This test evaluates a event result for a double item copied from a source
      * item value
      * 
-     * @throws PluginException
      */
     @Test
     public void testEvaluateWorkflowResultNumbersFromSource() {
@@ -156,7 +153,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(result.hasItem("count"));
             Assert.assertEquals(55.123, result.getItemValueDouble("count"),0);
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -179,8 +176,7 @@ public class TestEvaluateWorkflowResult {
         activityEntity.replaceItemValue("txtActivityResult", sResult);
 
         // expected txtname= Manfred,Anna,Sam
-        ItemCollection evalItemCollection = new ItemCollection();
-        evalItemCollection = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
+        ItemCollection evalItemCollection = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
                 new ItemCollection());
 
         Assert.assertTrue(evalItemCollection.hasItem("txtName"));
@@ -213,8 +209,7 @@ public class TestEvaluateWorkflowResult {
 
         workflowMockEnvironment.getWorkflowService();
         long l = System.currentTimeMillis();
-        ItemCollection evalItemCollection = new ItemCollection();
-        evalItemCollection = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
+        ItemCollection evalItemCollection = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
                 new ItemCollection());
 
         logger.log(Level.INFO, "...evaluated result in {0}ms...", System.currentTimeMillis() - l);
@@ -235,7 +230,6 @@ public class TestEvaluateWorkflowResult {
         activityEntity = new ItemCollection();
         activityEntity.replaceItemValue("txtActivityResult", sResult);
         l = System.currentTimeMillis();
-        evalItemCollection = new ItemCollection();
         evalItemCollection = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
                 new ItemCollection());
         logger.log(Level.INFO, "...evaluated result in {0}ms...", System.currentTimeMillis() - l);
@@ -285,9 +279,13 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(xmlContent.contains("<modelversion>analyse-1.0.0</modelversion>"));
 
             // 2) create test result unix mode.....
-            activityResult = "<item name=\"subprocess_create\">\n" + "    <modelversion>analyse-1.0.0</modelversion>\n"
-                    + "	    <processid>1000</processid>\n" + "	    <activityid>100</activityid>\n"
-                    + "	    <items>_subject,_sender,_receipients,$file</items>\n" + "	</item>";
+            activityResult = """
+                             <item name="subprocess_create">
+                                 <modelversion>analyse-1.0.0</modelversion>
+                             \t    <processid>1000</processid>
+                             \t    <activityid>100</activityid>
+                             \t    <items>_subject,_sender,_receipients,$file</items>
+                             \t</item>""";
 
             activityEntity.replaceItemValue("txtActivityResult", activityResult);
             result = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
@@ -299,10 +297,13 @@ public class TestEvaluateWorkflowResult {
             Assert.assertTrue(xmlContent.contains("<modelversion>analyse-1.0.0</modelversion>"));
 
             // 3) create test result windows mode.....
-            activityResult = "<item name=\"subprocess_create\">\r\n"
-                    + "    <modelversion>analyse-1.0.0</modelversion>\r\n" + "	    <processid>1000</processid>\r\n"
-                    + "	    <activityid>100</activityid>\r\n"
-                    + "	    <items>_subject,_sender,_receipients,$file</items>\r\n" + "	</item>";
+            activityResult = """
+                             <item name="subprocess_create">\r
+                                 <modelversion>analyse-1.0.0</modelversion>\r
+                             \t    <processid>1000</processid>\r
+                             \t    <activityid>100</activityid>\r
+                             \t    <items>_subject,_sender,_receipients,$file</items>\r
+                             \t</item>""";
 
             activityEntity.replaceItemValue("txtActivityResult", activityResult);
             result = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
@@ -313,7 +314,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertFalse(xmlContent.isEmpty());
             Assert.assertTrue(xmlContent.contains("<modelversion>analyse-1.0.0</modelversion>"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -376,11 +377,10 @@ public class TestEvaluateWorkflowResult {
     @Test
     public void testEvaluateWorkflowResultEmptyString() {
         ItemCollection activityEntity = new ItemCollection();
-        ItemCollection result = null;
         try {
             // test no content
             activityEntity.replaceItemValue("txtActivityResult", "");
-            result = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
+            ItemCollection result = workflowMockEnvironment.getWorkflowService().evalWorkflowResult(activityEntity, "item",
                     new ItemCollection());
             Assert.assertNull(result);
 
@@ -432,8 +432,6 @@ public class TestEvaluateWorkflowResult {
 
     /**
      * This test evaluates a event result with garbage around the item tags
-     * 
-     * @throws PluginException
      */
     @Test
     public void testEvaluateWorkflowResultWithGarbage() {
@@ -449,7 +447,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertEquals("some data", result.getItemValueString("comment"));
             Assert.assertEquals("true", result.getItemValueString("comment.ignore"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
 
@@ -464,7 +462,7 @@ public class TestEvaluateWorkflowResult {
             Assert.assertEquals("", result.getItemValueString("comment"));
             Assert.assertEquals("true", result.getItemValueString("comment.ignore"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
     }

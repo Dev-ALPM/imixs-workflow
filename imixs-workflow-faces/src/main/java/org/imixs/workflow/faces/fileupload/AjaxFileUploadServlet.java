@@ -78,6 +78,8 @@ public class AjaxFileUploadServlet extends HttpServlet {
 
     /**
      * Upload files to stored in the current user session
+     * @param httpRequest
+     * @param response
      */
     @Override
     protected void doPost(HttpServletRequest httpRequest, HttpServletResponse response)
@@ -102,6 +104,8 @@ public class AjaxFileUploadServlet extends HttpServlet {
     /**
      * Delete a existing file form the fileData list stored in the current user
      * session
+     * @param httpRequest
+     * @param response
      */
     @Override
     protected void doDelete(HttpServletRequest httpRequest, HttpServletResponse response)
@@ -127,6 +131,8 @@ public class AjaxFileUploadServlet extends HttpServlet {
     /**
      * Getter method to return the file content from the fileData list stored in the
      * current user
+     * @param httpRequest
+     * @param httpResponse
      */
     @Override
     protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -217,11 +223,11 @@ public class AjaxFileUploadServlet extends HttpServlet {
      */
     private void writeFileContent(ServletResponse response, FileData fileData) throws IOException {
         logger.finest("......write file content...");
-        ServletOutputStream output = response.getOutputStream();
-        output.write(fileData.getContent());
-        // now return json string of uploaded files....
-        response.setContentType(fileData.getContentType());
-        output.close();
+        try (ServletOutputStream output = response.getOutputStream()) {
+            output.write(fileData.getContent());
+            // now return json string of uploaded files....
+            response.setContentType(fileData.getContentType());
+        }
     }
 
     /**
@@ -250,7 +256,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
     private List<FileData> getFilesFromRequest(HttpServletRequest httpRequest) {
         logger.finest("......Looping parts");
 
-        List<FileData> fileDataList = new ArrayList<FileData>();
+        List<FileData> fileDataList = new ArrayList<>();
         try {
             for (Part p : httpRequest.getParts()) {
                 byte[] b = new byte[(int) p.getSize()];
@@ -278,17 +284,14 @@ public class AjaxFileUploadServlet extends HttpServlet {
                     }
 
                     // extract the file content...
-                    FileData fileData = null;
                     logger.log(Level.FINEST, "......filename : {0}, contentType {1}", new Object[]{fileName, p.getContentType()});
-                    fileData = new FileData(fileName, b, p.getContentType(), null);
+                    FileData fileData = new FileData(fileName, b, p.getContentType(), null);
                     fileDataList.add(fileData);
 
                 }
             }
 
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        } catch (ServletException ex) {
+        } catch (IOException | ServletException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
 
@@ -328,44 +331,43 @@ public class AjaxFileUploadServlet extends HttpServlet {
     private void writeJsonMetadata(ServletResponse response, String context_url) throws IOException {
 
         response.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = response.getWriter();
-
         // look if we have a worktiem with filedata....
-        if (fileUploadController != null) {
-            // check workitem... issue
-            if (fileUploadController.getWorkitem() != null) {
-                // List<FileData> fileDataList =
-                // fileUploadController.getWorkitem().getFileData();// .removeFile(filename);
-
-                List<FileData> fileDataList = fileUploadController.getAttachedFiles();
-                logger.finest("......write JSON meta data...");
-
-                String result = "{ \"files\":[";
-                for (int i = 0; i < fileDataList.size(); i++) {
-
-                    FileData fileData = fileDataList.get(i);
-                    // we construct a temp file url with the current converstion id....
-                    result += "{ \"url\": \"" + context_url + fileData.getName() + "?cid="
-                            + fileUploadController.getCID() + "\",";
-                    result += "\"thumbnail_url\": \"\",";
-                    result += "\"name\": \"" + fileData.getName() + "\",";
-                    result += "\"type\": \"" + fileData.getContentType() + "\",";
-                    result += "\"size\": " + fileData.getContent().length + ",";
-                    result += "\"delete_url\": \"\",";
-                    result += "\"delete_type\": \"DELETE\"";
-
-                    // last element?
-                    if (i < fileDataList.size() - 1)
-                        result += "},";
-                    else
-                        result += "}";
+        try (PrintWriter out = response.getWriter()) {
+            // look if we have a worktiem with filedata....
+            if (fileUploadController != null) {
+                // check workitem... issue
+                if (fileUploadController.getWorkitem() != null) {
+                    // List<FileData> fileDataList =
+                    // fileUploadController.getWorkitem().getFileData();// .removeFile(filename);
+                    
+                    List<FileData> fileDataList = fileUploadController.getAttachedFiles();
+                    logger.finest("......write JSON meta data...");
+                    
+                    String result = "{ \"files\":[";
+                    for (int i = 0; i < fileDataList.size(); i++) {
+                        
+                        FileData fileData = fileDataList.get(i);
+                        // we construct a temp file url with the current converstion id....
+                        result += "{ \"url\": \"" + context_url + fileData.getName() + "?cid="
+                                + fileUploadController.getCID() + "\",";
+                        result += "\"thumbnail_url\": \"\",";
+                        result += "\"name\": \"" + fileData.getName() + "\",";
+                        result += "\"type\": \"" + fileData.getContentType() + "\",";
+                        result += "\"size\": " + fileData.getContent().length + ",";
+                        result += "\"delete_url\": \"\",";
+                        result += "\"delete_type\": \"DELETE\"";
+                        
+                        // last element?
+                        if (i < fileDataList.size() - 1)
+                            result += "},";
+                        else
+                            result += "}";
+                    }
+                    result += "]}";
+                    out.write(result);
                 }
-                result += "]}";
-                out.write(result);
             }
         }
-
-        out.close();
 
     }
 

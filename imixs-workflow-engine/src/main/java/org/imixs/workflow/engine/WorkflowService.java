@@ -147,6 +147,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * This method loads a Workitem with the corresponding uniqueid.
      * 
      */
+    @Override
     public ItemCollection getWorkItem(String uniqueid) {
         return documentService.load(uniqueid);
     }
@@ -273,9 +274,6 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * @param pageIndex   = optional start position
      * @param type        = defines the type property of the workitems to be
      *                    returnd. can be null
-     * @param sortorder   = defines sortorder (SORT_ORDER_CREATED_DESC = 0
-     *                    SORT_ORDER_CREATED_ASC = 1 SORT_ORDER_MODIFIED_DESC = 2
-     *                    SORT_ORDER_MODIFIED_ASC = 3)
      * @param sortBy      -optional field to sort the result
      * @param sortReverse - optional sort direction
      * 
@@ -284,7 +282,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      */
     public List<ItemCollection> getWorkListByWriteAccess(String type, int pageSize, int pageIndex, String sortBy,
             boolean sortReverse) {
-        StringBuffer nameListBuffer = new StringBuffer();
+        StringBuilder nameListBuffer = new StringBuilder();
         nameListBuffer.append("(");
         // construct a name list query for $writeaccess
         List<String> userNames = documentService.getUserNameList();
@@ -293,7 +291,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
             if (i>0) {
                 nameListBuffer.append(" OR ");
             }
-            nameListBuffer.append(" $writeaccess:\"" + userName + "\" ");            
+            nameListBuffer.append(" $writeaccess:\"").append(userName).append("\" ");            
         }
         nameListBuffer.append(")");
 
@@ -345,7 +343,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * Returns a collection of workitems belonging to a specified $taskID defined by
      * the workflow model. The behaivor is simmilar to the method getWorkList.
      * 
-     * @param aID         = $taskID for the workitems to be returned.
+     * @param aid         = $taskID for the workitems to be returned.
      * @param pageSize    = optional page count (default 20)
      * @param pageIndex   = optional start position
      * @param type        = defines the type property of the workitems to be
@@ -409,6 +407,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * Returns a collection of all workitems belonging to a specified workitem
      * identified by the attribute $UniqueIDRef.
      * 
+     * @param aref
      * @return List of workitems
      */
     public List<ItemCollection> getWorkListByRef(String aref) {
@@ -432,9 +431,8 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * @return
      * @throws ModelException
      */
-    @SuppressWarnings("unchecked")
     public List<ItemCollection> getEvents(ItemCollection workitem) throws ModelException {
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
         int processID = workitem.getTaskID();
         // verify if version is valid
         Model model = modelService.getModelByWorkitem(workitem);
@@ -457,12 +455,12 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
             // it is not necessary to evaluate $readaccess here (see Issue #832)
 
             // test RestrictedVisibility
-            List<String> restrictedList = event.getItemValue("keyRestrictedVisibility");
+            List<String> restrictedList = event.getItemValueList("keyRestrictedVisibility", String.class);
             if (!bManagerAccess && !restrictedList.isEmpty()) {
                 // test each item for the current user name...
-                List<String> totalNameList = new ArrayList<String>();
+                List<String> totalNameList = new ArrayList<>();
                 for (String itemName : restrictedList) {
-                    totalNameList.addAll(workitem.getItemValue(itemName));
+                    totalNameList.addAll(workitem.getItemValueList(itemName, String.class));
                 }
                 // remove null and empty values....
                 totalNameList.removeAll(Collections.singleton(null));
@@ -504,6 +502,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * @throws PluginException          - thrown if processing by a plugin fails
      * @throws ModelException
      */
+    @Override
     public ItemCollection processWorkItem(ItemCollection workitem)
             throws AccessDeniedException, ProcessingErrorException, PluginException, ModelException {
         boolean debug = logger.isLoggable(Level.FINE);
@@ -647,7 +646,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * @see method ItemCollection processWorkItem(ItemCollection workitem)
      * 
      * @param workitem - the workItem to be processed
-     * @param event    - event object
+     * @param eventID    - event object
      * @return updated version of the processed workItem
      * @throws AccessDeniedException    - thrown if the user has insufficient access
      *                                  to update the workItem
@@ -666,6 +665,8 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
     /**
      * This method processes a workitem in a new transaction.
      * 
+     * @param workitem
+     * @return workitem after processes
      * @throws ModelException
      * @throws PluginException
      * @throws ProcessingErrorException
@@ -682,6 +683,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
         return processWorkItem(workitem);
     }
 
+    @Override
     public void removeWorkItem(ItemCollection aworkitem) throws AccessDeniedException {
         documentService.remove(aworkitem);
     }
@@ -692,6 +694,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * from the processWorktiem method.
      * 
      */
+    @Override
     public ModelManager getModelManager() {
         return modelService;
     }
@@ -701,6 +704,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * 
      * @return
      */
+    @Override
     public SessionContext getSessionContext() {
         return ctx;
     }
@@ -743,7 +747,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
     public boolean isUserInRole(String rolename) {
         try {
             return ctx.isCallerInRole(rolename);
-        } catch (Exception e) {
+        } catch (IllegalStateException e) {
             // avoid a exception for a role request which is not defined
             return false;
         }
@@ -801,7 +805,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
             logger.warning("CDI Support is missing - TextEvent wil not be fired");
         }
         // no result return default
-        List<String> textList = new ArrayList<String>();
+        List<String> textList = new ArrayList<>();
         textList.add(text);
         return textList;
     }
@@ -811,17 +815,19 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * ItemColleciton containing all item values of a specified tag name. Each tag
      * definition of a WorkflowResult contains a name and a optional list of
      * additional attributes. The method generates a item for each content element
-     * and attribute value. <br>
-     * e.g. <item name="comment" ignore="true">text</item> <br>
+     * and attribute value.
+     * 
+     * e.g. {@code <item name="comment" ignore="true">text</item>}
      * will result in the attributes 'comment' with value 'text' and
      * 'comment.ignore' with the value 'true'
      * <p>
      * Also embedded itemVaues can be resolved (resolveItemValues=true):
+     * </p>
      * <p>
      * {@code
      * 		<somedata>ABC<itemvalue>$uniqueid</itemvalue></somedata>
      * }
-     * <p>
+     * </p>
      * This example will result in a new item 'somedata' with the $uniqueid prefixed
      * with 'ABC'
      * 
@@ -848,7 +854,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
         }
 
         // if no <tag exists we skip the evaluation...
-        if (workflowResult.indexOf("<" + tag) == -1) {
+        if (!workflowResult.contains("<" + tag)) {
             return null;
         }
 
@@ -878,7 +884,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
                 // group 0 contains complete tag string
                 // groups 1 or 2 contain the attributes
 
-                String content = "";
+                String content;
                 String attributes = matcher.group(1);
                 if (attributes == null) {
                     attributes = matcher.group(2);
@@ -897,7 +903,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
                     String spattern = "(\\S+)=[\"']?((?:.(?![\"']?\\s+(?:\\S+)=|[>\"']))+.)[\"']?";
                     Pattern attributePattern = Pattern.compile(spattern);
                     Matcher attributeMatcher = attributePattern.matcher(attributes);
-                    Map<String, String> attrMap = new HashMap<String, String>();
+                    Map<String, String> attrMap = new HashMap<>();
                     while (attributeMatcher.find()) {
                         String attrName = attributeMatcher.group(1); // name
                         String attrValue = attributeMatcher.group(2); // value
@@ -930,31 +936,31 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
                                 result.appendItemValue(tagName, Integer.valueOf(content));
                             } catch (NumberFormatException e) {
                                 // append 0 value
-                                result.appendItemValue(tagName, new Integer(0));
+                                result.appendItemValue(tagName, 0);
                             }
                         } else if ("double".equalsIgnoreCase(sType)) {
                             try {
                                 result.appendItemValue(tagName, Double.valueOf(content));
                             } catch (NumberFormatException e) {
                                 // append 0 value
-                                result.appendItemValue(tagName, new Double(0));
+                                result.appendItemValue(tagName, 0.0d);
                             }
                         } else if ("float".equalsIgnoreCase(sType)) {
                             try {
                                 result.appendItemValue(tagName, Float.valueOf(content));
                             } catch (NumberFormatException e) {
                                 // append 0 value
-                                result.appendItemValue(tagName, new Float(0));
+                                result.appendItemValue(tagName, 0.0f);
                             }
                         } else if ("long".equalsIgnoreCase(sType)) {
                             try {
                                 result.appendItemValue(tagName, Long.valueOf(content));
                             } catch (NumberFormatException e) {
                                 // append 0 value
-                                result.appendItemValue(tagName, new Long(0));
+                                result.appendItemValue(tagName, 0L);
                             }
                         } else if ("date".equalsIgnoreCase(sType)) {
-                            if (content == null || content.isEmpty()) {
+                            if (content.isEmpty()) {
                                 // no value available - no op!
                                 if (debug) {
                                     logger.finer("......can not convert empty string into date object");
@@ -965,7 +971,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
                                     if (debug) {
                                         logger.finer("......convert string into date object");
                                     }
-                                    Date dateResult = null;
+                                    Date dateResult;
                                     if (sFormat == null || sFormat.isEmpty()) {
                                         // use standard format short/short
                                         dateResult = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
@@ -1013,17 +1019,19 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * ItemColleciton containing all item values of a specified tag name. Each tag
      * definition of a WorkflowResult contains a name and a optional list of
      * additional attributes. The method generates a item for each content element
-     * and attribute value. <br>
-     * e.g. <item name="comment" ignore="true">text</item> <br>
+     * and attribute value.
+     * 
+     * e.g. {@code <item name="comment" ignore="true">text</item>}
      * will result in the attributes 'comment' with value 'text' and
      * 'comment.ignore' with the value 'true'
      * <p>
      * Also embedded itemVaues can be resolved (resolveItemValues=true):
+     * </p>
      * <p>
      * {@code
      *      <somedata>ABC<itemvalue>$uniqueid</itemvalue></somedata>
      * }
-     * <p>
+     * </p>
      * This example will result in a new item 'somedata' with the $uniqueid prefixed
      * with 'ABC'
      * 
@@ -1068,6 +1076,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * The method did not persist the process instance or execute any plugin or
      * adapter classes.
      * 
+     * @param documentContext
      * @return Task entity
      * @throws PluginException
      * @throws ModelException
@@ -1082,16 +1091,17 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
     /**
      * This method register all plugin classes listed in the model profile
      * 
+     * @param workflowkernel
+     * @param model
      * @throws PluginException
      */
-    @SuppressWarnings("unchecked")
     protected void registerPlugins(WorkflowKernel workflowkernel, Model model) throws PluginException {
         boolean debug = logger.isLoggable(Level.FINE);
         // Fetch the current Profile Entity for this version.
         ItemCollection profile = model.getDefinition();
 
         // register plugins defined in the environment.profile ....
-        List<String> vPlugins = (List<String>) profile.getItemValue("txtPlugins");
+        List<String> vPlugins = profile.getItemValueList("txtPlugins", String.class);
         for (int i = 0; i < vPlugins.size(); i++) {
             String aPluginClassName = vPlugins.get(i);
 
@@ -1135,7 +1145,7 @@ public class WorkflowService implements WorkflowManager, WorkflowContext {
      * <li>$lasteditor</li>
      * <li>$participants</li>
      * </ul>
-     * <p>
+     * 
      * The method also migrates deprected items.
      * 
      * @param workitem

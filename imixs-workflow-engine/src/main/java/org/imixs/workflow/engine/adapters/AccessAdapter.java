@@ -28,14 +28,13 @@
 
 package org.imixs.workflow.engine.adapters;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.util.ArrayList;
 import org.imixs.workflow.GenericAdapter;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.engine.WorkflowService;
@@ -64,9 +63,8 @@ import org.imixs.workflow.exceptions.PluginException;
  * @version 1.0.0
  */
 @Named
-public class AccessAdapter implements GenericAdapter, Serializable {
+public class AccessAdapter implements GenericAdapter {
 
-    private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(AccessAdapter.class.getName());
 
     // See CDI Constructor
@@ -97,7 +95,7 @@ public class AccessAdapter implements GenericAdapter, Serializable {
      */
     @Override
     public ItemCollection execute(ItemCollection document, ItemCollection event) throws AdapterException {
-        ItemCollection nextTask = null;
+        ItemCollection nextTask;
         // get next process entity
         try {
             // nextTask = workflowService.evalNextTask(document, event);
@@ -125,10 +123,8 @@ public class AccessAdapter implements GenericAdapter, Serializable {
      * @param workitem
      * @return
      */
-    @SuppressWarnings("unchecked")
     public ItemCollection updateParticipants(ItemCollection workitem) {
-
-        List<String> participants = workitem.getItemValue(WorkflowService.PARTICIPANTS);
+        List<String> participants = workitem.getItemValueList(WorkflowService.PARTICIPANTS, String.class);
         String user = workflowService.getUserName();
         if (!participants.contains(user)) {
             participants.add(user);
@@ -146,8 +142,12 @@ public class AccessAdapter implements GenericAdapter, Serializable {
      * will not be updated.
      * 
      * 
+     * @param workitem
+     * @param event
+     * @param nextTask
+     * @return 
+     * @throws org.imixs.workflow.exceptions.PluginException 
      */
-    @SuppressWarnings({ "rawtypes" })
     public ItemCollection updateACL(ItemCollection workitem, ItemCollection event, ItemCollection nextTask)
             throws PluginException {
 
@@ -165,8 +165,8 @@ public class AccessAdapter implements GenericAdapter, Serializable {
             return documentContext;
         } else {
             // clear existing settings!
-            documentContext.replaceItemValue(WorkflowService.READACCESS, new Vector());
-            documentContext.replaceItemValue(WorkflowService.WRITEACCESS, new Vector());
+            documentContext.replaceItemValue(WorkflowService.READACCESS, new ArrayList<>());
+            documentContext.replaceItemValue(WorkflowService.WRITEACCESS, new ArrayList<>());
 
             // event settings will not be merged with task settings!
             if (event != null && event.getItemValueBoolean("keyupdateacl") == true) {
@@ -191,7 +191,6 @@ public class AccessAdapter implements GenericAdapter, Serializable {
      * 
      * @throws PluginException
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void updateACLByItemCollection(ItemCollection documentContext, ItemCollection modelEntity)
             throws PluginException {
         boolean debug = logger.isLoggable(Level.FINE);
@@ -200,38 +199,38 @@ public class AccessAdapter implements GenericAdapter, Serializable {
             return;
         }
 
-        List vectorAccess;
-        vectorAccess = documentContext.getItemValue(WorkflowService.READACCESS);
+        List<String> access;
+        access = documentContext.getItemValueList(WorkflowService.READACCESS, String.class);
         // add roles
-        mergeRoles(vectorAccess, modelEntity.getItemValue("namaddreadaccess"), documentContext);
+        mergeRoles(access, modelEntity.getItemValueList("namaddreadaccess", String.class), documentContext);
         // add Mapped Fields
-        mergeFieldList(documentContext, vectorAccess, modelEntity.getItemValue("keyaddreadfields"));
-        // clean Vector
-        vectorAccess = uniqueList(vectorAccess);
+        mergeFieldList(documentContext, access, modelEntity.getItemValueList("keyaddreadfields", String.class));
+        // clean List
+        access = uniqueList(access);
 
         // update accesslist....
-        documentContext.replaceItemValue(WorkflowService.READACCESS, vectorAccess);
-        if ((debug) && (vectorAccess.size() > 0)) {
+        documentContext.replaceItemValue(WorkflowService.READACCESS, access);
+        if ((debug) && (!access.isEmpty())) {
             logger.finest("......[AccessPlugin] ReadAccess:");
-            for (int j = 0; j < vectorAccess.size(); j++)
-                logger.log(Level.FINEST, "               ''{0}''", (String) vectorAccess.get(j));
+            for (int j = 0; j < access.size(); j++)
+                logger.log(Level.FINEST, "               ''{0}''", access.get(j));
         }
 
         // update WriteAccess
-        vectorAccess = documentContext.getItemValue(WorkflowService.WRITEACCESS);
+        access = documentContext.getItemValueList(WorkflowService.WRITEACCESS, String.class);
         // add Names
-        mergeRoles(vectorAccess, modelEntity.getItemValue("namaddwriteaccess"), documentContext);
+        mergeRoles(access, modelEntity.getItemValueList("namaddwriteaccess", String.class), documentContext);
         // add Mapped Fields
-        mergeFieldList(documentContext, vectorAccess, modelEntity.getItemValue("keyaddwritefields"));
-        // clean Vector
-        vectorAccess = uniqueList(vectorAccess);
+        mergeFieldList(documentContext, access, modelEntity.getItemValueList("keyaddwritefields", String.class));
+        // clean List
+        access = uniqueList(access);
 
         // update accesslist....
-        documentContext.replaceItemValue(WorkflowService.WRITEACCESS, vectorAccess);
-        if ((debug) && (vectorAccess.size() > 0)) {
+        documentContext.replaceItemValue(WorkflowService.WRITEACCESS, access);
+        if ((debug) && (!access.isEmpty())) {
             logger.finest("......[AccessPlugin] WriteAccess:");
-            for (int j = 0; j < vectorAccess.size(); j++)
-                logger.log(Level.FINEST, "               ''{0}''", (String) vectorAccess.get(j));
+            for (int j = 0; j < access.size(); j++)
+                logger.log(Level.FINEST, "               ''{0}''", access.get(j));
         }
 
     }
@@ -253,15 +252,15 @@ public class AccessAdapter implements GenericAdapter, Serializable {
      * Also Curly brackets are allowed '{user1,user2}'
      * 
      * 
+     * @param documentContext
      * @param valueList
      * @param fieldList
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void mergeFieldList(ItemCollection documentContext, List valueList, List<String> fieldList) {
+    public void mergeFieldList(ItemCollection documentContext, List<String> valueList, List<String> fieldList) {
         if (valueList == null || fieldList == null)
             return;
-        List<?> values = null;
-        if (fieldList.size() > 0) {
+        List<String> values;
+        if (!fieldList.isEmpty()) {
             // iterate over the fieldList
             for (String key : fieldList) {
                 if (key == null) {
@@ -277,11 +276,11 @@ public class AccessAdapter implements GenericAdapter, Serializable {
                     values = Arrays.asList(key.substring(1, key.length() - 1).split("\\s*,\\s*"));
                 } else {
                     // extract value list form documentContext
-                    values = documentContext.getItemValue(key);
+                    values = documentContext.getItemValueList(key, String.class);
                 }
-                // now append the values into p_VectorDestination
-                if ((values != null) && (values.size() > 0)) {
-                    for (Object o : values) {
+                // now append the values into valueList
+                if ((values != null) && (!values.isEmpty())) {
+                    for (String o : values) {
                         // append only if not used
                         if (valueList.indexOf(o) == -1)
                             valueList.add(o);
@@ -293,26 +292,28 @@ public class AccessAdapter implements GenericAdapter, Serializable {
     }
 
     /**
-     * This method removes duplicates and null values from a vector.
+     * This method removes duplicates and null values from a list.
      * 
+     * @param <T>
      * @param valueList - list of elements
+     * @return 
      */
-    public List<?> uniqueList(List<Object> valueList) {
-        int iVectorSize = valueList.size();
-        Vector<Object> cleanedVector = new Vector<Object>();
+    public <T> List<T> uniqueList(List<T> valueList) {
+        int iListSize = valueList.size();
+        List<T> cleanedList = new ArrayList<>();
 
-        for (int i = 0; i < iVectorSize; i++) {
-            Object o = valueList.get(i);
-            if (o == null || cleanedVector.indexOf(o) > -1 || "".equals(o.toString()))
+        for (int i = 0; i < iListSize; i++) {
+            T o = valueList.get(i);
+            if (o == null || cleanedList.indexOf(o) > -1 || "".equals(o.toString()))
                 continue;
 
             // add unique object
-            cleanedVector.add(o);
+            cleanedList.add(o);
         }
-        valueList = cleanedVector;
-        // do not work with empty vectors....
-        if (valueList.size() == 0)
-            valueList.add("");
+        valueList = cleanedList;
+        // do not work with empty list....
+//        if (valueList.isEmpty())
+//            valueList.add("");
 
         return valueList;
     }
@@ -325,21 +326,16 @@ public class AccessAdapter implements GenericAdapter, Serializable {
      * 
      * @param valueList
      * @param sourceList
+     * @param documentContext
      * @throws PluginException
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public void mergeRoles(List valueList, List sourceList, ItemCollection documentContext) throws PluginException {
-        if ((sourceList != null) && (sourceList.size() > 0)) {
-            for (Object o : sourceList) {
+    public void mergeRoles(List<String> valueList, List<String> sourceList, ItemCollection documentContext) throws PluginException {
+        if ((sourceList != null) && (!sourceList.isEmpty())) {
+            for (String o : sourceList) {
                 if (valueList.indexOf(o) == -1) {
-                    if (o instanceof String) {
-                        // addapt textList
-                        List<String> adaptedRoles = workflowService.adaptTextList((String) o, documentContext);
-                        valueList.addAll(adaptedRoles);// .add(getWorkflowService().adaptText((String)o,
-                                                       // documentContext));
-                    } else {
-                        valueList.add(o);
-                    }
+                    // addapt textList
+                    List<String> adaptedRoles = workflowService.adaptTextList(o, documentContext);
+                    valueList.addAll(adaptedRoles);// .add(getWorkflowService().adaptText((String)o,
                 }
             }
         }

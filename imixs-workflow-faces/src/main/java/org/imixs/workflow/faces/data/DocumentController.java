@@ -28,7 +28,6 @@
 
 package org.imixs.workflow.faces.data;
 
-import java.io.Serializable;
 import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ConversationScoped;
@@ -103,7 +102,7 @@ import java.util.logging.Level;
  */
 @Named
 @ConversationScoped
-public class DocumentController extends AbstractDataController implements Serializable {
+public class DocumentController extends AbstractDataController {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(DocumentController.class.getName());
@@ -136,7 +135,7 @@ public class DocumentController extends AbstractDataController implements Serial
     /**
      * Set the current worktItem
      * 
-     * @param workitem - new reference or null to clear the current workItem.
+     * @param document - new reference or null to clear the current workItem.
      */
     public void setDocument(ItemCollection document) {
         this.data = document;
@@ -209,7 +208,7 @@ public class DocumentController extends AbstractDataController implements Serial
      * This action method deletes a workitem. The Method also deletes also all child
      * workitems recursive
      * 
-     * @param currentSelection - workitem to be deleted
+     * @param uniqueID - workitemId to be deleted
      * @throws AccessDeniedException
      */
     public void delete(String uniqueID) throws AccessDeniedException {
@@ -239,6 +238,7 @@ public class DocumentController extends AbstractDataController implements Serial
      * 
      * @param uniqueid
      */
+    @Override
     public void load(String uniqueid) {
         super.load(uniqueid);
         if (data != null && events != null) {

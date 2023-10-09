@@ -44,6 +44,7 @@ public class AccessPlugin extends AbstractPlugin {
     private static final Logger logger = Logger.getLogger(AccessPlugin.class.getName());
 
     @Deprecated
+    @Override
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection documentActivity) throws PluginException {
 
         logger.warning("The AccessPlugin is deprecated and can be removed from this model!");

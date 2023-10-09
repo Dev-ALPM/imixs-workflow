@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import jakarta.ejb.SessionContext;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -56,12 +57,12 @@ public class WorkflowSimulationEnvironment {
 
 	protected WorkflowContext workflowContext;
 	protected SimulationService simulationService;
-	protected List<String> plugins=null;
+	protected List<String> plugins  = new ArrayList<>();
 
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setUp() throws PluginException, ModelException, AccessDeniedException, ProcessingErrorException {
-		MockitoAnnotations.initMocks(this);
+		MockitoAnnotations.openMocks(this);
 
 		// mock session context
 		ctx = Mockito.mock(SessionContext.class);
@@ -84,7 +85,7 @@ public class WorkflowSimulationEnvironment {
 			when(modelManager.getModel(Mockito.anyString())).thenReturn(this.getModel());
 			when(modelManager.getModelByWorkitem(Mockito.any(ItemCollection.class))).thenReturn(this.getModel());
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 
 		// Mock context
@@ -139,7 +140,7 @@ public class WorkflowSimulationEnvironment {
 
 				this.modelService.addModel(model);
 			} catch (ModelException | ParseException | ParserConfigurationException | SAXException | IOException e) {
-				e.printStackTrace();
+				logger.severe(e.getMessage());
 			}
 
 		}

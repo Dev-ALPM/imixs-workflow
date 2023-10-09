@@ -1,7 +1,7 @@
 package org.imixs.workflow.engine.adapters;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -96,7 +96,7 @@ public class TestAccessAdapter {
 		documentActivity = workflowMockEnvironment.getModel().getEvent(100, 10);
 		documentContext.setEventID(10);
 		logger.info("[TestAccessAdapter] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);

@@ -99,7 +99,7 @@ public class LuceneUpdateService implements UpdateService {
     public void updateIndex() {
         long ltime = System.currentTimeMillis();
         // flush eventlog (see issue #411)
-        int flushCount = 0;
+        int flushCount;
         while (luceneIndexService.flushEventLog(2048) == false) {
             // repeat flush....
             flushCount = +2048;

@@ -76,6 +76,7 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * This session ejb provides functionality to maintain a local Lucene index.
@@ -96,7 +97,7 @@ public class LuceneIndexService {
     @PersistenceContext(unitName = "org.imixs.workflow.jpa")
     private EntityManager manager;
 
-    private SimpleDateFormat luceneDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+    private final SimpleDateFormat luceneDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     @Inject
     @ConfigProperty(name = "lucence.indexDir", defaultValue = DEFAULT_INDEX_DIRECTORY)
@@ -157,6 +158,7 @@ public class LuceneIndexService {
      * method which runs always in a new transaction. The goal of this mechanism is
      * to reduce the event log even in cases the outer transaction breaks.
      * 
+     * @param junkSize
      * @see LuceneSearchService
      * @return true if the the complete event log was flushed. If false the method
      *         must be recalled.
@@ -202,6 +204,8 @@ public class LuceneIndexService {
     /**
      * This method forces an update of the full text index. The method also creates
      * the index directory if it does not yet exist.
+     * @param indexDir
+     * @throws java.io.IOException
      */
     public void rebuildIndex(Directory indexDir) throws IOException {
 
@@ -257,9 +261,9 @@ public class LuceneIndexService {
                     updateLuceneIndex(term, lucenedoc, indexWriter, taxonomyWriter);
                 }
             }
-        } catch (IOException luceneEx) {
-            logger.log(Level.WARNING, "lucene error: {0}", luceneEx.getMessage());
-            throw new IndexException(IndexException.INVALID_INDEX, "Unable to update lucene search index", luceneEx);
+        } catch (NoSuchMethodException | IllegalArgumentException | InvocationTargetException | IOException ex) {
+            logger.log(Level.WARNING, "lucene error: {0}", ex.getMessage());
+            throw new IndexException(IndexException.INVALID_INDEX, "Unable to update lucene search index", ex);
         } finally {
             // close writer!
             if (indexWriter != null) {
@@ -315,7 +319,7 @@ public class LuceneIndexService {
         List<EventLog> events = eventLogService.findEventsByTopic(count + 1, DocumentService.EVENTLOG_TOPIC_INDEX_ADD,
                 DocumentService.EVENTLOG_TOPIC_INDEX_REMOVE);
 
-        if (events != null && events.size() > 0) {
+        if (events != null && !events.isEmpty()) {
             try {
                 indexWriter = createIndexWriter();
                 taxonomyWriter = createTaxonomyWriter();
@@ -360,8 +364,8 @@ public class LuceneIndexService {
                         break;
                     }
                 }
-            } catch (IOException luceneEx) {
-                logger.log(Level.WARNING, "...unable to flush lucene event log: {0}", luceneEx.getMessage());
+            } catch (NoSuchMethodException | IllegalArgumentException | InvocationTargetException | IOException ex) {
+                logger.log(Level.WARNING, "...unable to flush lucene event log: {0}", ex.getMessage());
                 // We just log a warning here and close the flush mode to no longer block the
                 // writer.
                 // NOTE: maybe throwing a IndexException would be an alternative:
@@ -402,7 +406,7 @@ public class LuceneIndexService {
         }
 
         logger.log(Level.FINE, "...flushEventLog - {0} events in {1} ms - last log entry: {2}",
-                new Object[]{events.size(), System.currentTimeMillis() - l, lastEventDate});
+                new Object[]{events != null ? events.size() : 0, System.currentTimeMillis() - l, lastEventDate});
 
         return cacheIsEmpty;
 
@@ -455,20 +459,17 @@ public class LuceneIndexService {
      * @param document - the Imixs document to be indexed
      * @return - a lucene document instance
      */
-    @SuppressWarnings("unchecked")
     protected Document createDocument(ItemCollection document) {
-        String sValue = null;
         Document doc = new Document();
         // combine all search fields from the search field list into one field
         // ('content') for the lucene document
-        String textContent = "";
-
+        StringBuilder sbTextContent = new StringBuilder();
+        
         List<String> searchFieldList = schemaService.getFieldList();
         for (String aFieldname : searchFieldList) {
-            sValue = "";
             // check value list - skip empty fields
             List<?> vValues = document.getItemValue(aFieldname);
-            if (vValues.size() == 0)
+            if (vValues.isEmpty())
                 continue;
             // get all values of a value list field
             for (Object o : vValues) {
@@ -479,21 +480,21 @@ public class LuceneIndexService {
                 if (o instanceof Calendar || o instanceof Date) {
                     // convert calendar to string
                     String sDateValue;
-                    if (o instanceof Calendar)
-                        sDateValue = luceneDateFormat.format(((Calendar) o).getTime());
+                    if (o instanceof Calendar calendar)
+                        sDateValue = luceneDateFormat.format(calendar.getTime());
                     else
                         sDateValue = luceneDateFormat.format((Date) o);
-                    sValue += sDateValue + ",";
+                    sbTextContent.append(sDateValue).append(",");
 
                 } else
                     // simple string representation
-                    sValue += o.toString() + ",";
+                    sbTextContent.append(o.toString()).append(",");
             }
-            if (sValue != null) {
-                textContent += sValue + ",";
-            }
+            sbTextContent.append(",");
         }
-
+        
+        String textContent = sbTextContent.toString();
+        
         // fire IndexEvent to update the text content if needed
         if (indexEvents != null) {
             IndexEvent indexEvent = new IndexEvent(IndexEvent.ON_INDEX_UPDATE, document);
@@ -508,7 +509,7 @@ public class LuceneIndexService {
         doc.add(new TextField("content", textContent, Store.NO));
 
         // add each field from the indexFieldList into the lucene document
-        List<String> _localFieldListStore = new ArrayList<String>();
+        List<String> _localFieldListStore = new ArrayList<>();
         _localFieldListStore.addAll(schemaService.getFieldListStore());
 
         // analyzed...
@@ -529,13 +530,11 @@ public class LuceneIndexService {
         doc.add(new StringField("$uniqueid", document.getItemValueString("$uniqueid"), Store.YES));
 
         // add $readAccess not analyzed
-        List<String> vReadAccess = (List<String>) document.getItemValue(DocumentService.READACCESS);
-        if (vReadAccess.size() == 0 || (vReadAccess.size() == 1 && "".equals(vReadAccess.get(0).toString()))) {
+        List<String> vReadAccess = document.getItemValueList(DocumentService.READACCESS, String.class);
+        if (vReadAccess.isEmpty() || (vReadAccess.size() == 1 && "".equals(vReadAccess.get(0)))) {
             // if emtpy add the ANONYMOUS default entry
-            sValue = ANONYMOUS;
-            doc.add(new StringField(DocumentService.READACCESS, sValue, Store.NO));
+            doc.add(new StringField(DocumentService.READACCESS, ANONYMOUS, Store.NO));
         } else {
-            sValue = "";
             // add each role / username as a single field value
             for (String sReader : vReadAccess) {
                 doc.add(new StringField(DocumentService.READACCESS, sReader, Store.NO));
@@ -560,7 +559,7 @@ public class LuceneIndexService {
             /** MULTI VALUE VARIANT **/
             // a facetField can only be written if we have a value
             List<?> valueList = document.getItemValue(aFieldname);
-            if (valueList.size() > 0 && valueList.get(0) != null) {
+            if (!valueList.isEmpty() && valueList.get(0) != null) {
                 for (Object singleValue : valueList) {
                     String stringValue = luceneItemAdapter.convertItemValue(singleValue);
                     try {
@@ -583,7 +582,7 @@ public class LuceneIndexService {
      * 
      * @param doc          an existing lucene document
      * @param workitem     the workitem containg the values
-     * @param itemName     the Fieldname inside the workitem
+     * @param _itemName     the Fieldname inside the workitem
      * @param analyzeValue indicates if the value should be parsed by the analyzer
      * @param store        indicates if the value will become part of the Lucene
      *                     document
@@ -601,7 +600,7 @@ public class LuceneIndexService {
         itemName = itemName.toLowerCase().trim();
 
         List<?> vValues = workitem.getItemValue(itemName);
-        if (vValues.size() == 0) {
+        if (vValues.isEmpty()) {
             return;
         }
         if (vValues.get(0) == null) {
@@ -610,7 +609,7 @@ public class LuceneIndexService {
 
         boolean firstValue = true;
         for (Object singleValue : vValues) {
-            IndexableField indexableField = null;
+            IndexableField indexableField;
             if (store) {
                 indexableField = luceneItemAdapter.adaptItemValue(itemName, singleValue, analyzeValue, Store.YES);
             } else {
@@ -639,8 +638,10 @@ public class LuceneIndexService {
      * 
      * @return
      * @throws IOException
+     * @throws java.lang.NoSuchMethodException
+     * @throws java.lang.reflect.InvocationTargetException
      */
-    protected IndexWriter createIndexWriter() throws IOException {
+    protected IndexWriter createIndexWriter() throws IOException, NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
         logger.finest("......createIndexWriter...");
         // create a IndexWriter Instance
         Directory indexDir = createIndexDirectory();
@@ -648,7 +649,7 @@ public class LuceneIndexService {
         // indexWriterConfig = new IndexWriterConfig(new ClassicAnalyzer());
         try {
             // issue #429
-            indexWriterConfig = new IndexWriterConfig((Analyzer) Class.forName(luceneAnalyzerClass).newInstance());
+            indexWriterConfig = new IndexWriterConfig((Analyzer) Class.forName(luceneAnalyzerClass).getConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
             throw new IndexException(IndexException.INVALID_INDEX,
                     "Unable to create analyzer '" + luceneAnalyzerClass + "'", e);
@@ -682,8 +683,8 @@ public class LuceneIndexService {
     public Directory createIndexDirectory() throws IOException {
         logger.log(Level.FINEST, "......create lucene Index Directory - path={0}", getLuceneIndexDir());
         // create Lucene Directory Instance
-        Path luceneIndexDir = Paths.get(getLuceneIndexDir());
-        Directory indexDir = FSDirectory.open(luceneIndexDir);
+        Path luceneIndexDirPath = Paths.get(getLuceneIndexDir());
+        Directory indexDir = FSDirectory.open(luceneIndexDirPath);
         if (!DirectoryReader.indexExists(indexDir)) {
             logger.log(Level.INFO, "...lucene index directory ''{0}'' is empty or does not yet exist,"
                     + " rebuild index now....", getLuceneIndexDir());
@@ -710,8 +711,8 @@ public class LuceneIndexService {
         sPath = sPath + "_tax";
         logger.log(Level.FINEST, "......create lucene taxonomy Directory - path={0}", sPath);
         // create Lucene Directory Instance
-        Path luceneIndexDir = Paths.get(sPath);
-        Directory indexDir = FSDirectory.open(luceneIndexDir);
+        Path luceneIndexDirPath = Paths.get(sPath);
+        Directory indexDir = FSDirectory.open(luceneIndexDirPath);
         if (!DirectoryReader.indexExists(indexDir)) {
             logger.info(
                     "...lucene taxonomy directory is empty or does not yet exist, initialize the Taxonomy index now....");

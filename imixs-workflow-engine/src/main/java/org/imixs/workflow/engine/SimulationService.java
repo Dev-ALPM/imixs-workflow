@@ -105,7 +105,8 @@ public class SimulationService implements WorkflowContext {
      * This method simulates a processing life cycle of a process instance without
      * storing any data into the database.
      * 
-     * @param workitem - the workItem to be processed
+     * @param _workitem - the workItem to be processed
+     * @param vPlugins
      * @return updated version of the processed workItem
      * @throws AccessDeniedException    - thrown if the user has insufficient access
      *                                  to update the workItem
@@ -133,7 +134,7 @@ public class SimulationService implements WorkflowContext {
         // Fetch the current Profile Entity for this version.
         WorkflowKernel workflowkernel = new WorkflowKernel(this);
         // register plugins defined in the environment.profile ....
-        if (vPlugins != null && vPlugins.size() > 0) {
+        if (vPlugins != null && !vPlugins.isEmpty()) {
             for (int i = 0; i < vPlugins.size(); i++) {
                 String aPluginClassName = vPlugins.get(i);
 
@@ -187,6 +188,7 @@ public class SimulationService implements WorkflowContext {
      * from the processWorktiem method.
      * 
      */
+    @Override
     public ModelManager getModelManager() {
         return modelService;
     }
@@ -196,6 +198,7 @@ public class SimulationService implements WorkflowContext {
      * 
      * @return
      */
+    @Override
     public SessionContext getSessionContext() {
         return ctx;
     }

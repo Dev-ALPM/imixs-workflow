@@ -45,6 +45,7 @@ import org.imixs.workflow.ItemCollection;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonParser;
 import jakarta.json.stream.JsonParser.Event;
+import java.util.ArrayList;
 
 /**
  * The JSONParser is an utility class to parse JSON structures. The parser
@@ -82,11 +83,10 @@ public class JSONParser {
         JsonParser parser = Json.createParser(new StringReader(json));
         // {"key":"b38b84614af36f874ba4f08dd4ea40c4e66e0607"}
 
-        Event event = null;
         while (true) {
 
             try {
-                event = parser.next(); // START_OBJECT
+                Event event = parser.next(); // START_OBJECT
                 if (event == null) {
                     return null;
                 }
@@ -137,24 +137,25 @@ public class JSONParser {
      * This method parses an Imixs JSON input stream and returns a Imixs
      * ItemCollection.
      * 
-     * Example: <code>
+     * Example: 
+     * <code>
      *  {
-    	"item":[
-    			{"name":"$isauthor","value":{"@type":"xs:boolean","$":"true"}},
-    			{"name":"$readaccess","value":{"@type":"xs:string","$":"Anna"}},
-    			{"name":"txtmessage","value":{"@type":"xs:string","$":"worklist"}},
-    			{"name":"txtlog","value":[
-    				{"@type":"xs:string","$":"A"},
-    				{"@type":"xs:string","$":"B"},
-    				{"@type":"xs:string","$":"C"}]
-    			},
-    			{"name":"$activityid","value":{"@type":"xs:int","$":"0"}}
-    		]
-    	}
+     *  "item":[
+     *                  {"name":"$isauthor","value":{"@type":"xs:boolean","$":"true"}},
+     *                  {"name":"$readaccess","value":{"@type":"xs:string","$":"Anna"}},
+     *                  {"name":"txtmessage","value":{"@type":"xs:string","$":"worklist"}},
+     *                  {"name":"txtlog","value":[
+     *                          {"@type":"xs:string","$":"A"},
+     *                          {"@type":"xs:string","$":"B"},
+     *                          {"@type":"xs:string","$":"C"}]
+     *                  },
+     *                  {"name":"$activityid","value":{"@type":"xs:int","$":"0"}}
+     *          ]
+     *  }
      * </code>
      * 
      * @param requestBodyStream
-     * @param encoding          - default encoding use to parse the stream
+     * @param _encoding
      * @return a workitem
      * @throws ParseException
      * @throws UnsupportedEncodingException
@@ -178,19 +179,18 @@ public class JSONParser {
             encoding = "UTF-8";
         }
 
-        // Vector<String> vMultiValueFieldNames = new Vector<String>();
         BufferedReader in = new BufferedReader(new InputStreamReader(requestBodyStream, encoding));
 
         String inputLine;
         ItemCollection workitem = new ItemCollection();
 
-        String content = null;
-        String token = null;
-        String name = null;
-        StringBuffer stringBuffer = new StringBuffer();
-        int iPos = -1;
-        int iStart = -1;
-        int iEnd = -1;
+        String content;
+        String token;
+        String name;
+        StringBuilder stringBuffer = new StringBuilder();
+        int iPos;
+        int iStart;
+        int iEnd;
         try {
             // first we concat all lines
             while ((inputLine = in.readLine()) != null) {
@@ -263,15 +263,15 @@ public class JSONParser {
                     break;
 
             }
-        } catch (IOException e1) {
+        } catch (IOException e) {
             // logger.severe("Unable to parse workitem data!");
-            e1.printStackTrace();
+            logger.severe(e.getMessage());
             return null;
         } finally {
             try {
                 in.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
 
         }
@@ -295,7 +295,6 @@ public class JSONParser {
      * @param token
      * @throws ParseException
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static void storeValue(String name, String token, ItemCollection workitem) throws ParseException {
         boolean debug = logger.isLoggable(Level.FINE);
         int iPos, iStart, iEnd;
@@ -315,7 +314,7 @@ public class JSONParser {
         }
 
         // check if "$" exists
-        String stringValue = null;
+        String stringValue = "";
         iPos = token.indexOf("\"$\"");
         if (iPos > -1) {
             iStart = token.indexOf('"', iPos + "\"$\"".length() + 1) + 0;
@@ -341,31 +340,31 @@ public class JSONParser {
 
         // convert value to Object Type
         if ("xs:boolean".equalsIgnoreCase(type)) {
-            value = Boolean.parseBoolean(stringValue);
+            value = Boolean.valueOf(stringValue);
             if (debug) {
                 logger.finest("......storeValue - datatype=xs:boolean");
             }
         }
         if ("xs:integer".equalsIgnoreCase(type) || "xs:int".equalsIgnoreCase(type)) {
-            value = Integer.parseInt(stringValue);
+            value = Integer.valueOf(stringValue);
             if (debug) {
                 logger.finest("......storeValue - datatype=xs:integer");
             }
         }
         if ("xs:long".equalsIgnoreCase(type)) {
-            value = Long.parseLong(stringValue);
+            value = Long.valueOf(stringValue);
             if (debug) {
                 logger.finest("......storeValue - datatype=xs:long");
             }
         }
         if ("xs:float".equalsIgnoreCase(type)) {
-            value = new Float(stringValue);
+            value = Float.valueOf(stringValue);
             if (debug) {
                 logger.finest("......storeValue - datatype=xs:float");
             }
         }
         if ("xs:double".equalsIgnoreCase(type)) {
-            value = new Double(stringValue);
+            value = Double.valueOf(stringValue);
             if (debug) {
                 logger.finest("......storeValue - datatype=xs:double");
             }
@@ -380,7 +379,7 @@ public class JSONParser {
             }
         } else {
             // add value
-            List valueList = workitem.getItemValue(name);
+            List<Object> valueList = new ArrayList<>(workitem.getItemValue(name));
             valueList.add(value);
             workitem.replaceItemValue(name, valueList);
             if (debug) {
@@ -401,10 +400,7 @@ public class JSONParser {
     private static boolean isValueArray(String token) {
         int b1 = findNextChar(token, '[');
         int b2 = findNextChar(token, '{');
-        if (b1 > -1 && b1 < b2)
-            return true;
-        else
-            return false;
+        return b1 > -1 && b1 < b2;
     }
 
     /**

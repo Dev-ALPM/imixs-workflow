@@ -75,7 +75,7 @@ public interface ModelManager {
      * Returns a Model matching a given workitem. The method throws a ModelException
      * in case the model version did not exits.
      * 
-     * @param version
+     * @param workitem
      * @throws ModelException
      * @return Model
      */

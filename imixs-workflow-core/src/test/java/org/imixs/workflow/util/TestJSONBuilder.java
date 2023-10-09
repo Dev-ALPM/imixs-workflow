@@ -51,19 +51,18 @@ public class TestJSONBuilder {
 		workitem.setItemValue("$readaccess", "Anna");
 
 		workitem.setItemValue("count", 42);
-		workitem.setItemValue("amount", Double.valueOf(100.99));
+		workitem.setItemValue("amount", 100.99d);
 		workitem.appendItemValue("txtlog", "A");
 		workitem.appendItemValue("txtlog", "B");
 		workitem.appendItemValue("txtlog", "C");
 
-		String jsonResult = null;
+		String jsonResult;
 		try {
 			jsonResult = ImixsJSONBuilder.build(workitem);
 			Assert.assertNotNull(jsonResult);
 		} catch (UnsupportedEncodingException e) {
-
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
+                        return;
 		}
 
 		// now convert the json string back using the Imixs JSONParser
@@ -89,8 +88,7 @@ public class TestJSONBuilder {
 			Assert.assertEquals("C", valueList.get(2));
 
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		logger.info(jsonResult);

@@ -30,7 +30,6 @@ package org.imixs.workflow.jaxrs;
 
 import jakarta.annotation.Resource;
 import jakarta.ejb.SessionContext;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.logging.Logger;
@@ -43,7 +42,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -59,7 +57,6 @@ import org.imixs.workflow.xml.XMLDocument;
 import org.imixs.workflow.xml.XMLDocumentAdapter;
 
 import jakarta.ejb.Stateless;
-import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * The AdminPRestService provides methods to access the AdminPService EJB
@@ -88,36 +85,33 @@ public class AdminPRestService {
     @Path("/help")
     public StreamingOutput getHelpHTML() {
 
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<html><head>".getBytes());
-                out.write("<style>".getBytes());
-                out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
-                out.write(
-                        "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
-                                .getBytes());
-                out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
-                        .getBytes());
-
-                out.write("table th,table td {font-size: 12px;}".getBytes());
-
-                out.write("table tr.a {background-color: #ddd;}".getBytes());
-
-                out.write("table tr.b {background-color: #eee;}".getBytes());
-
-                out.write("</style>".getBytes());
-                out.write("</head><body>".getBytes());
-
-                // body
-                out.write("<h1>Imixs-AdminP REST Service</h1>".getBytes());
-                out.write(
-                        "<p>See the <a href=\"http://www.imixs.org/xml/restservice/adminpservice.html\" target=\"_blank\">Imixs REST Service API</a> for more information about this Service.</p>"
-                                .getBytes());
-
-                // end
-                out.write("</body></html>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<html><head>".getBytes());
+            out.write("<style>".getBytes());
+            out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
+            out.write(
+                    "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
+                            .getBytes());
+            out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
+                    .getBytes());
+            
+            out.write("table th,table td {font-size: 12px;}".getBytes());
+            
+            out.write("table tr.a {background-color: #ddd;}".getBytes());
+            
+            out.write("table tr.b {background-color: #eee;}".getBytes());
+            
+            out.write("</style>".getBytes());
+            out.write("</head><body>".getBytes());
+            
+            // body
+            out.write("<h1>Imixs-AdminP REST Service</h1>".getBytes());
+            out.write(
+                    "<p>See the <a href=\"http://www.imixs.org/xml/restservice/adminpservice.html\" target=\"_blank\">Imixs REST Service API</a> for more information about this Service.</p>"
+                            .getBytes());
+            
+            // end
+            out.write("</body></html>".getBytes());
         };
 
     }
@@ -125,21 +119,16 @@ public class AdminPRestService {
     /**
      * Returns all existing jobs
      * 
-     * @param query
-     * @param pageSize
-     * @param pageIndex
-     * @param items
      * @return
      */
     @GET
     @Path("/jobs")
     public XMLDataCollection getAllJobs() {
-        Collection<ItemCollection> col = null;
         try {
-            col = documentService.getDocumentsByType("adminp");
+            Collection<ItemCollection> col = documentService.getDocumentsByType("adminp");
             return XMLDataCollectionAdapter.getDataCollection(col);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
         return new XMLDataCollection();
     }
@@ -191,13 +180,15 @@ public class AdminPRestService {
                 return Response.ok(XMLDataCollectionAdapter.getDataCollection(workitem), MediaType.APPLICATION_XML)
                         .build();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.NOT_ACCEPTABLE).build();
         }
     }
 
     /**
-     * This method deletes an entity
+     * This method deletes an enti
+     * @param uniqueid
+     * @return 
      * 
      */
     @DELETE

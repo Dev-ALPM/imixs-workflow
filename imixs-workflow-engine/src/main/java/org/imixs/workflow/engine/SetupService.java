@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -238,7 +237,7 @@ public class SetupService {
         	dummy.setItemValueUnique(WorkflowKernel.UNIQUEID,"00000000-aaaa-0000-0000-luceneindexcheck");
         	String checksum=""+System.currentTimeMillis();
         	dummy.setItemValue("$workflowsummary", checksum);
-        	List<ItemCollection> dummyList=new ArrayList<ItemCollection>();
+        	List<ItemCollection> dummyList=new ArrayList<>();
         	dummyList.add(dummy);
         	indexUpdateService.updateIndex(dummyList);
         	
@@ -261,7 +260,6 @@ public class SetupService {
      * This method loads the default model if no models exist in the current
      * instance
      * 
-     * @return - status
      */
     public void scanDefaultModels() {
         logger.finest("......scan default models...");
@@ -323,7 +321,7 @@ public class SetupService {
                         try {
                             inputStream.close();
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.severe(e.getMessage());
                         }
                     }
                 }
@@ -342,19 +340,16 @@ public class SetupService {
      * uploads during the system setup. The method can also import general entity
      * data like configuration data.
      * 
-     * @param event
-     * @throws Exception
+     * @param filestream
      */
     public void importXmlEntityData(byte[] filestream) {
         XMLDocument entity;
         ItemCollection itemCollection;
-        String sModelVersion = null;
 
         if (filestream == null)
             return;
         try {
 
-            XMLDataCollection ecol = null;
             logger.fine("importXmlEntityData - importModel, verifing file content....");
 
             JAXBContext context;
@@ -373,11 +368,11 @@ public class SetupService {
                 throw new ModelException(ModelException.INVALID_MODEL,
                         "error - wrong xml file format - unable to import model file!");
 
-            ecol = (XMLDataCollection) jaxbObject;
+            XMLDataCollection ecol = (XMLDataCollection) jaxbObject;
             // import the model entities....
             if (ecol.getDocument().length > 0) {
 
-                Vector<String> vModelVersions = new Vector<String>();
+                List<String> vModelVersions = new ArrayList<>();
                 // first iterrate over all enttity and find if model entries are
                 // included
                 for (XMLDocument aentity : ecol.getDocument()) {
@@ -387,7 +382,7 @@ public class SetupService {
                     if ("WorkflowEnvironmentEntity".equals(itemCollection.getItemValueString("type"))
                             && "environment.profile".equals(itemCollection.getItemValueString("txtName"))) {
 
-                        sModelVersion = itemCollection.getItemValueString("$ModelVersion");
+                        String sModelVersion = itemCollection.getItemValueString("$ModelVersion");
                         if (vModelVersions.indexOf(sModelVersion) == -1)
                             vModelVersions.add(sModelVersion);
                     }
@@ -398,8 +393,8 @@ public class SetupService {
                     modelService.removeModel(aModelVersion);
                 }
                 // save new entities into database and update modelversion.....
-                for (int i = 0; i < ecol.getDocument().length; i++) {
-                    entity = ecol.getDocument()[i];
+                for (XMLDocument document : ecol.getDocument()) {
+                    entity = document;
                     itemCollection = XMLDocumentAdapter.putDocument(entity);
                     // save entity
                     documentService.save(itemCollection);
@@ -408,8 +403,8 @@ public class SetupService {
                 logger.log(Level.FINE, "importXmlEntityData - {0} entries sucessfull imported", ecol.getDocument().length);
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (AccessDeniedException | ModelException e) {
+            logger.severe(e.getMessage());
         }
 
     }
@@ -421,7 +416,6 @@ public class SetupService {
     public void migrateWorkflowScheduler() {
         // lets see if we have an old scheduler configuration....
 
-        ItemCollection configItemCollection = null;
         String searchTerm = "(type:\"configuration\" AND txtname:\"org.imixs.workflow.scheduler\")";
         Collection<ItemCollection> col;
         try {
@@ -433,7 +427,7 @@ public class SetupService {
 
         if (col.size() == 1) {
 
-            configItemCollection = col.iterator().next();
+            ItemCollection configItemCollection = col.iterator().next();
             ItemCollection scheduler = new ItemCollection();
 
             // create new scheduler??

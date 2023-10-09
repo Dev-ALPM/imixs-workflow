@@ -43,7 +43,6 @@ public class SortOrder {
      * Creates a sort, possibly in reverse, with a custom comparison function.
      * 
      * @param field      Name of field to sort by; cannot be <code>null</code>.
-     * @param comparator Returns a comparator for sorting hits.
      * @param reverse    True if natural order should be reversed.
      */
     public SortOrder(String field, boolean reverse) {
@@ -90,8 +89,6 @@ public class SortOrder {
                 return false;
         } else if (!field.equals(other.field))
             return false;
-        if (reverse != other.reverse)
-            return false;
-        return true;
+        return reverse == other.reverse;
     }
 }

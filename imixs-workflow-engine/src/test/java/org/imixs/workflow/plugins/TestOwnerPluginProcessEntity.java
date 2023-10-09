@@ -1,7 +1,7 @@
 package org.imixs.workflow.plugins;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -62,14 +62,13 @@ public class TestOwnerPluginProcessEntity {
 		try {
 			ownerPlugin.init(workflowMockEnvironment.getWorkflowService());
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 
 		// prepare data
 		documentContext = new ItemCollection().model(WorkflowMockEnvironment.DEFAULT_MODEL_VERSION).task(100).event(10);
 		logger.info("[TestOwnerPluginProcessEntity] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -85,7 +84,7 @@ public class TestOwnerPluginProcessEntity {
 	 ***/
 	@Test
 	public void testOwnerNoUpdate() throws ModelException {
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(OwnerPlugin.OWNER, list);
@@ -95,13 +94,13 @@ public class TestOwnerPluginProcessEntity {
 		try {
 			ownerPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 
 		@SuppressWarnings("unchecked")
-		List<String> ownerList = documentContext.getItemValue(OwnerPlugin.OWNER);
+		List<String> ownerList = documentContext.getItemValueList(OwnerPlugin.OWNER, String.class);
 
 		Assert.assertEquals(2, ownerList.size());
 		Assert.assertTrue(ownerList.contains("Kevin"));
@@ -122,13 +121,13 @@ public class TestOwnerPluginProcessEntity {
 		try {
 			ownerPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 
 		@SuppressWarnings("unchecked")
-		List<String> onwerList = documentContext.getItemValue(OwnerPlugin.OWNER);
+		List<String> onwerList = documentContext.getItemValueList(OwnerPlugin.OWNER, String.class);
 
 		Assert.assertEquals(3, onwerList.size());
 		Assert.assertTrue(onwerList.contains("joe"));
@@ -152,13 +151,13 @@ public class TestOwnerPluginProcessEntity {
 		try {
 			ownerPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 
 		@SuppressWarnings("unchecked")
-		List<String> ownerList = documentContext.getItemValue(OwnerPlugin.OWNER);
+		List<String> ownerList = documentContext.getItemValueList(OwnerPlugin.OWNER, String.class);
 
 		Assert.assertEquals(2, ownerList.size());
 		Assert.assertTrue(ownerList.contains("joe"));
@@ -178,7 +177,7 @@ public class TestOwnerPluginProcessEntity {
 	public void testOwnerfromProcessEntityAndActivityEntity() throws ModelException {
 
 		// set some old values
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(OwnerPlugin.OWNER, list);
@@ -189,13 +188,13 @@ public class TestOwnerPluginProcessEntity {
 		try {
 			ownerPlugin.run(documentContext, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 
 		// $writeAccess= anna , manfred, joe, sam
-		List<String> onwerList = documentContext.getItemValue(OwnerPlugin.OWNER);
+		List<String> onwerList = documentContext.getItemValueList(OwnerPlugin.OWNER, String.class);
 		Assert.assertEquals(3, onwerList.size());
 		Assert.assertTrue(onwerList.contains("joe"));
 		// Assert.assertTrue(onwerList.contains("sam"));

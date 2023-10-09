@@ -40,7 +40,6 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.util.BytesRef;
-import org.imixs.workflow.engine.index.UpdateService;
 
 /**
  * The LuceneItemAdapter is a CDI bean, providing methods to convert the value
@@ -57,7 +56,7 @@ import org.imixs.workflow.engine.index.UpdateService;
 @Named
 public class LuceneItemAdapter {
 
-    private static final Logger logger = Logger.getLogger(UpdateService.class.getName());
+    private static final Logger logger = Logger.getLogger(LuceneItemAdapter.class.getName());
 
     /**
      * Creates a Indexable Lucene Field to be added into a Lucene document. The
@@ -94,6 +93,7 @@ public class LuceneItemAdapter {
      *                  convertItemValue
      * @param doAnalyze - if true the content will by analyzed by the LuceneAnalyzer
      *                  configured in the IndexWriter
+     * @param stored
      * @return
      */
     public IndexableField adaptItemValue(String itemName, Object itemValue, boolean doAnalyze, Store stored) {
@@ -134,20 +134,20 @@ public class LuceneItemAdapter {
      * @return string value
      */
     public String convertItemValue(Object itemValue) {
-        String convertedValue = "";
+        String convertedValue="";
 
         if (itemValue instanceof Calendar || itemValue instanceof Date) {
             SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMddHHmmss");
 
             // convert calendar to lucene string representation
             String sDateValue;
-            if (itemValue instanceof Calendar) {
-                sDateValue = dateformat.format(((Calendar) itemValue).getTime());
+            if (itemValue instanceof Calendar calendar) {
+                sDateValue = dateformat.format(calendar.getTime());
             } else {
                 sDateValue = dateformat.format((Date) itemValue);
             }
             convertedValue = sDateValue;
-        } else {
+        } else if(itemValue != null) {
             // default
             convertedValue = itemValue.toString();
         }

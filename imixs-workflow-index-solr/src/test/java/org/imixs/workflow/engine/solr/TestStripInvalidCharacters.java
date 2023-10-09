@@ -5,7 +5,7 @@ import org.imixs.workflow.exceptions.PluginException;
 import org.junit.Before;
 import org.junit.Test;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 /**
  * Test striping invalid characters
@@ -29,15 +29,8 @@ public class TestStripInvalidCharacters {
 	public void testCDATA() {
 		
 		String testString = "Hello <![CDATA[<XX>....</XX>]]> Data!";
-		
-		
-		
 		String result=solrIndexService.stripCDATA(testString);
-		
-		
 		Assert.assertEquals("Hello <XX>....</XX> Data!",result);
-		
-		
 		
 	}
 

@@ -28,6 +28,7 @@
 
 package org.imixs.workflow.engine;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -117,7 +118,7 @@ public class ImixsConfigSource implements ConfigSource {
      * 
      */
     private void loadProperties() {
-        properties = new HashMap<String, String>();
+        properties = new HashMap<>();
         Properties fileProperties = new Properties();
         try {
             fileProperties.load(getFileFromResourceAsStream("imixs.properties"));
@@ -129,10 +130,10 @@ public class ImixsConfigSource implements ConfigSource {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.warning("unable to find imixs.properties in current classpath");
             if (logger.isLoggable(Level.FINE)) {
-                e.printStackTrace();
+                logger.fine(e.getMessage());
             }
         }
 

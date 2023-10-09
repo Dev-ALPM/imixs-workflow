@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -110,14 +109,15 @@ public class WorkflowKernel {
     private Map<String, Adapter> adapterRegistry = null;
 
     private WorkflowContext ctx = null;
-    private Vector<String> vectorEdgeHistory = new Vector<String>();
+    private List<String> edgeHistory = new ArrayList<>();
     private List<ItemCollection> splitWorkitems = null;
     private RuleEngine ruleEngine = null;
 
     private static final Logger logger = Logger.getLogger(WorkflowKernel.class.getName());
 
     /**
-     * Constructor initialize the contextObject and plugin vectors
+     * Constructor initialize workflow kernel
+     * @param actx Workflow context
      */
     public WorkflowKernel(final WorkflowContext actx) {
         // check workflow context
@@ -127,9 +127,9 @@ public class WorkflowKernel {
         }
 
         ctx = actx;
-        pluginRegistry = new ArrayList<Plugin>();
-        adapterRegistry = new HashMap<String, Adapter>();
-        splitWorkitems = new ArrayList<ItemCollection>();
+        pluginRegistry = new ArrayList<>();
+        adapterRegistry = new HashMap<>();
+        splitWorkitems = new ArrayList<>();
         ruleEngine = new RuleEngine();
     }
 
@@ -166,13 +166,15 @@ public class WorkflowKernel {
      * If the new Plugin implements the PluginDependency interface, the method
      * validates dependencies.
      * 
-     * @param pluginClass
+     * @param plugin
      * @throws PluginException
      */
+    // plugin cannot be null test before call
+    @SuppressWarnings("null")
     public void registerPlugin(final Plugin plugin) throws PluginException {
         // validate dependencies
-        if (plugin instanceof PluginDependency) {
-            List<String> dependencies = ((PluginDependency) plugin).dependsOn();
+        if (plugin instanceof PluginDependency pluginDependency) {
+            List<String> dependencies = pluginDependency.dependsOn();
             for (String dependency : dependencies) {
                 boolean found = false;
                 for (Plugin regiseredPlugin : pluginRegistry) {
@@ -194,7 +196,7 @@ public class WorkflowKernel {
     /**
      * This method registers a new adapter class.
      * 
-     * @param adapterClass
+     * @param adapter
      */
     public void registerAdapter(final Adapter adapter) {
         adapterRegistry.put(adapter.getClass().getName(), adapter);
@@ -214,9 +216,8 @@ public class WorkflowKernel {
             if (logger.isLoggable(Level.FINEST))
                 logger.log(Level.FINEST, "......register plugin class: {0}...", pluginClass);
 
-            Class<?> clazz = null;
             try {
-                clazz = Class.forName(pluginClass);
+                Class<?> clazz = Class.forName(pluginClass);
 
                 // deprecated since java9 clazz.getDeclaredConstructor().newInstance()
                 // Plugin plugin = (Plugin) clazz.newInstance();
@@ -260,15 +261,13 @@ public class WorkflowKernel {
 
     /**
      * This method removes all registered plugins
-     * 
-     * @param pluginClass
      */
     public void unregisterAllPlugins() {
         boolean debug = logger.isLoggable(Level.FINE);
         if (debug) {
             logger.finest("......unregisterAllPlugins...");
         }
-        pluginRegistry = new ArrayList<Plugin>();
+        pluginRegistry = new ArrayList<>();
     }
 
     /**
@@ -295,7 +294,8 @@ public class WorkflowKernel {
      * 
      * @param workitem the process instance to be processed.
      * @return updated workitem
-     * @throws PluginException,ModelException
+     * @throws org.imixs.workflow.exceptions.PluginException
+     * @throws org.imixs.workflow.exceptions.ModelException
      */
     public ItemCollection process(final ItemCollection workitem) throws PluginException, ModelException {
 
@@ -315,9 +315,9 @@ public class WorkflowKernel {
                     "processing error: $eventID undefined (" + workitem.getEventID() + ")");
 
         // ItemCollection documentResult = new ItemCollection(workitem);
-        // we do no longer clone the woritem - Issue #507
+        // we do no longer clone the workitem - Issue #507
         ItemCollection documentResult = workitem;
-        vectorEdgeHistory = new Vector<String>();
+        edgeHistory = new ArrayList<>();
 
         // Check if $UniqueID is available
         if ("".equals(workitem.getItemValueString(UNIQUEID))) {
@@ -365,7 +365,8 @@ public class WorkflowKernel {
      * 
      * @param workitem the process instance to be evaluated.
      * @return result TaskID
-     * @throws PluginException,ModelException
+     * @throws org.imixs.workflow.exceptions.PluginException
+     * @throws org.imixs.workflow.exceptions.ModelException
      */
     public int eval(final ItemCollection workitem) throws PluginException, ModelException {
 
@@ -385,7 +386,7 @@ public class WorkflowKernel {
                     "processing error: $eventID undefined (" + workitem.getEventID() + ")");
 
         // clone the woritem to avoid pollution of the origin workitem
-        ItemCollection workitemClone = (ItemCollection) workitem.clone();
+        ItemCollection workitemClone = workitem.clone();
 
         // now evaluate all events defined by the model
         while (workitemClone.getEventID() > 0) {
@@ -393,7 +394,7 @@ public class WorkflowKernel {
             ItemCollection event = loadEvent(workitemClone);
             ItemCollection task = findNextTask(workitemClone, event);
             // Update the attributes $taskID
-            workitemClone.setTaskID(Integer.valueOf(task.getItemValueInteger("numprocessid")));
+            workitemClone.setTaskID(task.getItemValueInteger("numprocessid"));
             workitemClone = updateEventList(workitemClone, event);
         }
 
@@ -420,14 +421,13 @@ public class WorkflowKernel {
     private ItemCollection findNextTask(ItemCollection documentContext, ItemCollection event)
             throws ModelException, PluginException {
         boolean debug = logger.isLoggable(Level.FINE);
-        ItemCollection itemColNextTask = null;
 
         int iNewProcessID = event.getItemValueInteger("numnextprocessid");
         if (debug) {
             logger.log(Level.FINEST, "......next $taskID={0}", iNewProcessID);
         }
         // test if we have an conditional exclusive Task exits...
-        itemColNextTask = findConditionalExclusiveTask(event, documentContext);
+        ItemCollection itemColNextTask = findConditionalExclusiveTask(event, documentContext);
         if (itemColNextTask != null) {
             return itemColNextTask;
         }
@@ -470,7 +470,7 @@ public class WorkflowKernel {
         ItemCollection documentResult = documentContext;
         boolean debug = logger.isLoggable(Level.FINE);
         // first clear the eventID
-        documentResult.setEventID(Integer.valueOf(0));
+        documentResult.setEventID(0);
 
         // test if a FollowUp event is defined for the given event (Deprecated)...
         String sFollowUp = event.getItemValueString("keyFollowUp");
@@ -486,19 +486,19 @@ public class WorkflowKernel {
             List<?> vActivityList = documentContext.getItemValue(ACTIVITYIDLIST);
 
             // remove 0 values if contained!
-            while (vActivityList.indexOf(Integer.valueOf(0)) > -1) {
-                vActivityList.remove(vActivityList.indexOf(Integer.valueOf(0)));
+            while (vActivityList.indexOf(0) > -1) {
+                vActivityList.remove(vActivityList.indexOf(0));
             }
 
             // test if an id is found....
-            if (vActivityList.size() > 0) {
+            if (!vActivityList.isEmpty()) {
                 // yes - load next ID from activityID List
                 int iNextID = 0;
                 Object oA = vActivityList.get(0);
-                if (oA instanceof Integer)
-                    iNextID = ((Integer) oA).intValue();
-                if (oA instanceof Double)
-                    iNextID = ((Double) oA).intValue();
+                if (oA instanceof Integer integer)
+                    iNextID = integer;
+                if (oA instanceof Double aDouble)
+                    iNextID = aDouble.intValue();
 
                 if (iNextID > 0) {
                     // load activity
@@ -508,7 +508,7 @@ public class WorkflowKernel {
                     }
                     vActivityList.remove(0);
                     // update document context
-                    documentResult.setEventID(Integer.valueOf(iNextID));
+                    documentResult.setEventID(iNextID);
                     documentResult.replaceItemValue(ACTIVITYIDLIST, vActivityList);
                 }
             }
@@ -544,7 +544,7 @@ public class WorkflowKernel {
         String eventResult = event.getItemValueString("txtActivityResult");
 
         List<String> modelTags = XMLParser.findNoEmptyTags(eventResult, "model");
-        if (modelTags != null && modelTags.size() > 0) {
+        if (modelTags != null && !modelTags.isEmpty()) {
             // extract the model tag information - version and event are mandatory
             ItemCollection modelData;
             modelData = XMLParser.parseTag(modelTags.get(0), "model");
@@ -560,7 +560,7 @@ public class WorkflowKernel {
             }
             // apply new model version and event id
             documentResult.setModelVersion(version);
-            documentResult.setEventID(Integer.valueOf(iNextEvent));
+            documentResult.setEventID(iNextEvent);
             if (iTask > 0) {
                 // optional
                 documentResult.task(iTask);
@@ -590,11 +590,9 @@ public class WorkflowKernel {
      * 
      * @throws PluginException,ModelException
      */
-    @SuppressWarnings("unused")
     private ItemCollection processEvent(final ItemCollection documentContext, final ItemCollection event)
             throws PluginException, ModelException {
         ItemCollection documentResult = documentContext;
-        boolean debug = logger.isLoggable(Level.FINE);
         // log the general processing message
         String msg = "⚙ processing: " + documentContext.getItemValueString(UNIQUEID) + " ("
                 + documentContext.getItemValueString(MODELVERSION) + " ▷ " + documentContext.getTaskID() + "→"
@@ -627,7 +625,7 @@ public class WorkflowKernel {
         documentResult = logEvent(documentResult, event);
 
         // put current edge in history
-        vectorEdgeHistory.addElement(
+        edgeHistory.add(
                 event.getItemValueInteger("numprocessid") + "." + event.getItemValueInteger("numactivityid"));
 
         // update the next task (can be updated by plugins or conditional events....
@@ -672,7 +670,7 @@ public class WorkflowKernel {
     private void updateWorkflowStatus(ItemCollection documentResult, ItemCollection itemColNextTask) {
         boolean debug = logger.isLoggable(Level.FINE);
         // Update the attributes $taskID and $WorkflowStatus
-        documentResult.setTaskID(Integer.valueOf(itemColNextTask.getItemValueInteger("numprocessid")));
+        documentResult.setTaskID(itemColNextTask.getItemValueInteger("numprocessid"));
         if (debug) {
             logger.log(Level.FINEST, "......new $taskID={0}", documentResult.getTaskID());
         }
@@ -775,7 +773,6 @@ public class WorkflowKernel {
      * @throws PluginException
      */
     private void executeAdaper(Adapter adapter, ItemCollection workitem, ItemCollection event) throws PluginException {
-        boolean debug = logger.isLoggable(Level.FINE);
         // execute...
         try {
             // remove adapter errors..
@@ -783,7 +780,7 @@ public class WorkflowKernel {
             workitem.removeItem("adapter.error_code");
             workitem.removeItem("adapter.error_params");
             workitem.removeItem("adapter.error_message");
-            workitem = adapter.execute(workitem, event);
+            adapter.execute(workitem, event);
         } catch (AdapterException e) {
             logger.log(Level.WARNING, "...execution of adapter failed: {0}", e.getMessage());
             // update workitem with adapter exception....
@@ -791,9 +788,6 @@ public class WorkflowKernel {
             workitem.setItemValue("adapter.error_code", e.getErrorCode());
             workitem.setItemValue("adapter.error_params", e.getErrorParameters());
             workitem.setItemValue("adapter.error_message", e.getMessage());
-            if (debug) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -809,20 +803,19 @@ public class WorkflowKernel {
      * @throws PluginException
      * @throws ModelException
      */
-    @SuppressWarnings("unchecked")
     private ItemCollection findConditionalExclusiveTask(ItemCollection event, ItemCollection documentContext)
             throws PluginException, ModelException {
         boolean debug = logger.isLoggable(Level.FINE);
-        Map<String, String> conditions = null;
+        
         // test if we have an exclusive condition
         if (event.hasItem("keyExclusiveConditions")) {
             // get first element
-            conditions = (Map<String, String>) event.getItemValue("keyExclusiveConditions").get(0);
+            Map<String, String> conditions = event.getItemValueMap("keyExclusiveConditions", String.class);
 
-            if (conditions != null && conditions.size() > 0) {
+            if (conditions != null && !conditions.isEmpty()) {
                 // we support also an optional default flow (Issue #723)
                 // a default flow is evaluated always as the last option!
-                List<Map.Entry<String, String>> orderedConditionList = new ArrayList<Map.Entry<String, String>>();
+                List<Map.Entry<String, String>> orderedConditionList = new ArrayList<>();
                 for (Map.Entry<String, String> entry : conditions.entrySet()) {
                     if ("true".equals(entry.getValue())) {
                         // we move a default condition (true) to the end of the list
@@ -898,16 +891,14 @@ public class WorkflowKernel {
      * @throws PluginException
      * @throws ModelException
      */
-    @SuppressWarnings("unchecked")
     private ItemCollection findConditionalSplitTask(ItemCollection event, ItemCollection documentContext)
             throws PluginException, ModelException {
         boolean debug = logger.isLoggable(Level.FINE);
-        // test if we have an split event
-        Map<String, String> conditions = null;
+
         // test if we have an split event
         if (event.hasItem("keySplitConditions")) {
             // get first element
-            conditions = (Map<String, String>) event.getItemValue("keySplitConditions").get(0);
+            Map<String, String> conditions = event.getItemValueMap("keySplitConditions", String.class);
 
             if (conditions != null) {
 
@@ -981,16 +972,14 @@ public class WorkflowKernel {
      * @throws ModelException
      * @throws AdapterException
      */
-    @SuppressWarnings("unchecked")
     private void evaluateSplitEvent(ItemCollection event, ItemCollection documentContext)
             throws PluginException, ModelException {
         boolean debug = logger.isLoggable(Level.FINE);
-        // test if we have an split event
-        Map<String, String> conditions = null;
+
         // test if we have an split event
         if (event.hasItem("keySplitConditions")) {
             // get first element
-            conditions = (Map<String, String>) event.getItemValue("keySplitConditions").get(0);
+            Map<String, String> conditions = event.getItemValueMap("keySplitConditions", String.class);
 
             if (conditions != null) {
 
@@ -1035,7 +1024,7 @@ public class WorkflowKernel {
                                     logger.log(Level.FINEST, "......created new version={0}", cloned.getUniqueID());
                                 }
                                 // set new $taskID
-                                cloned.setTaskID(Integer.valueOf(itemColNextTask.getItemValueInteger("numprocessid")));
+                                cloned.setTaskID(itemColNextTask.getItemValueInteger("numprocessid"));
                                 cloned.setEventID(eventID);
                                 // add temporary attribute $isversion...
                                 cloned.replaceItemValue(ISVERSION, true);
@@ -1076,7 +1065,7 @@ public class WorkflowKernel {
     private ItemCollection createVersion(ItemCollection sourceItemCollection) throws PluginException {
 
         // clone the source workitem with its '$workitemid'
-        ItemCollection itemColNewVersion = (ItemCollection) sourceItemCollection.clone();
+        ItemCollection itemColNewVersion = sourceItemCollection.clone();
         String id = sourceItemCollection.getUniqueID();
 
         // create a new $Uniqueid to force the generation of a new Entity Instance.
@@ -1100,21 +1089,20 @@ public class WorkflowKernel {
      * ($ActivityIDList) The activity list may not contain 0 values.
      * 
      */
-    @SuppressWarnings("unchecked")
     private ItemCollection appendActivityID(final ItemCollection documentContext, final int aID) {
         boolean debug = logger.isLoggable(Level.FINE);
         ItemCollection documentResult = documentContext;
         // check if activityidlist is available
-        List<Integer> vActivityList = (List<Integer>) documentContext.getItemValue(ACTIVITYIDLIST);
+        List<Integer> vActivityList = documentContext.getItemValueList(ACTIVITYIDLIST, Integer.class);
         // clear list?
         if ((vActivityList.size() == 1) && ("".equals(vActivityList.get(0).toString())))
-            vActivityList = new Vector<Integer>();
+            vActivityList = new ArrayList<>();
 
-        vActivityList.add(Integer.valueOf(aID));
+        vActivityList.add(aID);
 
         // remove 0 values if contained!
-        while (vActivityList.indexOf(Integer.valueOf(0)) > -1) {
-            vActivityList.remove(vActivityList.indexOf(Integer.valueOf(0)));
+        while (vActivityList.indexOf(0) > -1) {
+            vActivityList.remove(vActivityList.indexOf(0));
         }
 
         documentResult.replaceItemValue(ACTIVITYIDLIST, vActivityList);
@@ -1144,11 +1132,10 @@ public class WorkflowKernel {
      * #179)
      * 
      */
-    @SuppressWarnings("unchecked")
     private ItemCollection logEvent(final ItemCollection documentContext, final ItemCollection event) {
         boolean debug = logger.isLoggable(Level.FINE);
         ItemCollection documentResult = documentContext;
-        StringBuffer sLogEntry = new StringBuffer();
+        StringBuilder sLogEntry = new StringBuilder();
         // 22.9.2004 13:50:41|modelversion|1000.90|1000|
 
         sLogEntry.append(new SimpleDateFormat(ISO8601_FORMAT).format(new Date()));
@@ -1157,7 +1144,7 @@ public class WorkflowKernel {
         sLogEntry.append(documentContext.getItemValueString(MODELVERSION));
 
         sLogEntry.append("|");
-        sLogEntry.append(event.getItemValueInteger("numprocessid") + "." + event.getItemValueInteger("numactivityid"));
+        sLogEntry.append(event.getItemValueInteger("numprocessid")).append(".").append(event.getItemValueInteger("numactivityid"));
 
         sLogEntry.append("|");
         sLogEntry.append(event.getItemValueInteger("numnextprocessid"));
@@ -1169,11 +1156,11 @@ public class WorkflowKernel {
             sLogEntry.append(sLogComment);
 
         // support deprecated field txtworkflowactivitylog
-        List<String> logEntries = null;
+        List<String> logEntries;
         if (!documentContext.hasItem("$eventlog"))
-            logEntries = (List<String>) documentContext.getItemValue("txtworkflowactivitylog"); // deprecated
+            logEntries = documentContext.getItemValueList("txtworkflowactivitylog", String.class); // deprecated
         else
-            logEntries = (List<String>) documentContext.getItemValue("$eventlog");
+            logEntries = documentContext.getItemValueList("$eventlog",String.class);
         logEntries.add(sLogEntry.toString());
 
         // test if the log has exceeded the maximum count of entries
@@ -1187,10 +1174,10 @@ public class WorkflowKernel {
 
         documentResult.replaceItemValue("$eventlog", logEntries);
 
-        documentResult.replaceItemValue("$lastEvent", Integer.valueOf(event.getItemValueInteger("numactivityid")));
+        documentResult.replaceItemValue("$lastEvent", event.getItemValueInteger("numactivityid"));
         // deprecated
         documentResult.replaceItemValue("numlastactivityid",
-                Integer.valueOf(event.getItemValueInteger("numactivityid")));
+                event.getItemValueInteger("numactivityid"));
 
         return documentResult;
     }
@@ -1226,9 +1213,9 @@ public class WorkflowKernel {
             logger.log(Level.FINEST, ".......event: {0}.{1} loaded", new Object[]{taskID, eventID});
         }
         // Check for loop in edge history
-        if (vectorEdgeHistory != null && vectorEdgeHistory.indexOf((taskID + "." + eventID)) != -1) {
+        if (edgeHistory != null && edgeHistory.indexOf((taskID + "." + eventID)) != -1) {
             throw new ProcessingErrorException(WorkflowKernel.class.getSimpleName(), MODEL_ERROR,
-                    "[loadEvent] loop detected " + taskID + "." + eventID + "," + vectorEdgeHistory.toString());
+                    "[loadEvent] loop detected " + taskID + "." + eventID + "," + edgeHistory.toString());
         }
 
         return event;
@@ -1245,13 +1232,12 @@ public class WorkflowKernel {
             throws PluginException {
         boolean debug = logger.isLoggable(Level.FINE);
         ItemCollection documentResult = documentContext;
-        String sPluginName = null;
-        List<String> localPluginLog = new Vector<String>();
+        List<String> localPluginLog = new ArrayList<>();
 
         try {
             for (Plugin plugin : pluginRegistry) {
 
-                sPluginName = plugin.getClass().getName();
+                String sPluginName = plugin.getClass().getName();
                 if (debug) {
                     logger.log(Level.FINEST, "......running Plugin: {0}...", sPluginName);
                 }
@@ -1294,7 +1280,7 @@ public class WorkflowKernel {
 
     private void closePlugins(boolean rollbackTransaction) throws PluginException {
         for (int i = 0; i < pluginRegistry.size(); i++) {
-            Plugin plugin = (Plugin) pluginRegistry.get(i);
+            Plugin plugin = pluginRegistry.get(i);
             if (logger.isLoggable(Level.FINEST))
                 logger.log(Level.FINEST, "closing Plugin: {0}...", plugin.getClass().getName());
             plugin.close(rollbackTransaction);

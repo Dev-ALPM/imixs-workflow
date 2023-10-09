@@ -30,6 +30,8 @@ package org.imixs.workflow.xml;
 
 import java.util.List;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * The JAXB DocumentTable represents a list of documents in a table format. For
@@ -41,31 +43,31 @@ import jakarta.xml.bind.annotation.XmlRootElement;
  * @version 2.0.0
  */
 @XmlRootElement(name = "data")
-public class DocumentTable implements java.io.Serializable {
+public class DocumentTable implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private XMLDocument[] document;
-    private List<String> items;
-    private List<String> labels;
+    private XMLDocument[] documents;
+    private ArrayList<String> items;
+    private ArrayList<String> labels;
     private String encoding;
 
     public DocumentTable() {
-        setDocument(new XMLDocument[] {});
+        this(new XMLDocument[] {}, null, null, null);
     }
 
     public DocumentTable(XMLDocument[] documents, List<String> items, List<String> labels, String encoding) {
-        setDocument(documents);
-        setItems(items);
-        setLabels(labels);
-        setEncoding(encoding);
+        this.documents = documents;
+        this.items = new ArrayList<>(items);
+        this.labels = new ArrayList<>(labels);
+        this.encoding = encoding;
     }
 
-    public XMLDocument[] getDocument() {
-        return document;
+    public XMLDocument[] getDocuments() {
+        return documents;
     }
 
-    public void setDocument(XMLDocument[] document) {
-        this.document = document;
+    public void setDocuments(XMLDocument[] document) {
+        this.documents = document;
     }
 
     public List<String> getItems() {
@@ -73,7 +75,7 @@ public class DocumentTable implements java.io.Serializable {
     }
 
     public void setItems(List<String> items) {
-        this.items = items;
+        this.items = new ArrayList<>(items);
     }
 
     public List<String> getLabels() {
@@ -81,7 +83,7 @@ public class DocumentTable implements java.io.Serializable {
     }
 
     public void setLabels(List<String> labels) {
-        this.labels = labels;
+        this.labels = new ArrayList<>(labels);
     }
 
     public String getEncoding() {

@@ -29,7 +29,6 @@
 package org.imixs.workflow.engine.plugins;
 
 import java.util.Calendar;
-import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.engine.EventLogService;
@@ -69,7 +68,6 @@ import jakarta.inject.Inject;
 public class EventLogPlugin extends AbstractPlugin {
 	public static final String INVALID_FORMAT = "INVALID_FORMAT";
 
-	private static final Logger logger = Logger.getLogger(EventLogPlugin.class.getName());
 
 	@Inject
 	EventLogService eventLogService;
@@ -80,7 +78,7 @@ public class EventLogPlugin extends AbstractPlugin {
 		// parse for eventlog definition....
 		ItemCollection eventLogConfig = this.getWorkflowService().evalWorkflowResult(event, "eventlog", documentContext,
 				true);
-		if (eventLogConfig == null || eventLogConfig.getItemNames().size() == 0) {
+		if (eventLogConfig == null || eventLogConfig.getItemNames().isEmpty()) {
 			// no op - return
 			return documentContext;
 		}

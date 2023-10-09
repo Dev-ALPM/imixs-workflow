@@ -42,8 +42,7 @@ public class TestIntervalPlugin {
         try {
             intervalPlugin.init(workflowMockEnvironment.getWorkflowService());
         } catch (PluginException e) {
-
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
 
         // prepare test workitem
@@ -68,7 +67,7 @@ public class TestIntervalPlugin {
             documentActivity = workflowMockEnvironment.getModel().getEvent(100, 99);
             intervalPlugin.run(documentContext, documentActivity);
         } catch (PluginException | ModelException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
         Date result = documentContext.getItemValueDate("reminder");
@@ -187,15 +186,12 @@ public class TestIntervalPlugin {
 
     /**
      * This test verifies different cron patterns with value lists
-     * 
-     * @throws PluginException
      */
     @Test
     public void testCronUnitValueList() {
         // m h d m w
         try {
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime date=null;
 
             // 1.12.2022 
             now = now.with(ChronoField.DAY_OF_MONTH,1);
@@ -206,7 +202,7 @@ public class TestIntervalPlugin {
             now = now.with(ChronoField.MINUTE_OF_HOUR,0);
             now = now.with(ChronoField.HOUR_OF_DAY,8);
             String cron = "0 9,18 * * *";
-            date = intervalPlugin.evalCron(cron,now);
+            LocalDateTime date = intervalPlugin.evalCron(cron,now);
             logger.log(Level.INFO, " => now={0}  result={1}", new Object[]{now, date});
             // expected 9:00
             Assert.assertTrue(date.getHour()==9);
@@ -229,9 +225,6 @@ public class TestIntervalPlugin {
             // expected 9:00 next day
             Assert.assertTrue(date.getHour()==9);
             Assert.assertTrue(date.getDayOfYear()==now.getDayOfYear()+1);
-    
-            
-            
             
             cron = "15,30 * * * *";
             now = now.with(ChronoField.HOUR_OF_DAY,10);
@@ -250,10 +243,8 @@ public class TestIntervalPlugin {
             Assert.assertTrue(date.getHour()==10);
             Assert.assertTrue(date.getMinute()==30);
             
-            
-            
         } catch (PluginException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             Assert.fail();
         }
     }

@@ -42,6 +42,7 @@ import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.interceptor.Interceptor;
+import java.util.ArrayList;
 
 /**
  * The TextForEachAdapter can be used to format text fragments with the
@@ -112,6 +113,7 @@ public class TextForEachAdapter {
      * The priority of the CDI event is set to (APPLICATION-10) to ensure that the
      * for-each adapter is triggered before the TextItemValueAdapter
      * 
+     * @param event
      */
     @SuppressWarnings("unchecked")
     public void onEvent(@Observes @Priority(Interceptor.Priority.APPLICATION - 10) TextEvent event) {
@@ -132,13 +134,13 @@ public class TextForEachAdapter {
 
             // next we iterate over all item values and test for each value if the value is
             // a basic value or an embedded ItemCollection.
-            List<Object> values = event.getDocument().getItemValue(itemName);
+            List<Object> values = new ArrayList<>(event.getDocument().getItemValue(itemName));
             for (Object _value : values) {
-                ItemCollection _tempDoc = null;
+                ItemCollection _tempDoc;
                 // test if the value defines an embedded ItemCollection....
                 if (_value instanceof Map<?, ?>) {
                     try {
-                        _tempDoc = new ItemCollection((Map<String, List<Object>>) _value);
+                        _tempDoc = new ItemCollection((Map<String, List<?>>) _value);
                     } catch (ClassCastException e) {
                         // embedded value can not be processed
                         logger.warning("unable to cast embedded map to ItemCollection!");
@@ -154,7 +156,7 @@ public class TextForEachAdapter {
                 }
 
                 // now we fire a recursive text event to process the content....
-                TextEvent _event = new TextEvent(new String(innervalue), _tempDoc);
+                TextEvent _event = new TextEvent(innervalue, _tempDoc);
                 if (textEvents != null) {
                     textEvents.fire(_event);
                     textResult = textResult + _event.getText();

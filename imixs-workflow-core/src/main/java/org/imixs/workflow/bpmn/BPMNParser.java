@@ -68,7 +68,7 @@ public class BPMNParser {
      * 
      * @param bpmnInputStream
      * @param encoding        - default encoding use to parse the stream
-     * @return List<ItemCollection> a model definition
+     * @return a model definition
      * @throws ParseException
      * @throws SAXException
      * @throws ParserConfigurationException
@@ -117,9 +117,9 @@ public class BPMNParser {
     /**
      * This method parses a BPMN model from a byte array.
      * 
-     * @param requestBodyStream
+     * @param bpmnByteArray
      * @param encoding          - default encoding use to parse the stream
-     * @return List<ItemCollection> a model definition
+     * @return a model definition
      * @throws ParseException
      * @throws SAXException
      * @throws ParserConfigurationException

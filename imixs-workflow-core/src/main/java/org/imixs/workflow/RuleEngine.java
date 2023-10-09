@@ -45,11 +45,8 @@ import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 import org.imixs.workflow.exceptions.PluginException;
 
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Named;
-
 /**
- * The Imixs RuleEngine is a CDI bean called by the WorkflowKernel to evaluate
+ * The Imixs RuleEngine is called by the WorkflowKernel to evaluate
  * business rules part of an BPMN model.
  * <p>
  * The engine is based on the GraalVM script engine which provides an advanced
@@ -78,8 +75,6 @@ import jakarta.inject.Named;
  * @version 4.0
  * 
  */
-@Named
-@RequestScoped
 public class RuleEngine {
     public static final String DEFAULT_LANGUAGE_ID = "js";
     public static final String INVALID_SCRIPT = "INVALID_SCRIPT";
@@ -94,31 +89,21 @@ public class RuleEngine {
      * This method initializes the default script engine.
      */
     public RuleEngine() {
-        super();
-        init(DEFAULT_LANGUAGE_ID);
+        this(DEFAULT_LANGUAGE_ID);
     }
 
     /**
      * This method initializes the script engine with a specific languageId.
      * 
-     * @param scriptLanguage
+     * @param languageID
      */
     public RuleEngine(final String languageID) {
         super();
         if (languageID == null || languageID.isEmpty()) {
-            init(DEFAULT_LANGUAGE_ID);
+            this.languageId = DEFAULT_LANGUAGE_ID;
         } else {
-            init(languageID);
+            this.languageId = languageID;
         }
-    }
-
-    /**
-     * This method initializes a context with default configuration.
-     * 
-     * @param languageId
-     */
-    void init(final String languageId) {
-        this.languageId = languageId;
         // lazy initialization - see getContext()
         _context=null;
     }
@@ -168,7 +153,8 @@ public class RuleEngine {
      * This method evaluates a boolean expression. An optional documentContext can
      * be provided as member Variables to be used by the script
      * 
-     * @param documentContext optional workitem context
+     * @param script
+     * @param workitem
      * @return boolean
      * @throws PluginException
      */
@@ -218,6 +204,7 @@ public class RuleEngine {
      * An optional documentContext and a event object can be provided as member
      * Variables to be used by the script
      * 
+     * @param script
      * @param workitem optional document context
      * @param event    optional bpmn event context
      * @return evaluated result instance
@@ -268,9 +255,8 @@ public class RuleEngine {
      * context into a Map object and returns a new instance of a ItemCollection
      * holding the values of the map.
      * 
-     * <code> var result={};result.name='xxx';result.count=42; <code>
+     * <code> var result={};result.name='xxx';result.count=42; </code>
      * 
-     * @param engine
      * @return ItemCollection holding the item values of the variable or null if no
      *         variable with the given name exists or the variable has not
      *         properties.
@@ -296,7 +282,7 @@ public class RuleEngine {
             if (itemObject.hasArrayElements()) {
                 // build an object array with all values...
                 long arraySize = itemObject.getArraySize();
-                List<Object> arrayValues = new ArrayList<Object>();
+                List<Object> arrayValues = new ArrayList<>();
                 for (long i = 0; i < arraySize; i++) {
                     Value arrayValue = itemObject.getArrayElement(i);
                     Object objectValue = arrayValue.as(Object.class);
@@ -323,7 +309,7 @@ public class RuleEngine {
     }
 
     private static HashSet<Class<?>> getBasicObjectTypes() {
-        HashSet<Class<?>> ret = new HashSet<Class<?>>();
+        HashSet<Class<?>> ret = new HashSet<>();
         ret.add(Boolean.class);
         ret.add(Character.class);
         ret.add(Byte.class);

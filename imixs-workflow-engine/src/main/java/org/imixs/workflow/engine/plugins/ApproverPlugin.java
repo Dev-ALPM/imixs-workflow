@@ -76,23 +76,21 @@ public class ApproverPlugin extends AbstractPlugin {
 
     private static final Logger logger = Logger.getLogger(ApproverPlugin.class.getName());
 
-    public static String APPROVEDBY = "$approvedby";
-    public static String APPROVERS = "$approvers";
+    public static final String APPROVEDBY = "$approvedby";
+    public static final String APPROVERS = "$approvers";
 
-    private static String EVAL_APPROVEDBY = "approvedby";
+    private static final String EVAL_APPROVEDBY = "approvedby";
 
     /**
      * computes the approvedBy and appovers name fields.
      * 
      * 
+     * @param workitem
      * @throws PluginException
      * 
      **/
-    @SuppressWarnings("unchecked")
     @Override
     public ItemCollection run(ItemCollection workitem, ItemCollection event) throws PluginException {
-        boolean refresh = false;
-        boolean reset = false;
 
         ItemCollection evalItemCollection = this.getWorkflowService().evalWorkflowResult(event, "item", workitem);
 
@@ -101,7 +99,7 @@ public class ApproverPlugin extends AbstractPlugin {
             boolean debug = logger.isLoggable(Level.FINE);
 
             // test refresh
-            refresh = true;
+            boolean refresh = true;
             if ("false".equals(evalItemCollection.getItemValueString(EVAL_APPROVEDBY + ".refresh"))) {
                 refresh = false;
             }
@@ -109,7 +107,7 @@ public class ApproverPlugin extends AbstractPlugin {
                 logger.log(Level.FINE, "refresh={0}", refresh);
             }
             // test reset
-            reset = false;
+            boolean reset = false;
             if ("true".equals(evalItemCollection.getItemValueString(EVAL_APPROVEDBY + ".reset"))) {
                 reset = true;
             }
@@ -117,17 +115,17 @@ public class ApproverPlugin extends AbstractPlugin {
                 logger.log(Level.FINE, "reset={0}", reset);
             }
             // 1.) extract the groups definitions
-            List<String> groups = evalItemCollection.getItemValue(EVAL_APPROVEDBY);
+            List<String> groups = evalItemCollection.getItemValueList(EVAL_APPROVEDBY, String.class);
 
             // 2.) iterate over all definitions
             for (String aGroup : groups) {
 
                 // fetch name list...
-                List<String> nameList = workitem.getItemValue(aGroup);
+                List<String> nameList = workitem.getItemValueList(aGroup,String.class);
                 // remove empty entries...
                 nameList.removeIf(item -> item == null || "".equals(item));
-                // create a new instance of a Vector to avoid setting the
-                // same vector as reference! We also distinct the List here.
+                // create a new instance of a List to avoid setting the
+                // same List as reference! We also distinct the List here.
                 List<String> newAppoverList = nameList.stream().distinct().collect(Collectors.toList());
 
                 if (!workitem.hasItem(aGroup + APPROVERS) || reset) {
@@ -145,8 +143,8 @@ public class ApproverPlugin extends AbstractPlugin {
 
                     // 2.) add current approver to approvedBy.....
                     String currentAppover = getWorkflowService().getUserName();
-                    List<String> listApprovedBy = workitem.getItemValue(aGroup + APPROVEDBY);
-                    List<String> listApprovers = workitem.getItemValue(aGroup + APPROVERS);
+                    List<String> listApprovedBy = workitem.getItemValueList(aGroup + APPROVEDBY, String.class);
+                    List<String> listApprovers = workitem.getItemValueList(aGroup + APPROVERS, String.class);
                     if (debug) {
                         logger.log(Level.FINE, "approved by:  {0}", currentAppover);
                     }
@@ -177,21 +175,20 @@ public class ApproverPlugin extends AbstractPlugin {
      * @param workitem
      * @param sourceItem - item name of the source user list
      */
-    @SuppressWarnings("unchecked")
     void refreshApprovers(ItemCollection workitem, String sourceItem) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<String> nameList = workitem.getItemValue(sourceItem);
+        List<String> nameList = workitem.getItemValueList(sourceItem, String.class);
         // remove empty entries...
         nameList.removeIf(item -> item == null || "".equals(item));
 
-        // create a new instance of a Vector to avoid setting the
-        // same vector as reference! We also distinct the List here.
+        // create a new instance of a List to avoid setting the
+        // same list as reference! We also distinct the List here.
         List<String> newAppoverList = nameList.stream().distinct().collect(Collectors.toList());
 
         // verify if a new member of the existing approvers is available...
         // (issue #150)
-        List<String> listApprovedBy = workitem.getItemValue(sourceItem + APPROVEDBY);
-        List<String> listApprovers = workitem.getItemValue(sourceItem + APPROVERS);
+        List<String> listApprovedBy = workitem.getItemValueList(sourceItem + APPROVEDBY, String.class);
+        List<String> listApprovers = workitem.getItemValueList(sourceItem + APPROVERS, String.class);
         boolean update = false;
         for (String approver : newAppoverList) {
             if (!listApprovedBy.contains(approver) && !listApprovers.contains(approver)) {

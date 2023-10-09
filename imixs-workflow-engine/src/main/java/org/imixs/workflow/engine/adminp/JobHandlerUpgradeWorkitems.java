@@ -34,7 +34,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
-import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RunAs;
 import jakarta.inject.Inject;
@@ -44,10 +43,8 @@ import org.imixs.workflow.WorkflowKernel;
 import org.imixs.workflow.engine.DocumentService;
 import org.imixs.workflow.engine.plugins.OwnerPlugin;
 import org.imixs.workflow.exceptions.AccessDeniedException;
-import org.imixs.workflow.exceptions.PluginException;
 
 import jakarta.ejb.LocalBean;
-import jakarta.ejb.SessionContext;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -72,13 +69,10 @@ public class JobHandlerUpgradeWorkitems implements JobHandler {
 
     private static final int DEFAULT_BLOCK_SIZE = 100;
 
-    @Resource
-    SessionContext ctx;
-
     @Inject
     DocumentService documentService;
 
-    private static Logger logger = Logger.getLogger(JobHandlerUpgradeWorkitems.class.getName());
+    private static final Logger logger = Logger.getLogger(JobHandlerUpgradeWorkitems.class.getName());
 
     /**
      * This method runs the RebuildLuceneIndexJob. The AdminP job description
@@ -103,7 +97,6 @@ public class JobHandlerUpgradeWorkitems implements JobHandler {
      * @param adminp
      * @return true if no more unprocessed documents exist.
      * @throws AccessDeniedException
-     * @throws PluginException
      */
     @Override
     @TransactionAttribute(value = TransactionAttributeType.REQUIRES_NEW)
@@ -175,7 +168,7 @@ public class JobHandlerUpgradeWorkitems implements JobHandler {
     /**
      * This method upgrades missing fields in a workitem
      * 
-     * @param worktem
+     * @param workitem
      * @return
      */
     public boolean upgradeWorkitem(ItemCollection workitem) {
@@ -258,13 +251,12 @@ public class JobHandlerUpgradeWorkitems implements JobHandler {
         String typeFilter = adminp.getItemValueString("typelist");
         SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-        boolean bAddAnd = false;
-        String query = "SELECT document FROM Document AS document ";
+        StringBuilder query = new StringBuilder("SELECT document FROM Document AS document ");
         // ignore lucene event log entries
-        query += "WHERE document.type NOT IN ('event') ";
+        query.append("WHERE document.type NOT IN ('event') ");
         // ignore imixs-archive snapshots and deprecated blob
-        query += "AND document.type NOT LIKE 'snapshot%' ";
-        query += "AND document.type NOT LIKE 'workitemlob%' ";
+        query.append("AND document.type NOT LIKE 'snapshot%' ");
+        query.append("AND document.type NOT LIKE 'workitemlob%' ");
 
         if (typeFilter != null && !typeFilter.isEmpty()) {
             // convert type list into comma separated list
@@ -274,32 +266,22 @@ public class JobHandlerUpgradeWorkitems implements JobHandler {
                 sType += "'" + aValue.trim() + "',";
             }
             sType = sType.substring(0, sType.length() - 1);
-            query += " AND document.type IN(" + sType + ")";
-            bAddAnd = true;
+            query.append(" AND document.type IN(").append(sType).append(")");
         } else {
-        	// default to workitem
-        	  query += " AND document.type IN('workitem')";
-        	  bAddAnd = true;
+            // default to workitem
+            query.append(" AND document.type IN('workitem')");
         }
 
         if (datFilterFrom != null) {
-            if (bAddAnd) {
-                query += " AND ";
-            }
-            query += " document.created>='" + isoFormat.format(datFilterFrom) + "' ";
-            bAddAnd = true;
+            query.append(" AND document.created>='").append(isoFormat.format(datFilterFrom)).append("' ");
         }
 
         if (datFilterTo != null) {
-            if (bAddAnd) {
-                query += " AND ";
-            }
-            query += " document.created<='" + isoFormat.format(datFilterTo) + "' ";
-            bAddAnd = true;
+            query.append(" AND document.created<='").append(isoFormat.format(datFilterTo)).append("' ");
         }
 
-        query += " ORDER BY document.created";
+        query.append(" ORDER BY document.created");
 
-        return query;
+        return query.toString();
     }
 }

@@ -26,7 +26,6 @@ import org.junit.Assert;
  */
 public class TestBPMNParserConditionalEvents {
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testSimple()
 			throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
@@ -36,12 +35,8 @@ public class TestBPMNParserConditionalEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -71,7 +66,7 @@ public class TestBPMNParserConditionalEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keyExclusiveConditions"));
-		Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keyExclusiveConditions").get(0);
+		Map<String, String> conditions = activity.getItemValueMap("keyExclusiveConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]>100)", conditions.get("task=1100"));
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]<=100)", conditions.get("task=1200"));
@@ -86,7 +81,6 @@ public class TestBPMNParserConditionalEvents {
      * @throws IOException
      * @throws ModelException
      */
-	@SuppressWarnings("unchecked")
     @Test
     public void testSimpleDefault()
             throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
@@ -96,12 +90,8 @@ public class TestBPMNParserConditionalEvents {
         BPMNModel model = null;
         try {
             model = BPMNParser.parseModel(inputStream, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (ModelException e) {
-            e.printStackTrace();
-            Assert.fail();
+        } catch (UnsupportedEncodingException | ModelException e) {
+            Assert.fail(e.getMessage());
         }
         Assert.assertNotNull(model);
       
@@ -115,7 +105,7 @@ public class TestBPMNParserConditionalEvents {
         // Now we need to evaluate if the Event is marked as an conditional Event with
         // the condition list copied from the gateway.
         Assert.assertTrue(activity.hasItem("keyExclusiveConditions"));
-        Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keyExclusiveConditions").get(0);
+        Map<String, String> conditions = activity.getItemValueMap("keyExclusiveConditions", String.class);
         Assert.assertNotNull(conditions);
         Assert.assertEquals("(workitem._budget && workitem._budget[0]>100)", conditions.get("task=1100"));
         Assert.assertEquals("true", conditions.get("task=1200"));
@@ -129,7 +119,6 @@ public class TestBPMNParserConditionalEvents {
 	 * @throws IOException
 	 * @throws ModelException
 	 */
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testSimpleWithSimpleTask()
 			throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
@@ -139,12 +128,8 @@ public class TestBPMNParserConditionalEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -163,7 +148,7 @@ public class TestBPMNParserConditionalEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keyExclusiveConditions"));
-		Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keyExclusiveConditions").get(0);
+		Map<String, String> conditions = activity.getItemValueMap("keyExclusiveConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]>100)", conditions.get("task=1100"));
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]<=100)", conditions.get("task=1200"));
@@ -171,7 +156,6 @@ public class TestBPMNParserConditionalEvents {
 
 	
 	
-	@SuppressWarnings({ "unchecked" })
 	@Test
 	// @Ignore
 	public void testFollowUp()
@@ -182,12 +166,8 @@ public class TestBPMNParserConditionalEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -217,7 +197,7 @@ public class TestBPMNParserConditionalEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keyExclusiveConditions"));
-		Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keyExclusiveConditions").get(0);
+		Map<String, String> conditions = activity.getItemValueMap("keyExclusiveConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]>100)", conditions.get("task=1100"));
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]<=100)", conditions.get("event=20"));
@@ -239,7 +219,6 @@ public class TestBPMNParserConditionalEvents {
 	 * @throws IOException
 	 * @throws ModelException
 	 */
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testConditionalSplitEvent()
 			throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
@@ -249,12 +228,8 @@ public class TestBPMNParserConditionalEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -284,7 +259,7 @@ public class TestBPMNParserConditionalEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keyExclusiveConditions"));
-		Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keyExclusiveConditions").get(0);
+		Map<String, String> conditions = activity.getItemValueMap("keyExclusiveConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]<=100)", conditions.get("task=1300"));
 		Assert.assertEquals("(workitem._budget && workitem._budget[0]>100)", conditions.get("event=20"));
@@ -299,7 +274,7 @@ public class TestBPMNParserConditionalEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keySplitConditions"));
-		conditions = (Map<String, String>) activity.getItemValue("keySplitConditions").get(0);
+		conditions = activity.getItemValueMap("keySplitConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("true", conditions.get("task=1100"));
 		Assert.assertEquals("false", conditions.get("event=30"));

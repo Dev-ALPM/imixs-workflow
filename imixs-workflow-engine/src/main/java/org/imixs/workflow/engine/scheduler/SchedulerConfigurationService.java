@@ -30,7 +30,6 @@ package org.imixs.workflow.engine.scheduler;
 
 import java.util.logging.Logger;
 
-import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RunAs;
 import jakarta.inject.Inject;
@@ -38,7 +37,6 @@ import jakarta.inject.Inject;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.engine.DocumentService;
 
-import jakarta.ejb.SessionContext;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -57,9 +55,6 @@ import jakarta.ejb.TransactionAttributeType;
 @Stateless
 public class SchedulerConfigurationService {
 
-    @Resource
-    SessionContext ctx;
-
     @Inject
     DocumentService documentService;
 
@@ -69,11 +64,12 @@ public class SchedulerConfigurationService {
      * This method saves a configuration in a new transaction. This is needed case
      * of a runtime exception
      * 
+     * @param config
      */
     @TransactionAttribute(value = TransactionAttributeType.REQUIRES_NEW)
     public void storeConfigurationInNewTransaction(ItemCollection config) {
         logger.finest(" ....saving scheduler configuration by new transaciton...");
         config.removeItem("$version");
-        config = documentService.save(config);
+        documentService.save(config);
     }
 }

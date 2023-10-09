@@ -28,7 +28,6 @@
 
 package org.imixs.workflow.engine.plugins;
 
-import java.util.logging.Logger;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.exceptions.ModelException;
 import org.imixs.workflow.exceptions.PluginException;
@@ -41,7 +40,7 @@ import org.imixs.workflow.exceptions.PluginException;
  * <li>txtWorkflowImageURL - visual image can be displayed by an application
  * <li>$WorkflowAbstract - Abstract text
  * <li>$WorkflowSummary - Summary
- * 
+ * </ul>
  * 
  * These settings can be configured by the imixs modeler on the Application
  * Property Tab on a ProcessEntity.
@@ -81,9 +80,8 @@ public class ApplicationPlugin extends AbstractPlugin {
     private String sImageURL;
     private String sAbstract;
     private String sSummary;
-    @SuppressWarnings("unused")
-    private static final Logger logger = Logger.getLogger(ApplicationPlugin.class.getName());
 
+    @Override
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection adocumentActivity)
             throws PluginException {
 

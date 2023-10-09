@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.script.ScriptException;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.WorkflowKernel;
@@ -49,8 +48,7 @@ public class TestResultPlugin {
         try {
             resultPlugin.init(workflowMockEnvironment.getWorkflowService());
         } catch (PluginException e) {
-
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
 
     }
@@ -58,7 +56,6 @@ public class TestResultPlugin {
     /**
      * This test verifies the evaluation of a item tag
      * 
-     * @throws ScriptException
      * @throws PluginException
      */
     @Test
@@ -237,10 +234,7 @@ public class TestResultPlugin {
 
     /**
      * This test verifies if a pluginException is thronw if the format was invalid
-     * 
-     * @throws PluginException
      */
-    @SuppressWarnings("unused")
     @Test
     public void testInvalidFormatException() {
 
@@ -253,15 +247,14 @@ public class TestResultPlugin {
         logger.log(Level.INFO, "txtActivityResult={0}", sResult);
         adocumentActivity.replaceItemValue("txtActivityResult", sResult);
 
-        int result;
         try {
             // run plugin
-            adocumentContext = resultPlugin.run(adocumentContext, adocumentActivity);
+            resultPlugin.run(adocumentContext, adocumentActivity);
 
             Assert.fail();
 
         } catch (PluginException e) {
-            logger.info(e.getMessage());
+            logger.severe(e.getMessage());
         }
 
         // wrong format missing "
@@ -272,11 +265,11 @@ public class TestResultPlugin {
 
         try {
             // run plugin
-            adocumentContext = resultPlugin.run(adocumentContext, adocumentActivity);
+            resultPlugin.run(adocumentContext, adocumentActivity);
             Assert.fail();
 
         } catch (PluginException e) {
-            logger.info(e.getMessage());
+            logger.severe(e.getMessage());
         }
 
     }
@@ -291,6 +284,7 @@ public class TestResultPlugin {
      * 
      * @throws ProcessingErrorException
      * @throws AccessDeniedException
+     * @throws org.imixs.workflow.exceptions.PluginException
      * @throws ModelException
      */
     @Test
@@ -354,7 +348,6 @@ public class TestResultPlugin {
      * 
      * issue #339
      * 
-     * @throws ScriptException
      * @throws PluginException
      */
     @Test

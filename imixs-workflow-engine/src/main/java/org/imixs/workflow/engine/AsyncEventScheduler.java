@@ -130,6 +130,7 @@ public class AsyncEventScheduler {
      * Before processing the eventLog the method releases possible dead locks first.
      * Both methods are running in separate transactions
      * 
+     * @param timer
      */
     @Timeout
     public void run(Timer timer) {

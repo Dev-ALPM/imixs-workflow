@@ -72,15 +72,13 @@ public class TextItemValueAdapter {
      * {@code Phone List: <itemvalue separator="<br />">txtPhones</itemvalue>}
      * 
      * 
+     * @param event
      */
     public void onEvent(@Observes TextEvent event) {
         boolean debug = logger.isLoggable(Level.FINE);
         String text = event.getText();
         ItemCollection documentContext = event.getDocument();
 
-        String sFormat = "";
-        String sSeparator = " ";
-        String sPosition = null;
         if (text == null)
             return;
 
@@ -99,13 +97,13 @@ public class TextItemValueAdapter {
         for (String tag : tagList) {
 
             // next we check if the start tag contains a 'format' attribute
-            sFormat = XMLParser.findAttribute(tag, "format");
+            String sFormat = XMLParser.findAttribute(tag, "format");
 
             // next we check if the start tag contains a 'separator' attribute
-            sSeparator = XMLParser.findAttribute(tag, "separator");
+            String sSeparator = XMLParser.findAttribute(tag, "separator");
 
             // next we check if the start tag contains a 'position' attribute
-            sPosition = XMLParser.findAttribute(tag, "position");
+            String sPosition = XMLParser.findAttribute(tag, "position");
 
             // extract locale...
             Locale locale = null;
@@ -155,12 +153,18 @@ public class TextItemValueAdapter {
      * The format and locale attributes can be used to format number and date
      * values.
      * 
+     * @param aItem
+     * @param aSeparator
+     * @param sFormat
+     * @param locale
+     * @param sPosition
+     * @return 
      */
     public String formatItemValues(List<?> aItem, String aSeparator, String sFormat, Locale locale, String sPosition) {
 
-        StringBuffer sBuffer = new StringBuffer();
+        StringBuilder sBuffer = new StringBuilder();
 
-        if (aItem == null || aItem.size() == 0)
+        if (aItem == null || aItem.isEmpty())
             return "";
 
         // test if a position was defined?
@@ -202,6 +206,10 @@ public class TextItemValueAdapter {
     /**
      * this method formats a string object depending of an attribute type.
      * MultiValues will be separated by the provided separator
+     * @param aItem
+     * @param aSeparator
+     * @param sFormat
+     * @return 
      */
     public String formatItemValues(List<?> aItem, String aSeparator, String sFormat) {
         return formatItemValues(aItem, aSeparator, sFormat, null, null);
@@ -210,6 +218,11 @@ public class TextItemValueAdapter {
     /**
      * this method formats a string object depending of an attribute type.
      * MultiValues will be separated by the provided separator
+     * @param aItem
+     * @param aSeparator
+     * @param sFormat
+     * @param alocale
+     * @return 
      */
     public String formatItemValues(List<?> aItem, String aSeparator, String sFormat, Locale alocale) {
         return formatItemValues(aItem, aSeparator, sFormat, alocale, null);
@@ -234,7 +247,7 @@ public class TextItemValueAdapter {
      * @return
      */
     private String customNumberFormat(String pattern, Locale _locale, double value) {
-        DecimalFormat formatter = null;
+        DecimalFormat formatter;
 
         // test if we have a locale
         if (_locale != null) {
@@ -261,16 +274,19 @@ public class TextItemValueAdapter {
      * @return
      */
     private String formatObjectValue(Object o, String format, Locale locale) {
-        String singleValue = "";
+        String singleValue;
         Date dateValue = null;
-
+        
+        if(o == null) {
+            return "";
+        }
+        
         // now test the objct type to date
-        if (o instanceof Date) {
-            dateValue = (Date) o;
+        if (o instanceof Date date) {
+            dateValue = date;
         }
 
-        if (o instanceof Calendar) {
-            Calendar cal = (Calendar) o;
+        if (o instanceof Calendar cal) {
             dateValue = cal.getTime();
         }
 
@@ -279,7 +295,7 @@ public class TextItemValueAdapter {
             if (format != null && !"".equals(format)) {
                 // format date with provided formater
                 try {
-                    SimpleDateFormat formatter = null;
+                    SimpleDateFormat formatter;
                     if (locale != null) {
                         formatter = new SimpleDateFormat(format, locale);
                     } else {

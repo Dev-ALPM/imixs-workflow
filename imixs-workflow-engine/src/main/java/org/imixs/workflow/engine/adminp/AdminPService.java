@@ -41,13 +41,11 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
 import org.imixs.workflow.ItemCollection;
-import org.imixs.workflow.Plugin;
 import org.imixs.workflow.WorkflowKernel;
 import org.imixs.workflow.engine.DocumentService;
 import org.imixs.workflow.exceptions.AccessDeniedException;
 
 import jakarta.ejb.EJBException;
-import jakarta.ejb.SessionContext;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.Timeout;
 import jakarta.ejb.Timer;
@@ -93,9 +91,6 @@ public class AdminPService {
     public static final int DEFAULT_INTERVAL = 60;
 
     @Resource
-    SessionContext ctx;
-
-    @Resource
     jakarta.ejb.TimerService timerService;
 
     @Inject
@@ -113,10 +108,6 @@ public class AdminPService {
     @Inject
     @Any
     private Instance<JobHandler> jobHandlers;
-
-    @Inject
-    @Any
-    private Instance<Plugin> plugins;
 
     private static final Logger logger = Logger.getLogger(AdminPService.class.getName());
 
@@ -142,6 +133,8 @@ public class AdminPService {
      * The method throws an exception if the timerdescription contains invalid
      * attributes or values.
      * 
+     * @param adminp
+     * @return 
      * @throws AccessDeniedException
      */
     public ItemCollection createJob(ItemCollection adminp) throws AccessDeniedException {
@@ -183,7 +176,6 @@ public class AdminPService {
      * Stops a running job and deletes the job configuration.
      * 
      * @param id
-     * @return
      * @throws AccessDeniedException
      */
     public void deleteJob(String id) throws AccessDeniedException {
@@ -202,12 +194,9 @@ public class AdminPService {
      */
     @Timeout
     public void scheduleTimer(jakarta.ejb.Timer timer) {
-        String sTimerID = null;
-        boolean debug = logger.isLoggable(Level.FINE);
-
         // Startzeit ermitteln
         long lProfiler = System.currentTimeMillis();
-        sTimerID = timer.getInfo().toString();
+        String sTimerID = timer.getInfo().toString();
         // load adminp configuration from database
         ItemCollection adminp = documentService.load(sTimerID);
         try {
@@ -269,10 +258,9 @@ public class AdminPService {
             }
 
         } catch (AdminPException e) {
-            e.printStackTrace();
             // stop timer!
             timer.cancel();
-            logger.severe("AdminP job '" + sTimerID + "' failed - " + e.getMessage());
+            logger.log(Level.SEVERE, "AdminP job ''{0}'' failed - {1}", new Object[]{sTimerID, e.getMessage()});
             if (adminp != null) {
                 adminp.replaceItemValue("$workflowStatus", "FAILED");
                 adminp.replaceItemValue("errormessage", e.getMessage());
@@ -281,15 +269,12 @@ public class AdminPService {
             // try to update the amdinp document...
             try {
                 if (adminp != null) {
-                    adminp = documentService.save(adminp);
+                    documentService.save(adminp);
                 } else {
                     logger.warning("Unable to update adminp job status - adminp document is null!");
                 }
             } catch (AccessDeniedException | EJBException e2) {
                 logger.log(Level.WARNING, "Unable to update adminp job status - reason: {0}", e2.getMessage());
-                if (debug) {
-                    e2.printStackTrace();
-                }
             }
         }
 

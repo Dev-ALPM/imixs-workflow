@@ -1,7 +1,7 @@
 package org.imixs.workflow.engine.adapters;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -65,7 +65,7 @@ public class TestAccessAdapterProcessEntity {
 		// prepare data
 		documentContext = new ItemCollection().model(WorkflowMockEnvironment.DEFAULT_MODEL_VERSION).task(100);
 		logger.info("[TestAccessAdapterProcessEntity] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -81,7 +81,7 @@ public class TestAccessAdapterProcessEntity {
 	 ***/
 	@Test
 	public void testACLNoUpdate() throws ModelException {
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(WorkflowService.WRITEACCESS, list);
@@ -173,7 +173,7 @@ public class TestAccessAdapterProcessEntity {
 	public void testACLfromProcessEntityAndActivityEntity() throws ModelException {
 
 		// set some old values
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(OwnerPlugin.OWNER, list);

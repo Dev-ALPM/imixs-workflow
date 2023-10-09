@@ -1,7 +1,8 @@
 package org.imixs.workflow.engine;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Vector;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -175,7 +176,7 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		logger.info("[TestAdaptText] setup test data...");
 
-		Vector<Integer> value = new Vector<Integer>();
+		List<Integer> value = new ArrayList<>();
 		value.add(1);
 		value.add(20);
 		value.add(300);
@@ -248,7 +249,7 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		logger.info("[TestAdaptText] setup test data...");
 
-		Vector<Integer> value = new Vector<Integer>();
+		List<Integer> value = new ArrayList<>();
 		value.add(1);
 		value.add(20);
 		value.add(300);
@@ -285,7 +286,7 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		logger.info("[TestAdaptText] setup test data...");
 
-		Vector<Integer> values = new Vector<Integer>();
+		List<Integer> values = new ArrayList<>();
 		values.add(1);
 		values.add(20);
 		values.add(300);

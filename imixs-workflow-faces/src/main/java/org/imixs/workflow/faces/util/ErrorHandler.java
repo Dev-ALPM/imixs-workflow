@@ -53,6 +53,7 @@ public class ErrorHandler {
      * If the PluginException was thrown from the RulePLugin then the method test
      * this exception for ErrorParams and generate separate Faces Error Messages for
      * each param.
+     * @param pe
      */
     public static void handlePluginException(PluginException pe) {
         // if the PluginException was throws from the RulePlugin then test
@@ -84,10 +85,6 @@ public class ErrorHandler {
 
         logger.log(Level.WARNING, "ErrorHandler cauth PluginException - error code={0} - {1}",
                 new Object[]{pe.getErrorCode(), pe.getMessage()});
-        if (logger.isLoggable(Level.FINE)) {
-
-            pe.printStackTrace(); // Or use a logger.
-        }
     }
 
     /**
@@ -96,6 +93,7 @@ public class ErrorHandler {
      * 
      * In case of a model exception, the exception message will become part of the
      * error message. ErrorParams are not supported by a ModelException.
+     * @param me
      */
     public static void handleModelException(ModelException me) {
 
@@ -115,9 +113,6 @@ public class ErrorHandler {
 
         logger.log(Level.WARNING, "ErrorHandler cauth ModelException - error code={0} - {1}",
                 new Object[]{me.getErrorCode(), me.getMessage()});
-        if (logger.isLoggable(Level.FINE)) {
-            me.printStackTrace(); // Or use a logger.
-        }
     }
 
     /**
@@ -155,20 +150,16 @@ public class ErrorHandler {
         }
 
         // parse message for params
-        if (pe instanceof PluginException) {
-            PluginException p = (PluginException) pe;
+        if (pe instanceof PluginException p) {
             if (p.getErrorParameters() != null && p.getErrorParameters().length > 0) {
                 for (int i = 0; i < p.getErrorParameters().length; i++) {
                     message = message.replace("{" + i + "}", p.getErrorParameters()[i].toString());
                 }
             }
-        } else {
-            if (pe instanceof ValidationException) {
-                ValidationException p = (ValidationException) pe;
-                if (p.getErrorParameters() != null && p.getErrorParameters().length > 0) {
-                    for (int i = 0; i < p.getErrorParameters().length; i++) {
-                        message = message.replace("{" + i + "}", p.getErrorParameters()[i].toString());
-                    }
+        } else if (pe instanceof ValidationException p) {
+            if (p.getErrorParameters() != null && p.getErrorParameters().length > 0) {
+                for (int i = 0; i < p.getErrorParameters().length; i++) {
+                    message = message.replace("{" + i + "}", p.getErrorParameters()[i].toString());
                 }
             }
         }

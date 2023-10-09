@@ -28,7 +28,6 @@
 
 package org.imixs.workflow.xml;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -44,6 +42,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlSeeAlso;
+import java.io.Serializable;
+import java.util.Objects;
 import java.util.logging.Level;
 
 /**
@@ -62,7 +62,7 @@ public class XMLItem implements Serializable {
 
     private String name;
 
-    private Object[] value;
+    private Serializable[] value;
 
     @XmlAttribute
     public java.lang.String getName() {
@@ -84,7 +84,7 @@ public class XMLItem implements Serializable {
      * <p>
      * Map or List interface will be converted into instances of XMLItem.
      * <p>
-     * Null values will be converted into an empty vector.
+     * Null values will be converted into an empty List.
      * <p>
      * In case an value is not convertible the method prints a warning into the log
      * file.
@@ -92,16 +92,13 @@ public class XMLItem implements Serializable {
      * issue #52: the method also converts XMLGregorianCalendar into java.util.Date
      * 
      * 
-     * @param values - array of objects
+     * @param _values - array of objects
      */
     @SuppressWarnings("unchecked")
     public void setValue(Object[] _values) {
 
         if (_values == null || _values.length == 0) {
-            // add empty vector
-            Vector<Object> vOrg = new Vector<Object>();
-            vOrg.add(null);
-            value = vOrg.toArray();
+            value = new Serializable[] {};
             return;
         }
 
@@ -109,15 +106,15 @@ public class XMLItem implements Serializable {
         Object[] values = convertXMLGregorianCalendar(_values);
 
         // convert values...
-        List<Object> listOfObjects = new ArrayList<Object>();
+        List<Object> listOfObjects = new ArrayList<>();
         boolean conversionSuccessfull = true;
         for (Object aSingleObject : values) {
             if (isBasicType(aSingleObject)) {
 
-                if (aSingleObject instanceof String) {
+                if (aSingleObject instanceof String string) {
                     // issue #502
                     // we test the string for NonValidXMLCharacters
-                    aSingleObject = stripNonValidXMLCharacters((String) aSingleObject);
+                    aSingleObject = stripNonValidXMLCharacters(string);
                 }
                 // normal type....
                 listOfObjects.add(aSingleObject);
@@ -138,14 +135,14 @@ public class XMLItem implements Serializable {
                     } else {
                         conversionSuccessfull = false;
                         logger.log(Level.WARNING, "WARNING : XMLItem - property ''{0}'' contains unsupported java types: {1}",
-                                new Object[]{this.name, aSingleObject.getClass().getName()});
+                                new Object[]{this.name, aSingleObject != null ? aSingleObject.getClass().getName() : "null"});
                         break;
                     }
                 }
             }
         }
         if (conversionSuccessfull) {
-            this.value = listOfObjects.toArray();
+            this.value = listOfObjects.toArray(Serializable[]::new);
         }
 
     }
@@ -162,7 +159,7 @@ public class XMLItem implements Serializable {
      * @return The in String, stripped of non-valid characters.
      */
     private String stripNonValidXMLCharacters(String itemValue) {
-        StringBuffer out = new StringBuffer(); // Used to hold the output.
+        StringBuilder out = new StringBuilder(); // Used to hold the output.
         char current; // Used to reference the current character.
 
         if (itemValue == null || ("".equals(itemValue)))
@@ -201,18 +198,16 @@ public class XMLItem implements Serializable {
         int j = 0;
         for (Object aSingleObject : value) {
 
-            if (aSingleObject instanceof XMLItem) {
-                XMLItem embeddedXMLItem = (XMLItem) aSingleObject;
+            if (aSingleObject instanceof XMLItem embeddedXMLItem) {
                 Object[] embeddedValueArray = embeddedXMLItem.transformValue();
                 // convert to mutable list (Issue #593)
                 result[j] = new ArrayList<>(Arrays.asList(embeddedValueArray));
             } else {
 
                 // is value object of type XMLItem >> Map
-                if (aSingleObject instanceof XMLItem[]) {
-                    XMLItem[] innerlist = (XMLItem[]) aSingleObject;
+                if (aSingleObject instanceof XMLItem[] innerlist) {
                     // create map
-                    HashMap<String, List<Object>> map = new HashMap<String, List<Object>>();
+                    HashMap<String, List<Object>> map = new HashMap<>();
                     for (XMLItem x : innerlist) {
                         // create mutable list (Issue #593)
                         map.put(x.getName(), new ArrayList<>(Arrays.asList(x.transformValue())));
@@ -234,13 +229,25 @@ public class XMLItem implements Serializable {
     }
 
     /**
-     * This method compares the item name and value array
+     * {@inheritDoc}
      */
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof XMLItem))
             return false;
         XMLItem _xmlItem = (XMLItem) o;
         return (name != null && name.equals(_xmlItem.name) && value != null && Arrays.equals(value, _xmlItem.value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 13 * hash + Objects.hashCode(this.name);
+        hash = 13 * hash + Arrays.deepHashCode(this.value);
+        return hash;
     }
 
     /**
@@ -282,7 +289,6 @@ public class XMLItem implements Serializable {
      * 
      * @return
      */
-    @SuppressWarnings("rawtypes")
     private static boolean isBasicType(java.lang.Object o) {
 
         if (o == null) {
@@ -298,8 +304,7 @@ public class XMLItem implements Serializable {
         }
 
         // text mixed object arrays...
-        if (o instanceof Object[]) {
-            Object[] objects = (Object[]) o;
+        if (o instanceof Object[] objects) {
             for (Object oneObject : objects) {
                 if (!isBasicType(oneObject)) {
                     return false;
@@ -310,15 +315,11 @@ public class XMLItem implements Serializable {
         }
 
         // finaly test package name
-        Class c = o.getClass();
+        Class<?> c = o.getClass();
         String name = c.getName();
-        if (name.startsWith("java.lang.") || name.startsWith("java.math.") || "java.util.Date".equals(name)
-                || "org.imixs.workflow.xml.XMLItem".equals(name)) {
-            return true;
-        }
-
         // unsupported object type
-        return false;
+        return name.startsWith("java.lang.") || name.startsWith("java.math.") || "java.util.Date".equals(name)
+                || "org.imixs.workflow.xml.XMLItem".equals(name);
     }
 
     /**
@@ -331,8 +332,7 @@ public class XMLItem implements Serializable {
     private static Object[] convertXMLGregorianCalendar(final Object[] objectArray) {
         // test the content for GregorianCalendar... (issue #52)
         for (int j = 0; j < objectArray.length; j++) {
-            if (objectArray[j] instanceof XMLGregorianCalendar) {
-                XMLGregorianCalendar xmlCal = (XMLGregorianCalendar) objectArray[j];
+            if (objectArray[j] instanceof XMLGregorianCalendar xmlCal) {
                 // convert into Date object
                 objectArray[j] = xmlCal.toGregorianCalendar().getTime();
             }

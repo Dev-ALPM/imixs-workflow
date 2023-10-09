@@ -1,7 +1,8 @@
 package org.imixs.workflow.engine;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.Model;
@@ -32,20 +33,20 @@ import org.imixs.workflow.exceptions.ModelException;
 public class ModelPluginMock extends BPMNModel {
 	protected BPMNModel internalModel = null;
 	protected ItemCollection internalDefinition = null;
-	protected Vector<String> plugins = null;
+	protected List<String> plugins = null;
 
 	/**
 	 * this constructor changes the registered plugins
 	 * 
+         * @param aModel
+         * @param pluginList
 	 */
 	public ModelPluginMock(Model aModel, String... pluginList) {
 		super();
 		internalModel = (BPMNModel) aModel;
 		// define custom plugin set....
-		plugins = new Vector<String>();
-		for (String sPlugin : pluginList) {
-			plugins.add(sPlugin);
-		}
+		plugins = new ArrayList<>();
+                plugins.addAll(Arrays.asList(pluginList));
 		internalDefinition = internalModel.getDefinition();
 		internalDefinition.replaceItemValue("txtplugins", plugins);
 	}

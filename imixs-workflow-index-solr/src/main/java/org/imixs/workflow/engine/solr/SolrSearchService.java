@@ -41,7 +41,6 @@ import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.engine.DocumentService;
 import org.imixs.workflow.engine.index.Category;
@@ -73,27 +72,18 @@ import jakarta.json.stream.JsonParser.Event;
 @Stateless
 public class SolrSearchService implements SearchService {
 
-    public static final int DEFAULT_MAX_SEARCH_RESULT = 9999; // limiting the
-                                                              // total
-    // number of hits
-    public static final int DEFAULT_PAGE_SIZE = 100; // default docs in one page
-
-    @Inject
-    @ConfigProperty(name = "solr.core", defaultValue = "imixs-workflow")
-    private String core;
-
     @Inject
     private SchemaService schemaService;
 
     @Inject
-    private SolrIndexService solarIndexService;
+    private SolrIndexService solrIndexService;
 
     @Inject
     private DocumentService documentService;
 
     private static final Logger logger = Logger.getLogger(SolrSearchService.class.getName());
 
-    private SimpleDateFormat luceneDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+    private final SimpleDateFormat solrDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     /**
      * Returns a collection of documents matching the provided search term. The term
@@ -109,7 +99,7 @@ public class SolrSearchService implements SearchService {
      * loaded or if only the data fields stored in the lucedn index will be return.
      * The later is the faster method but returns only document stubs.
      * 
-     * @param searchTerm
+     * @param _searchTerm
      * @param pageSize        - docs per page
      * @param pageIndex       - page number
      * @param sortOrder
@@ -136,7 +126,7 @@ public class SolrSearchService implements SearchService {
         if (debug) {
             logger.log(Level.FINEST, "......solr search: pageNumber={0} pageSize={1}", new Object[]{pageIndex, pageSize});
         }
-        ArrayList<ItemCollection> workitems = new ArrayList<ItemCollection>();
+        ArrayList<ItemCollection> workitems = new ArrayList<>();
 
         String searchTerm = adaptSearchTerm(_searchTerm);
         // test if searchtem is provided
@@ -145,7 +135,7 @@ public class SolrSearchService implements SearchService {
         }
 
         // post query....
-        String result = solarIndexService.query(searchTerm, pageSize, pageIndex, sortOrder, defaultOperator, loadStubs);
+        String result = solrIndexService.query(searchTerm, pageSize, pageIndex, sortOrder, defaultOperator, loadStubs);
         if (debug) {
             logger.log(Level.FINEST, "......Result = {0}", result);
         }
@@ -181,8 +171,8 @@ public class SolrSearchService implements SearchService {
      * response contains still the numFound but not docs!
      * 
      * 
-     * @param sSearchTerm
-     * @param maxResult   - max search result
+     * @param _searchTerm
+     * @param _maxResult   - max search result
      * @return total hits of search result
      * @throws QueryException in case the searchterm is not understandable.
      */
@@ -190,7 +180,7 @@ public class SolrSearchService implements SearchService {
     public int getTotalHits(final String _searchTerm, final int _maxResult, final DefaultOperator defaultOperator)
             throws QueryException {
         long l = System.currentTimeMillis();
-        int hits = 0;
+        int hits;
 
         String searchTerm = adaptSearchTerm(_searchTerm);
         // test if searchtem is provided
@@ -199,7 +189,7 @@ public class SolrSearchService implements SearchService {
         }
 
         // post query with row = 0
-        String result = solarIndexService.query(searchTerm, 0, 0, null, defaultOperator, true);
+        String result = solrIndexService.query(searchTerm, 0, 0, null, defaultOperator, true);
         try {
             String response = JSONParser.getKey("response", result);
             hits = Integer.parseInt(JSONParser.getKey("numFound", response));
@@ -218,6 +208,7 @@ public class SolrSearchService implements SearchService {
         logger.warning("method getTaxonomy not implemented");
         return null;
     }
+    @Override
     public List<Category> getTaxonomy(String ... categories) {
         // TODO Auto-generated method stub
         logger.warning("method getTaxonomy not implemented");
@@ -233,17 +224,12 @@ public class SolrSearchService implements SearchService {
     protected List<ItemCollection> parseQueryResult(String json) {
         boolean debug = logger.isLoggable(Level.FINE);
         long l = System.currentTimeMillis();
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
         JsonParser parser = Json.createParser(new StringReader(json));
-        Event event = null;
         while (true) {
 
             try {
-                event = parser.next(); // START_OBJECT
-                if (event == null) {
-                    break;
-                }
-
+                Event event = parser.next(); // START_OBJECT
                 if (event.name().equals(Event.KEY_NAME.toString())) {
                     String jsonkey = parser.getString();
                     if ("docs".equals(jsonkey)) {
@@ -290,8 +276,7 @@ public class SolrSearchService implements SearchService {
     private ItemCollection parseDoc(JsonParser parser) {
         boolean debug = logger.isLoggable(Level.FINE);
         ItemCollection document = new ItemCollection();
-        Event event = null;
-        event = parser.next(); // a single doc..
+        Event event = parser.next(); // a single doc..
         while (event.name().equals(Event.KEY_NAME.toString())) {
             String itemName = parser.getString();
             if (debug) {
@@ -299,7 +284,7 @@ public class SolrSearchService implements SearchService {
             }
             List<?> itemValue = parseItem(parser);
             // convert itemName and value....
-            itemName = solarIndexService.adaptSolrFieldName(itemName);
+            itemName = solrIndexService.adaptSolrFieldName(itemName);
             document.replaceItemValue(itemName, itemValue);
             event = parser.next();
         }
@@ -315,10 +300,9 @@ public class SolrSearchService implements SearchService {
      */
     private List<Object> parseItem(JsonParser parser) {
 
-        List<Object> result = new ArrayList<Object>();
-        Event event = null;
+        List<Object> result = new ArrayList<>();
         while (true) {
-            event = parser.next(); // a single doc..
+            Event event = parser.next(); // a single doc..
             if (event.name().equals(Event.START_ARRAY.toString())) {
 
                 while (true) {
@@ -326,13 +310,13 @@ public class SolrSearchService implements SearchService {
                     if (event.name().equals(Event.VALUE_STRING.toString())) {
                         // just return the next json object here
 
-                        result.add(convertLuceneValue(parser.getString()));
+                        result.add(convertSolrValue(parser.getString()));
                     }
                     if (event.name().equals(Event.VALUE_NUMBER.toString())) {
                         // just return the next json object here
                         // result.add(parser.getBigDecimal());
 
-                        result.add(convertLuceneValue(parser.getString()));
+                        result.add(convertSolrValue(parser.getString()));
                     }
                     if (event.name().equals(Event.VALUE_TRUE.toString())) {
                         // just return the next json object here
@@ -378,14 +362,14 @@ public class SolrSearchService implements SearchService {
      * @param stringValue
      * @return
      */
-    private Object convertLuceneValue(String stringValue) {
+    private Object convertSolrValue(String stringValue) {
         Object objectValue = null;
         // check for numbers....
         if (isNumeric(stringValue)) {
             // is date?
             if (stringValue.length() == 14 && !stringValue.contains(".")) {
                 try {
-                    objectValue = luceneDateFormat.parse(stringValue);
+                    objectValue = solrDateFormat.parse(stringValue);
                 } catch (java.text.ParseException e) {
                     // no date!
                 }

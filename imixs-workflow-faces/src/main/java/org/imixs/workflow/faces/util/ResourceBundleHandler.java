@@ -56,15 +56,14 @@ public class ResourceBundleHandler {
      */
     @PostConstruct
     public void init() {
-        resourceBundleList = new ArrayList<ResourceBundle>();
+        resourceBundleList = new ArrayList<>();
         browserLocale = FacesContext.getCurrentInstance().getViewRoot().getLocale();
 
         // iterate over all bundle names and add them to the list
         String[] bundleNameList = bundNameProperty.split(",");
         for (String bundleName : bundleNameList) {
-            ResourceBundle bundle = null;
             try {
-                bundle = ResourceBundle.getBundle(bundleName, browserLocale);
+                ResourceBundle bundle = ResourceBundle.getBundle(bundleName, browserLocale);
                 if (bundle != null) {
                     resourceBundleList.add(bundle);
                 }
@@ -101,7 +100,8 @@ public class ResourceBundleHandler {
     /**
      * This helper method findes a message by key searching all bundles.
      * 
-     * @param pe
+     * @param key
+     * @return 
      */
     public String findMessage(String key) {
 

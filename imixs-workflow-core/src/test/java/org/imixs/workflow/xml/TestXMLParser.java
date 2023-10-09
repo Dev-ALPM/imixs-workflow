@@ -171,7 +171,9 @@ public class TestXMLParser {
     public void testMultiTags() {
 
         // test simple tag <date>..</date> <date />
-        String test = "abc <date field=\"a\"   number=1 >def</date>ghi\n" + "<date>abc</date>";
+        String test = """
+                      abc <date field="a"   number=1 >def</date>ghi
+                      <date>abc</date>""";
         List<String> result = XMLParser.findTags(test, "date");
         System.out.println(result);
         Assert.assertNotNull(result);
@@ -180,8 +182,9 @@ public class TestXMLParser {
         Assert.assertEquals("<date>abc</date>", result.get(1));
 
         // test complex list of tags
-        test = "abc <date field=\"a\"   number=1 >def</date>ghi\n" + "<item name=\"test\">value</item>"
-                + "<date>abc</date>" + "<date field=\"abc\">xyz</date>";
+        test = """
+               abc <date field="a"   number=1 >def</date>ghi
+               <item name="test">value</item><date>abc</date><date field="abc">xyz</date>""";
         result = XMLParser.findTags(test, "date");
         System.out.println(result);
         Assert.assertNotNull(result);
@@ -305,9 +308,7 @@ public class TestXMLParser {
             Assert.assertEquals("1000", result.getItemValueString("processID"));
             Assert.assertEquals("10", result.getItemValueString("activityID"));
         } catch (PluginException e) {
-
-            e.printStackTrace();
-            Assert.fail();
+            Assert.fail(e.getMessage());
         }
     }
 
@@ -317,25 +318,29 @@ public class TestXMLParser {
     @Test
     public void testItemXMLContentWhitespace() {
         // create test result.....
-        String activityResult = "\n" + "    <processid>2000</processid>\n"
-                + "    <items>_subject|_parentsubject,$workflowsummary|_parentworkflowsummary</items>\n"
-                + "    <activityid>100</activityid>";
+        String activityResult = """
+                                
+                                    <processid>2000</processid>
+                                    <items>_subject|_parentsubject,$workflowsummary|_parentworkflowsummary</items>
+                                    <activityid>100</activityid>""";
         try {
             ItemCollection result = XMLParser.parseItemStructure(activityResult);
             String s = result.getItemValueString("processid");
             Assert.assertFalse(s.isEmpty());
         } catch (PluginException e) {
-            e.printStackTrace();
-            Assert.fail();
+            Assert.fail(e.getMessage());
         }
     }
 
     @Test
     public void testParseTag() {
 
-        String data = "<api>" + "	<method>GET</method>\n" + "	<resource>http://ergo/details/100</resource>\n"
-                + "	<mediatype>XML</mediatype>\n" + "	<items>customer.firstname,customer.lastname</items>\n"
-                + "</api>";
+        String data = """
+                      <api>\t<method>GET</method>
+                      \t<resource>http://ergo/details/100</resource>
+                      \t<mediatype>XML</mediatype>
+                      \t<items>customer.firstname,customer.lastname</items>
+                      </api>""";
 
         ItemCollection apiData;
         try {
@@ -345,7 +350,7 @@ public class TestXMLParser {
             Assert.assertEquals("customer.firstname,customer.lastname", apiData.getItemValueString("items"));
 
         } catch (PluginException e) {
-            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
 
     }
@@ -358,13 +363,11 @@ public class TestXMLParser {
     @Test
     public void testParseEventModelTag() {
 
-        String data = "<!-- test --> <model>\n"
-
-                + "   <version>1.42.0</version>\n"
-
-                + "   <event>10</event>\n"
-
-                + "</model>";
+        String data = """
+                      <!-- test --> <model>
+                         <version>1.42.0</version>
+                         <event>10</event>
+                      </model>""";
 
         ItemCollection modelData;
         try {
@@ -372,7 +375,7 @@ public class TestXMLParser {
             Assert.assertEquals("1.42.0", modelData.getItemValueString("version"));
             Assert.assertEquals(10, modelData.getItemValueInteger("event"));
         } catch (PluginException e) {
-            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
 
     }

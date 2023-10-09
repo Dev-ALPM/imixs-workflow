@@ -73,19 +73,19 @@ public interface Model {
     /**
      * Returns a Task by its Id.
      * 
-     * @param taskid
-     * @param modelVersion
+     * @param taskID
      * @return ItemCollection
+     * @throws org.imixs.workflow.exceptions.ModelException
      */
     public ItemCollection getTask(int taskID) throws ModelException;
 
     /**
      * Returns a Event by its Id and Task-ID.
      * 
-     * @param taskid
-     * @param eventid
-     * @param modelVersion
+     * @param taskID
+     * @param eventID
      * @return ItemCollection
+     * @throws org.imixs.workflow.exceptions.ModelException
      */
     public ItemCollection getEvent(int taskID, int eventID) throws ModelException;
 
@@ -99,7 +99,6 @@ public interface Model {
     /**
      * Returns all Tasks defined in the model.
      * 
-     * @param modelVersion
      * @return List org.imixs.workflow.ItemCollection
      */
     public List<ItemCollection> findAllTasks();
@@ -107,7 +106,7 @@ public interface Model {
     /**
      * Returns all Events assigned to a task.
      * 
-     * @param taskid
+     * @param taskID
      * @return Collection org.imixs.workflow.ItemCollection
      */
     public List<ItemCollection> findAllEventsByTask(int taskID);

@@ -151,8 +151,7 @@ public class FileUploadController implements Serializable {
      * to the workitem but also updates the list of temporary files, which are not
      * yet persisted.
      * 
-     * @param document
-     * @param aFilename
+     * @param filedata
      */
     public void addAttachedFile(FileData filedata) {
         if (workitem != null) {
@@ -164,8 +163,7 @@ public class FileUploadController implements Serializable {
     /**
      * Removes a attached file object from the tmp list of uploaded files.
      * 
-     * @param sFilename - filename to be removed
-     * @return - null
+     * @param aFilename
      */
     public void removeAttachedFile(String aFilename) {
         if (workitem != null) {
@@ -186,8 +184,7 @@ public class FileUploadController implements Serializable {
      * workitem as the imixsFileUpload.xhtml has no idea of he current conversation
      * scoped controller.
      * 
-     * @param sFilename - filename to be removed
-     * @return - null
+     * @param aFilename
      */
     public void removePersistedFile(String aFilename) {
         if (workitem != null) {
@@ -210,7 +207,7 @@ public class FileUploadController implements Serializable {
      */
     public List<FileData> getAttachedFiles() {
         if (_tmpFiles == null) {
-            _tmpFiles = new ArrayList<FileData>();
+            _tmpFiles = new ArrayList<>();
         }
         return _tmpFiles;
     }
@@ -223,7 +220,7 @@ public class FileUploadController implements Serializable {
      */
     public List<FileData> getPersistedFiles() {
         if (_persistedFiles == null) {
-            _persistedFiles = new ArrayList<FileData>();
+            _persistedFiles = new ArrayList<>();
         }
         return _persistedFiles;
     }
@@ -232,8 +229,8 @@ public class FileUploadController implements Serializable {
      * reset the temp and persisted file variables.
      */
     public void reset() {
-        _tmpFiles = new ArrayList<FileData>();
-        _persistedFiles = new ArrayList<FileData>();
+        _tmpFiles = new ArrayList<>();
+        _persistedFiles = new ArrayList<>();
     }
 
     /**
@@ -242,7 +239,7 @@ public class FileUploadController implements Serializable {
      * In case the Imixs-Archive API is connected, the file size is stored in the
      * attriubte 'size'
      * 
-     * @param sFilename - filename to be removed
+     * @param aFilename
      * @return - filsize in human readable string
      */
     @SuppressWarnings("unchecked")
@@ -253,7 +250,7 @@ public class FileUploadController implements Serializable {
             if (bytes == 0) {
                 // test if we have the attribute size
                 List<Object> sizeAttribute = (List<Object>) fileData.getAttribute("size");
-                if (sizeAttribute != null && sizeAttribute.size() > 0) {
+                if (sizeAttribute != null && !sizeAttribute.isEmpty()) {
                     try {
                         bytes = Double.parseDouble(sizeAttribute.get(0).toString());
                     } catch (NumberFormatException n) {
@@ -281,7 +278,6 @@ public class FileUploadController implements Serializable {
      * helper method to round for 2 digits.
      * 
      * @param value
-     * @param places
      * @return
      */
     public static double round(double value) {

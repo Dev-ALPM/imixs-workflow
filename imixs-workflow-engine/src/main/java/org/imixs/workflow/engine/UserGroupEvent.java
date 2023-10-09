@@ -51,7 +51,7 @@ public class UserGroupEvent {
     public UserGroupEvent(String userId) {
         super();
         this.userId = userId;
-        this.groups = new LinkedHashSet<String>();
+        this.groups = new LinkedHashSet<>();
     }
 
     public String getUserId() {
@@ -89,6 +89,6 @@ public class UserGroupEvent {
      * This method empties the current group list
      */
     public void reset() {
-        this.groups = new LinkedHashSet<String>();
+        this.groups = new LinkedHashSet<>();
     }
 }

@@ -93,16 +93,17 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
      * 
      * For each item a corresponding processing cycle will be started.
      * 
+     * @param workitem
      * @throws @throws ProcessingErrorException @throws
      *                 AccessDeniedException @throws
      * 
      */
-    @SuppressWarnings("unchecked")
+    @Override
     public ItemCollection run(ItemCollection workitem, ItemCollection event)
             throws PluginException, AccessDeniedException, ProcessingErrorException {
         boolean debug = logger.isLoggable(Level.FINE);
 
-        ItemCollection evalItemCollection = null;
+        ItemCollection evalItemCollection;
         // test for deprecated configuration using the <item> tag....
         if (isDeprecatedConfiguration(workitem, event)) {
             logger.warning(
@@ -127,7 +128,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                     logger.finest("......processing " + SUBPROCESS_CREATE);
                 }
                 // extract the create subprocess definitions...
-                List<String> processValueList = evalItemCollection.getItemValue(SUBPROCESS_CREATE);
+                List<String> processValueList = evalItemCollection.getItemValueList(SUBPROCESS_CREATE, String.class);
                 createSubprocesses(processValueList, workitem);
             }
 
@@ -138,7 +139,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                     logger.finest("......processing " + SUBPROCESS_UPDATE);
                 }
                 // extract the create subprocess definitions...
-                List<String> processValueList = evalItemCollection.getItemValue(SUBPROCESS_UPDATE);
+                List<String> processValueList = evalItemCollection.getItemValueList(SUBPROCESS_UPDATE, String.class);
                 updateSubprocesses(processValueList, workitem);
             }
 
@@ -188,15 +189,11 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
         ItemCollection evalItemCollection = getWorkflowService().evalWorkflowResult(event, "item", workitem,
                 false);
 
-        if (evalItemCollection != null
+        return evalItemCollection != null
                 && (evalItemCollection.hasItem(SUBPROCESS_CREATE)
-                        || evalItemCollection.hasItem(SUBPROCESS_UPDATE)
-                        || evalItemCollection.hasItem(ORIGIN_UPDATE)
-                        || evalItemCollection.hasItem(SUBPROCESS_SYNC))) {
-            return true;
-        }
-
-        return false;
+                || evalItemCollection.hasItem(SUBPROCESS_UPDATE)
+                || evalItemCollection.hasItem(ORIGIN_UPDATE)
+                || evalItemCollection.hasItem(SUBPROCESS_SYNC));
     }
 
     /**
@@ -234,7 +231,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
     protected void createSubprocesses(final List<String> subProcessDefinitions, final ItemCollection originWorkitem)
             throws AccessDeniedException, ProcessingErrorException, PluginException, ModelException {
 
-        if (subProcessDefinitions == null || subProcessDefinitions.size() == 0) {
+        if (subProcessDefinitions == null || subProcessDefinitions.isEmpty()) {
             // no definition found
             return;
         }
@@ -270,7 +267,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                     logger.warning(
                             "...subprocess_create uses deprecated tag 'processid' instead of 'task'. Please check your model");
                 }
-                workitemSubProcess.setTaskID(Integer.valueOf(task_pattern));
+                workitemSubProcess.setTaskID(Integer.parseInt(task_pattern));
 
                 String event_pattern = processData.getItemValueString("event");
                 // support deprecated tag 'processid' (issue #446)
@@ -279,7 +276,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                     logger.warning(
                             "...subprocess_create uses deprecated tag 'activityid' instead of 'event'. Please check your model");
                 }
-                workitemSubProcess.setEventID(Integer.valueOf(event_pattern));
+                workitemSubProcess.setEventID(Integer.parseInt(event_pattern));
 
                 // add the origin reference
                 workitemSubProcess.replaceItemValue(WorkflowService.UNIQUEIDREF, originWorkitem.getUniqueID());
@@ -333,11 +330,10 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
      * @throws PluginException
      * @throws ModelException
      */
-    @SuppressWarnings("unchecked")
     protected void updateSubprocesses(final List<String> subProcessDefinitions, final ItemCollection originWorkitem)
             throws AccessDeniedException, ProcessingErrorException, PluginException, ModelException {
 
-        if (subProcessDefinitions == null || subProcessDefinitions.size() == 0) {
+        if (subProcessDefinitions == null || subProcessDefinitions.isEmpty()) {
             // no definition found
             return;
         }
@@ -365,10 +361,10 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                             "...subprocess_update uses deprecated tag 'processid' instead of 'task'. Please check your model");
                 }
 
-                List<String> subProcessRefList = originWorkitem.getItemValue(LINK_PROPERTY);
+                List<String> subProcessRefList = originWorkitem.getItemValueList(LINK_PROPERTY, String.class);
                 if (subProcessRefList.isEmpty() && originWorkitem.hasItem(LINK_PROPERTY_DEPRECATED)) {
                     // test for deprecated link property!
-                    subProcessRefList = originWorkitem.getItemValue(LINK_PROPERTY_DEPRECATED);
+                    subProcessRefList = originWorkitem.getItemValueList(LINK_PROPERTY_DEPRECATED, String.class);
                 }
 
                 for (String subProcessRef : subProcessRefList) {
@@ -393,7 +389,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                             logger.warning(
                                     "...subprocess_update uses deprecated tag 'activityid' instead of 'event'. Please check your model");
                         }
-                        workitemSubProcess.setEventID(Integer.valueOf(event_pattern));
+                        workitemSubProcess.setEventID(Integer.parseInt(event_pattern));
                         // process the exisitng subprocess...
 
                         workitemSubProcess = getWorkflowService().processWorkItem(workitemSubProcess);
@@ -430,18 +426,16 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
     /**
      * This method syncs the items from the parent into this process instance
      * 
-     * @param subProcessDefinitions
-     * @param originWorkitem
+     * @param originProcessDefinition
+     * @param subprocessWorkitem
      * @throws AccessDeniedException
      * @throws ProcessingErrorException
      * @throws PluginException
      * @throws ModelException
      */
-    @SuppressWarnings("unchecked")
     protected void syncSubprocesses(final String originProcessDefinition, final ItemCollection subprocessWorkitem)
             throws AccessDeniedException, ProcessingErrorException, PluginException, ModelException {
         boolean debug = logger.isLoggable(Level.FINE);
-        ItemCollection originWorkitem = null;
 
         if (originProcessDefinition == null) {
             // no definition found
@@ -452,11 +446,11 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
         ItemCollection processData = XMLParser.parseItemStructure(originProcessDefinition);
 
         // first we need to lookup the corresponding origin process instance
-        List<String> refs = subprocessWorkitem.getItemValue(WorkflowService.UNIQUEIDREF);
+        List<String> refs = subprocessWorkitem.getItemValueList(WorkflowService.UNIQUEIDREF, String.class);
         String workitemRef = subprocessWorkitem.getItemValueString(LINK_PROPERTY);
         if (refs.contains(workitemRef)) {
             // parent found..
-            originWorkitem = getWorkflowService().getWorkItem(workitemRef);
+            ItemCollection originWorkitem = getWorkflowService().getWorkItem(workitemRef);
             if (originWorkitem != null) {
                 // now clone the field list...
                 copyItemList(processData.getItemValueString("items"), originWorkitem, subprocessWorkitem);
@@ -491,11 +485,8 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
      * @throws PluginException
      * @throws ModelException
      */
-    @SuppressWarnings("unchecked")
     protected void updateOrigin(final String originProcessDefinition, final ItemCollection subprocessWorkitem)
             throws AccessDeniedException, ProcessingErrorException, PluginException, ModelException {
-
-        ItemCollection originWorkitem = null;
 
         if (originProcessDefinition == null || originProcessDefinition.isEmpty()) {
             // no definition
@@ -520,10 +511,10 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
         }
 
         // first we need to lookup the corresponding origin process instance
-        List<String> refs = subprocessWorkitem.getItemValue(WorkflowService.UNIQUEIDREF);
+        List<String> refs = subprocessWorkitem.getItemValueList(WorkflowService.UNIQUEIDREF, String.class);
         // iterate over all refs and identify the origin workItem
         for (String ref : refs) {
-            originWorkitem = getWorkflowService().getWorkItem(ref);
+            ItemCollection originWorkitem = getWorkflowService().getWorkItem(ref);
             if (originWorkitem != null) {
 
                 // test if process matches
@@ -543,7 +534,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
                         logger.warning(
                                 "...origin_update uses deprecated tag 'activityid' instead of 'event'. Please check your model");
                     }
-                    originWorkitem.setEventID(Integer.valueOf(event_pattern));
+                    originWorkitem.setEventID(Integer.parseInt(event_pattern));
 
                     // now clone the field list...
                     copyItemList(processData.getItemValueString("items"), subprocessWorkitem, originWorkitem);
@@ -595,6 +586,9 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
      *   
      * } A reg expression must be includes in brackets.
      * 
+     * @param items
+     * @param source
+     * @param target
      */
     protected void copyItemList(String items, ItemCollection source, ItemCollection target) {
         // clone the field list...
@@ -605,7 +599,7 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
             // test if field is a reg ex
             if (field.startsWith("(") && field.endsWith(")")) {
                 Pattern itemPattern = Pattern.compile(field);
-                Map<String, List<Object>> map = source.getAllItems();
+                Map<String, List<?>> map = source.getAllItems();
                 for (String itemName : map.keySet()) {
                     if (itemPattern.matcher(itemName).find()) {
                         target.replaceItemValue(itemName, source.getItemValue(itemName));
@@ -627,18 +621,19 @@ public class SplitAndJoinPlugin extends AbstractPlugin {
 
     /**
      * This methods adds a new workItem reference into a workitem
+     * @param aUniqueID
+     * @param workitem
      */
-    @SuppressWarnings("unchecked")
     protected void addWorkitemRef(String aUniqueID, ItemCollection workitem) {
         boolean debug = logger.isLoggable(Level.FINE);
         if (debug) {
             logger.log(Level.FINE, "LinkController add workitem reference: {0}", aUniqueID);
         }
 
-        List<String> refList = workitem.getItemValue(LINK_PROPERTY);
+        List<String> refList = workitem.getItemValueList(LINK_PROPERTY, String.class);
         if (refList.isEmpty() && workitem.hasItem(LINK_PROPERTY_DEPRECATED)) {
             // test for deprecated link property!
-            refList = workitem.getItemValue(LINK_PROPERTY_DEPRECATED);
+            refList = workitem.getItemValueList(LINK_PROPERTY_DEPRECATED, String.class);
         }
 
         // clear empty entry if set

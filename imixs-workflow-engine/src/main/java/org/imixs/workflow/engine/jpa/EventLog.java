@@ -86,7 +86,7 @@ public class EventLog implements java.io.Serializable {
     private String ref;
     private Integer version;
     private Calendar created;
-    private Map<String, List<Object>> data;
+    private Map<String, List<?>> data;
     private Calendar timeout;
 
     /**
@@ -103,7 +103,7 @@ public class EventLog implements java.io.Serializable {
      * @param ref   - the reference to the associated document entity
      * @param data  - a optional data list
      */
-    public EventLog(String topic, String ref, Map<String, List<Object>> data) {
+    public EventLog(String topic, String ref, Map<String, List<?>> data) {
         // Generate a new uniqueId
         this.id = WorkflowKernel.generateUniqueID();
         // Initialize objects
@@ -203,7 +203,7 @@ public class EventLog implements java.io.Serializable {
      */
     @Lob
     @Basic(fetch = FetchType.EAGER)
-    public Map<String, List<Object>> getData() {
+    public Map<String, List<?>> getData() {
         return data;
     }
 
@@ -217,7 +217,7 @@ public class EventLog implements java.io.Serializable {
      * @param data
      * @throws InvalidAccessException if $modified is missing
      */
-    public void setData(Map<String, List<Object>> itemCol) {
+    public void setData(Map<String, List<?>> itemCol) {
         this.data = itemCol;
     }
 

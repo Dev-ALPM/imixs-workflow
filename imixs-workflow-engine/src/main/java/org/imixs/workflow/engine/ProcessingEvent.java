@@ -53,8 +53,8 @@ public class ProcessingEvent {
     public static final int BEFORE_PROCESS = 1;
     public static final int AFTER_PROCESS = 2;
 
-    private int eventType;
-    private ItemCollection document;
+    private final int eventType;
+    private final ItemCollection document;
 
     public ProcessingEvent(ItemCollection document, int eventType) {
         this.eventType = eventType;

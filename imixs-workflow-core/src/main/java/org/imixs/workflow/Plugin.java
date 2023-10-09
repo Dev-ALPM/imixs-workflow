@@ -53,7 +53,7 @@ public interface Plugin {
      * @param workflowContext defines the context in which the plugin runs. The
      *                        context can be used to get information about the
      *                        environment
-     *
+     * @throws org.imixs.workflow.exceptions.PluginException
      */
     public void init(WorkflowContext workflowContext) throws PluginException;
 
@@ -61,6 +61,7 @@ public interface Plugin {
      * @param document the workitem to be processed
      * @param event    the workflow event containing the processing instructions
      * @return updated workitem for further processing
+     * @throws org.imixs.workflow.exceptions.PluginException
      */
     public ItemCollection run(ItemCollection document, ItemCollection event) throws PluginException;
 
@@ -70,6 +71,7 @@ public interface Plugin {
      * 
      * @param rollbackTransaction indicates if the current transaction will be
      *                            rolled back.
+     * @throws org.imixs.workflow.exceptions.PluginException
      */
     public void close(boolean rollbackTransaction) throws PluginException;
 }

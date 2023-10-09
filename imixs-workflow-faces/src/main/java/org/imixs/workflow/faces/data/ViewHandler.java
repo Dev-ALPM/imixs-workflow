@@ -65,7 +65,7 @@ public class ViewHandler implements Serializable {
     @PostConstruct
     public void init() {
         logger.finest("......init data map");
-        data = new HashMap<Integer, List<ItemCollection>>();
+        data = new HashMap<>();
     }
 
     /**
@@ -100,20 +100,21 @@ public class ViewHandler implements Serializable {
      * <p>
      * The method implements a lazy loading mechanism and caches the result locally.
      * 
+     * @param viewController
      * @return view result
      * @throws QueryException
      */
     public List<ItemCollection> getData(ViewController viewController) throws QueryException {
 
         if (viewController == null) {
-            return new ArrayList<ItemCollection>();
+            return new ArrayList<>();
         }
 
         String _query = viewController.getQuery();
         if (_query == null || _query.isEmpty()) {
             // no query defined
             logger.finest("......ViewController - no query defined!");
-            return new ArrayList<ItemCollection>();
+            return new ArrayList<>();
         }
 
         // Caching mechanism - verify if data is already cached

@@ -26,7 +26,6 @@ import org.junit.Assert;
  */
 public class TestBPMNParserSplitEvents {
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testSimple()
 			throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
@@ -36,12 +35,8 @@ public class TestBPMNParserSplitEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -71,7 +66,7 @@ public class TestBPMNParserSplitEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keySplitConditions"));
-		Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keySplitConditions").get(0);
+		Map<String, String> conditions = activity.getItemValueMap("keySplitConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("true", conditions.get("task=1100"));
 	}
@@ -88,7 +83,6 @@ public class TestBPMNParserSplitEvents {
 	 * @throws IOException
 	 * @throws ModelException
 	 */
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testSplitWithConditions()
 			throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
@@ -98,12 +92,8 @@ public class TestBPMNParserSplitEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -117,15 +107,13 @@ public class TestBPMNParserSplitEvents {
 		// Now we need to evaluate if the Event is marked as an conditional Event with
 		// the condition list copied from the gateway.
 		Assert.assertTrue(activity.hasItem("keySplitConditions"));
-		Map<String, String> conditions = (Map<String, String>) activity.getItemValue("keySplitConditions").get(0);
+		Map<String, String> conditions = activity.getItemValueMap("keySplitConditions", String.class);
 		Assert.assertNotNull(conditions);
 		Assert.assertEquals("true", conditions.get("task=1100"));
 
 		// we do not expect a ExclusiveCondition....
 		Assert.assertFalse(activity.hasItem("keyExclusiveConditions"));
 
-		//conditions = (Map<String, String>) activity.getItemValue("keyExclusiveConditions").get(0);
-		//Assert.assertNull(conditions);
 	}
 
 }

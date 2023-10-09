@@ -54,7 +54,7 @@ public class Category {
     public Category(String name, int count) {
         this.name = name;
         this.count = count;
-        labels=new HashMap<String,Integer>();
+        labels=new HashMap<>();
     }
 
 

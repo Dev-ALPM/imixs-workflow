@@ -30,15 +30,14 @@ public class TestReadWriteXMLData {
 	 */
 	@Test
 	public void testRead() {
-		List<ItemCollection> col = null;
+		List<ItemCollection> col;
 
 		try {
 			col = XMLDataCollectionAdapter
 					.readCollectionFromInputStream(getClass().getResourceAsStream("/document-example.xml"));
-		} catch (JAXBException e) {
-			Assert.fail();
-		} catch (IOException e) {
-			Assert.fail();
+		} catch (JAXBException | IOException e) {
+			Assert.fail(e.getMessage());
+                        return;
 		}
 
 		Assert.assertEquals(2, col.size());
@@ -56,25 +55,23 @@ public class TestReadWriteXMLData {
 	@Test
 	// @Ignore
 	public void testWrite() {
-		List<ItemCollection> col = null;
+		List<ItemCollection> col;
 		// read default content
 		try {
 			col = XMLDataCollectionAdapter
 					.readCollectionFromInputStream(getClass().getResourceAsStream("/document-example.xml"));
-		} catch (JAXBException e) {
-			Assert.fail();
-		} catch (IOException e) {
-			Assert.fail();
+		} catch (JAXBException | IOException e) {
+			Assert.fail(e.getMessage());
+                        return;
 		}
 
 		// create JAXB object
-		XMLDataCollection xmlCol = null;
+		XMLDataCollection xmlCol;
 		try {
 			xmlCol = XMLDataCollectionAdapter.getDataCollection(col);
-		} catch (Exception e1) {
-
-			e1.printStackTrace();
-			Assert.fail();
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+                        return;
 		}
 
 		// now write back to file
@@ -92,8 +89,7 @@ public class TestReadWriteXMLData {
 			jaxbMarshaller.marshal(xmlCol, System.out);
 
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(file);
 	}

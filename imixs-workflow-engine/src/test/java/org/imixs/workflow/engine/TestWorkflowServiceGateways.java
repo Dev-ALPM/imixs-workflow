@@ -44,8 +44,8 @@ public class TestWorkflowServiceGateways {
 	 * 
 	 * @throws ProcessingErrorException
 	 * @throws AccessDeniedException
-	 * @throws ModelException
-	 * @throws AdapterException 
+	 * @throws org.imixs.workflow.exceptions.PluginException
+	 * @throws ModelException 
 	 * 
 	 */
 	@Test
@@ -87,8 +87,8 @@ public class TestWorkflowServiceGateways {
      * 
      * @throws ProcessingErrorException
      * @throws AccessDeniedException
-     * @throws ModelException
-     * @throws AdapterException 
+     * @throws org.imixs.workflow.exceptions.PluginException
+     * @throws ModelException 
      * 
      */
     @Test
@@ -135,6 +135,7 @@ public class TestWorkflowServiceGateways {
 	 * 
 	 * @throws ProcessingErrorException
 	 * @throws AccessDeniedException
+	 * @throws org.imixs.workflow.exceptions.PluginException
 	 * @throws ModelException
 	 */
 	@Test
@@ -156,7 +157,7 @@ public class TestWorkflowServiceGateways {
 		Assert.assertEquals(1100, workitem.getTaskID());
 
 		// lookup the version.....
-		List<ItemCollection> versions = new ArrayList<ItemCollection>();
+		List<ItemCollection> versions = new ArrayList<>();
 		for (ItemCollection doc : workflowMockEnvironment.database.values()) {
 			if (workitem.getUniqueID().equals(doc.getItemValueString(WorkflowKernel.UNIQUEIDSOURCE))) {
 				versions.add(doc);

@@ -57,6 +57,7 @@ public class WorkflowSchedulerController extends SchedulerController {
     /**
      * Returns the workflow scheduler class name. 
      * 
+     * @return 
      */
     @Override
     public String getSchedulerClass() {

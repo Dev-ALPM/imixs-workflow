@@ -1,9 +1,5 @@
 package org.imixs.workflow;
 
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import javax.script.ScriptException;
 
 import org.imixs.workflow.exceptions.PluginException;
@@ -18,8 +14,6 @@ import org.junit.Test;
  */
 public class TestRuleEngineGraalJSDeprecatedScripts {
 	protected RuleEngine ruleEngine = null;
-	@SuppressWarnings("unused")
-	private static final Logger logger = Logger.getLogger(TestRuleEngineGraalJSDeprecatedScripts.class.getName());
 
 	@Before
 	public void setup() throws PluginException {

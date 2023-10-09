@@ -62,25 +62,19 @@ public class ItemCollectionComparator implements Comparator<ItemCollection> {
      * @param ascending
      */
     public ItemCollectionComparator(String aItemName, boolean ascending) {
-        this.collator = Collator.getInstance(Locale.getDefault());
-        this.ascending = ascending;
-        this.itemName = aItemName;
-
+        this(aItemName,ascending,Locale.getDefault());
     }
 
     /**
      * This method sorts by the default locale ascending
      * 
      * @param aItemName
-     * @param ascending
      */
     public ItemCollectionComparator(String aItemName) {
-        this.collator = Collator.getInstance(Locale.getDefault());
-        this.ascending = true;
-        this.itemName = aItemName;
-
+        this(aItemName,true,Locale.getDefault());
     }
 
+    @Override
     public int compare(ItemCollection a, ItemCollection b) {
 
         // date compare?
@@ -98,6 +92,7 @@ public class ItemCollectionComparator implements Comparator<ItemCollection> {
                 return 0;
             }
 
+            @SuppressWarnings("null")
             int result = dateB.compareTo(dateA);
             if (!this.ascending) {
                 result = -result;

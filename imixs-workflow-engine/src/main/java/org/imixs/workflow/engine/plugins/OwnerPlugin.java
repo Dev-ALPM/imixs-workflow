@@ -41,26 +41,23 @@ import org.imixs.workflow.exceptions.PluginException;
  * an BPMN Event element. The Plugin updates the WorkItem attribute '$owner'
  * depending on the provided information.
  * 
- * <p>
  * These attributes defined in Activity Entity are evaluated by the plugin:
  * <ul>
- * <li>keyupdateacl (Boolean): if false no changes are necessary
- * <li>keyOwnershipFields (Vector): Properties of the current WorkItem
- * <li>namOwnershipNames (Vector): Names & Groups to be added /replaced
- * 
- * 
- * 
+ * <li>keyupdateacl (Boolean): if false no changes are necessary</li>
+ * <li>keyOwnershipFields (List): Properties of the current WorkItem</li>
+ * <li>namOwnershipNames (List): Names & Groups to be added /replaced</li>
+ * </ul>
+ *  
  * NOTE: Models generated with the first version of the Imixs-Workflow Modeler
  * provide a different set of attributes. Therefore the plugin implements a
  * fallback method to support deprecated models. The fallback method evaluate
  * the following list of attributes defined in Activity Entity:
- * <p>
- * 
+ *  
  * <ul>
- * <li>keyOwnershipMode (Vector): '1'=modify access '0'=renew access
- * <li>keyOwnershipFields (Vector): Properties of the current WorkItem
- * <li>namOwnershipNames (Vector): Names & Groups to be added /replaced
- * 
+ * <li>keyOwnershipMode (List): '1'=modify access '0'=renew access</li>
+ * <li>keyOwnershipFields (List): Properties of the current WorkItem</li>
+ * <li>namOwnershipNames (List): Names & Groups to be added /replaced</li>
+ * </ul>
  * 
  * 
  * 
@@ -89,7 +86,11 @@ public class OwnerPlugin extends AbstractPlugin {
     /**
      * changes the '$owner' item depending to the activityentity or processEntity
      * 
+     * @param adocumentContext
+     * @param adocumentActivity
+     * @throws org.imixs.workflow.exceptions.PluginException
      */
+    @Override
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection adocumentActivity)
             throws PluginException {
 
@@ -139,7 +140,6 @@ public class OwnerPlugin extends AbstractPlugin {
      * 
      * @throws PluginException
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void updateOwnerByItemCollection(ItemCollection modelEntity) throws PluginException {
 
         if (modelEntity == null || modelEntity.getItemValueBoolean("keyupdateacl") == false) {
@@ -147,22 +147,21 @@ public class OwnerPlugin extends AbstractPlugin {
             return;
         }
 
-        List newOwnerList;
-        newOwnerList = new ArrayList<String>();
+        List<String> newOwnerList = new ArrayList<>();
 
         // add names
-        mergeRoles(newOwnerList, modelEntity.getItemValue("namOwnershipNames"), documentContext);
+        mergeRoles(newOwnerList, modelEntity.getItemValueList("namOwnershipNames", String.class), documentContext);
         // add Mapped Fields
-        mergeFieldList(documentContext, newOwnerList, modelEntity.getItemValue("keyOwnershipFields"));
-        // clean Vector
+        mergeFieldList(documentContext, newOwnerList, modelEntity.getItemValueList("keyOwnershipFields", String.class));
+        // clean List
         newOwnerList = uniqueList(newOwnerList);
 
         // update ownerlist....
         documentContext.replaceItemValue(OWNER, newOwnerList);
-        if ((logger.isLoggable(Level.FINE)) && (newOwnerList.size() > 0)) {
+        if ((logger.isLoggable(Level.FINE)) && (!newOwnerList.isEmpty())) {
             logger.finest("......Owners:");
             for (int j = 0; j < newOwnerList.size(); j++)
-                logger.log(Level.FINEST, "               ''{0}''", (String) newOwnerList.get(j));
+                logger.log(Level.FINEST, "               ''{0}''", newOwnerList.get(j));
         }
 
         // we also need to support the deprecated iten name "namOwner" which was
@@ -180,22 +179,18 @@ public class OwnerPlugin extends AbstractPlugin {
      * 
      * @param valueList
      * @param sourceList
+     * @param documentContext
      * @throws PluginException
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public void mergeRoles(List valueList, List sourceList, ItemCollection documentContext) throws PluginException {
-        if ((sourceList != null) && (sourceList.size() > 0)) {
-            for (Object o : sourceList) {
+    public void mergeRoles(List<String> valueList, List<String> sourceList, ItemCollection documentContext) throws PluginException {
+        if ((sourceList != null) && (!sourceList.isEmpty())) {
+            for (String o : sourceList) {
                 if (valueList.indexOf(o) == -1) {
-                    if (o instanceof String) {
                         // addapt textList
-                        List<String> adaptedRoles = this.getWorkflowService().adaptTextList((String) o,
+                        List<String> adaptedRoles = this.getWorkflowService().adaptTextList(o,
                                 documentContext);
                         valueList.addAll(adaptedRoles);// .add(getWorkflowService().adaptText((String)o,
                                                        // documentContext));
-                    } else {
-                        valueList.add(o);
-                    }
                 }
             }
         }

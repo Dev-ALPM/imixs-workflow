@@ -3,9 +3,8 @@ package org.imixs.workflow.plugins;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.engine.WorkflowMockEnvironment;
@@ -24,10 +23,11 @@ import org.junit.Assert;
  * @author rsoika
  */
 public class TestApproverPlugin {
-	ApproverPlugin approverPlugin = null;
+        private final static Logger logger = Logger.getLogger(TestApproverPlugin.class.getName());
+
+        ApproverPlugin approverPlugin = null;
 	ItemCollection documentActivity;
 	ItemCollection documentContext;
-	Map<String, ItemCollection> database = new HashMap<String, ItemCollection>();
 
 	WorkflowMockEnvironment workflowMockEnvironment;
 
@@ -43,8 +43,7 @@ public class TestApproverPlugin {
 		try {
 			approverPlugin.init(workflowMockEnvironment.getWorkflowService());
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 
 		documentContext = new ItemCollection();
@@ -65,7 +64,7 @@ public class TestApproverPlugin {
 		// change result
 		documentActivity.replaceItemValue("txtActivityResult", "<item name='approvedby'>ProcessManager</item>");
 
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -97,7 +96,7 @@ public class TestApproverPlugin {
 		// change result
 		documentActivity.replaceItemValue("txtActivityResult", "<item name='approvedby'>ProcessManager</item>");
 
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -121,7 +120,7 @@ public class TestApproverPlugin {
 		// we expect that the null and empty values are removed and the name anna is
 		// distinct.
 
-		List<String> approvers = documentContext.getItemValue("ProcessManager"+ApproverPlugin.APPROVERS);
+		List<String> approvers = documentContext.getItemValueList("ProcessManager"+ApproverPlugin.APPROVERS, String.class);
 		Assert.assertEquals(4, approvers.size());
 		Assert.assertEquals(0, documentContext.getItemValue("ProcessManager"+ApproverPlugin.APPROVEDBY).size());
 
@@ -151,7 +150,7 @@ public class TestApproverPlugin {
 
 		documentActivity = workflowMockEnvironment.getModel().getEvent(100, 10);
 
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -181,7 +180,7 @@ public class TestApproverPlugin {
 
 		documentActivity = workflowMockEnvironment.getModel().getEvent(100, 10);
 
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -197,7 +196,7 @@ public class TestApproverPlugin {
 
 		// second run - change soruce list
 
-		nameList = new ArrayList<String>();
+		nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -229,7 +228,7 @@ public class TestApproverPlugin {
 
 		documentActivity = workflowMockEnvironment.getModel().getEvent(100, 10);
 
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -245,7 +244,7 @@ public class TestApproverPlugin {
 
 		// second run - change soruce list
 
-		nameList = new ArrayList<String>();
+		nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -274,7 +273,7 @@ public class TestApproverPlugin {
 
 		documentActivity = workflowMockEnvironment.getModel().getEvent(100, 10);
 
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");

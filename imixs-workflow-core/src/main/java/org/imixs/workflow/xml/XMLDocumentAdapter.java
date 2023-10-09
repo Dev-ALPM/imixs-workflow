@@ -39,7 +39,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.xml.bind.JAXBContext;
@@ -66,10 +65,9 @@ public class XMLDocumentAdapter {
      * into a <code> org.imixs.workflow.ItemCollection</code> Returns null if entity
      * == null
      * 
-     * @param entity
+     * @param xmlDocument
      * @return ItemCollection
      */
-    @SuppressWarnings({ "rawtypes" })
     public static ItemCollection putDocument(final XMLDocument xmlDocument) {
         ItemCollection itemCol = new ItemCollection();
         if (xmlDocument == null) {
@@ -78,8 +76,7 @@ public class XMLDocumentAdapter {
 
         XMLItem items[] = xmlDocument.getItem();
         if (items != null)
-            for (int i = 0; i < items.length; i++) {
-                XMLItem it = items[i];
+            for (XMLItem it : items) {
                 if (it == null)
                     continue;
                 String key = it.getName();
@@ -87,13 +84,13 @@ public class XMLDocumentAdapter {
                 Object[] valueArray = it.transformValue();
                 if (valueArray == null || valueArray.length == 0) {
                     // no value found
-                    itemCol.replaceItemValue(key, new Vector());
+                    itemCol.replaceItemValue(key, new ArrayList<>());
                 } else {
                     // create a mutable list
-                    List valueList = new ArrayList<>(Arrays.asList(valueArray));
+                    List<Object> valueList = new ArrayList<>(Arrays.asList(valueArray));
                     itemCol.replaceItemValue(key, valueList);
                 }
-            }
+        }
         return itemCol;
     }
 
@@ -102,6 +99,7 @@ public class XMLDocumentAdapter {
      * <code>XMLDocument</code>
      * 
      * @param document instance of a ItemCollection to be converted
+     * @return 
      */
     public static XMLDocument getDocument(final ItemCollection document) {
         List<String> list = null;
@@ -119,30 +117,28 @@ public class XMLDocumentAdapter {
      * @param document  instance of a ItemCollection to be converted
      * @param itemNames - optional list of item names to be converted. If null all
      *                  items will be converted
+     * @return 
      */
-    @SuppressWarnings({ "unchecked" })
     public static XMLDocument getDocument(final ItemCollection document, final List<String> itemNames) {
 
         // create a deep copy of the source
-        ItemCollection aItemCollection = (ItemCollection) document.clone();
+        ItemCollection aItemCollection = document.clone();
 
-        String itemName = null;
         XMLDocument entity = new XMLDocument();
         int i = 0;
-        XMLItem[] items = null;
+        XMLItem[] items;
 
         if (aItemCollection != null) {
             // test if only a sublist of items should be converted
-            if (itemNames != null && itemNames.size() > 0) {
+            if (itemNames != null && !itemNames.isEmpty()) {
                 items = new XMLItem[itemNames.size()];
                 for (String aField : itemNames) {
                     // this code block guarantees that the order of items
                     // returned
-                    itemName = aField;
                     XMLItem item = new XMLItem();
                     // test the ItemValue
                     List<?> vOrg = aItemCollection.getItemValue(aField);
-                    item.setName(itemName);
+                    item.setName(aField);
                     item.setValue(vOrg.toArray());
 
                     items[i] = item;
@@ -151,25 +147,21 @@ public class XMLDocumentAdapter {
 
             } else {
                 // convert all items (no itemname list is provided)
-                Iterator<?> it = aItemCollection.getAllItems().entrySet().iterator();
+                Iterator<Entry<String, List<?>>> it = aItemCollection.getAllItems().entrySet().iterator();
                 int max = aItemCollection.getAllItems().entrySet().size();
                 items = new XMLItem[max];
 
                 // iterate over all items if no itemNames are provided
                 while (it.hasNext()) {
-                    Map.Entry<String, List<?>> entry = (Entry<String, List<?>>) it.next();
-                    itemName = entry.getKey();
-                    XMLItem item = null;
-                    item = new XMLItem();
-                    item.setName(itemName);
+                    Map.Entry<String, List<?>> entry = it.next();
+                    XMLItem item = new XMLItem();
+                    item.setName(entry.getKey());
                     if (entry.getValue() != null) {
                         item.setValue(entry.getValue().toArray());
-                        if (item != null) {
-                            items[i] = item;
-                            i++;
-                        }
+                        items[i] = item;
+                        i++;
                     } else {
-                        logger.log(Level.WARNING, "putItemCollection - itemName={0} has null value", itemName);
+                        logger.log(Level.WARNING, "putItemCollection - itemName={0} has null value", entry.getKey());
                     }
                 }
             }
@@ -180,22 +172,6 @@ public class XMLDocumentAdapter {
         entity = sortItemsByName(entity);
 
         return entity;
-    }
-
-    /**
-     * This Method converts a <code> org.imixs.workflow.ItemCollection</code> into a
-     * <code>XMLDocument</code>
-     * 
-     * <p>
-     * The method verifies if the values stored are basic java types. If not these
-     * values will not be converted!
-     * 
-     * @param document  instance of a ItemCollection to be converted
-     * @param itemNames - optional list of item names to be converted. If null all
-     *                  items will be converted
-     */
-    public static XMLDocument getDocument(final ItemCollection document, final String... itemNames) {
-        return getDocument(document, itemNames);
     }
 
     /**
@@ -225,12 +201,10 @@ public class XMLDocumentAdapter {
      */
     public static ItemCollection readItemCollectionFromInputStream(InputStream inputStream)
             throws JAXBException, IOException {
-        byte[] byteInput = null;
-
         if (inputStream == null) {
             return null;
         }
-        byteInput = getBytesFromStream(inputStream);
+        byte[] byteInput = getBytesFromStream(inputStream);
         return readItemCollection(byteInput);
 
     }
@@ -239,7 +213,7 @@ public class XMLDocumentAdapter {
      * This method imports a single XMLItemCollection and returns the ItemCollection
      * object.
      * 
-     * @param inputStream xml input stream
+     * @param byteInput
      * @throws JAXBException
      * @throws IOException
      * @return List of ItemCollection objects
@@ -268,8 +242,7 @@ public class XMLDocumentAdapter {
             return null;
         }
 
-        XMLDocument ecol = null;
-        if (debug) {
+         if (debug) {
             logger.finest("......importXmlEntityData - verifing content....");
         }
         JAXBContext context = JAXBContext.newInstance(XMLDocument.class);
@@ -281,9 +254,7 @@ public class XMLDocumentAdapter {
             throw new RuntimeException("readItemCollection error - wrong xml file format - unable to read content!");
         }
 
-        ecol = (XMLDocument) jaxbObject;
-
-        return ecol;
+        return (XMLDocument) jaxbObject;
 
     }
 
@@ -291,7 +262,7 @@ public class XMLDocumentAdapter {
      * This method writes a ItemCollection into a Byte array representing a
      * XMLDocument
      * 
-     * @param inputStream xml input stream
+     * @param document
      * @throws JAXBException
      * @throws IOException
      * @return List of ItemCollection objects
@@ -312,13 +283,13 @@ public class XMLDocumentAdapter {
 
     private static byte[] getBytesFromStream(InputStream is) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int nRead;
-        byte[] data = new byte[0x4000];
-        while ((nRead = is.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
+        try (is) {
+            int nRead;
+            byte[] data = new byte[0x4000];
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }   buffer.flush();
         }
-        buffer.flush();
-        is.close();
         return buffer.toByteArray();
     }
 

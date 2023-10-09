@@ -68,6 +68,7 @@ import org.imixs.workflow.util.XMLParser;
  * <li>taxonomy.[NAME].duration: contains the total time in seconds
  * <li>taxonomy.[NAME].start.by: contains the $owner list at the first start
  * <li>taxonomy.[NAME].end.by: contains the $editor list at the last stop
+ * </ul>
  * <p>
  * 
  * 
@@ -86,7 +87,7 @@ public class TaxonomyPlugin extends AbstractPlugin {
 		// parse for taxonomy definition....
 		ItemCollection taxonomyConfig = this.getWorkflowService().evalWorkflowResult(event, "taxonomy", documentContext,
 				true);
-		if (taxonomyConfig == null || taxonomyConfig.getItemNames().size() == 0) {
+		if (taxonomyConfig == null || taxonomyConfig.getItemNames().isEmpty()) {
 			// no op - return
 			return documentContext;
 		}
@@ -113,7 +114,6 @@ public class TaxonomyPlugin extends AbstractPlugin {
 		return documentContext;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	void evalTaxonomyDefinition(ItemCollection documentContext, String name, String type, boolean anonymised) throws PluginException {
 		
 		// test if taxonomy name is valid (^[\w.-]+$)
@@ -125,8 +125,8 @@ public class TaxonomyPlugin extends AbstractPlugin {
 		// add new taxonomy name
 		documentContext.appendItemValueUnique("taxonomy", name);
 		
-		List valuesStart = documentContext.getItemValue("taxonomy." + name + ".start");
-		List valuesStop = documentContext.getItemValue("taxonomy." + name + ".stop");
+		List<Date> valuesStart = documentContext.getItemValueList("taxonomy." + name + ".start", Date.class);
+		List<Date> valuesStop = documentContext.getItemValueList("taxonomy." + name + ".stop", Date.class);
 		
 		
 		
@@ -146,7 +146,7 @@ public class TaxonomyPlugin extends AbstractPlugin {
 
 			// anonymised ?
 			if (!anonymised) {
-				List owners = documentContext.getItemValue("$owner");
+				List<String> owners = documentContext.getItemValueList("$owner", String.class);
 				documentContext.replaceItemValue("taxonomy." + name + ".start.by", owners);
 
 			}
@@ -167,8 +167,8 @@ public class TaxonomyPlugin extends AbstractPlugin {
 
 			// now we add the new time range....
 			int numTotal = documentContext.getItemValueInteger("taxonomy." + name + ".duration");
-			Date start = (Date) valuesStart.get(0);
-			Date stop = (Date) valuesStop.get(0);
+			Date start = valuesStart.get(0);
+			Date stop = valuesStop.get(0);
 
 			long lStart = start.getTime() / 1000;
 			long lStop = stop.getTime() / 1000;
@@ -178,7 +178,7 @@ public class TaxonomyPlugin extends AbstractPlugin {
 
 			// anonymised ?
 			if (!anonymised) {
-				List owners = documentContext.getItemValue("$editor");
+				List<String> owners = documentContext.getItemValueList("$editor", String.class);
 				documentContext.replaceItemValue("taxonomy." + name + ".stop.by", owners);
 
 			}

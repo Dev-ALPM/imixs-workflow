@@ -80,7 +80,6 @@ public class SolrUpdateService implements UpdateService {
      * This method is used by the JobHandlerRebuildIndex only.
      * 
      * @param documents of ItemCollections to be indexed
-     * @throws RestAPIException
      * @throws IndexException
      */
     @Override
@@ -98,10 +97,10 @@ public class SolrUpdateService implements UpdateService {
         boolean debug = logger.isLoggable(Level.FINE);
         long ltime = System.currentTimeMillis();
         // flush eventlog (see issue #411)
-        int flushCount = 0;
+        int flushCount;
         while (solrIndexService.flushEventLog(1024) == false) {
             // repeat flush....
-            flushCount = +1048;
+            flushCount = +1024;
             if (debug) {
                 logger.log(Level.FINE, "...flush event log: {0} entries updated in {1}ms ...",
                         new Object[]{flushCount, System.currentTimeMillis() - ltime});

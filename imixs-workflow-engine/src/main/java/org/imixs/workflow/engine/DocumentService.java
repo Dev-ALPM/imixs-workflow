@@ -40,7 +40,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +59,6 @@ import org.imixs.workflow.engine.index.UpdateService;
 import org.imixs.workflow.engine.jpa.Document;
 import org.imixs.workflow.exceptions.AccessDeniedException;
 import org.imixs.workflow.exceptions.InvalidAccessException;
-import org.imixs.workflow.exceptions.PluginException;
 import org.imixs.workflow.exceptions.QueryException;
 
 import jakarta.ejb.SessionContext;
@@ -70,7 +68,7 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 
 /**
  * The DocumentService is used to save and load instances of ItemCollections
@@ -207,7 +205,7 @@ public class DocumentService {
 	/**
 	 * returns the disable optimistic locking status
 	 * 
-	 * @return - true if optimistic locking is disabled
+         * @param disableOptimisticLocking
 	 */
 	public void setDisableOptimisticLocking(Boolean disableOptimisticLocking) {
 		this.disableOptimisticLocking = disableOptimisticLocking;
@@ -229,10 +227,10 @@ public class DocumentService {
 	 */
 	public List<String> getUserNameList() {
 
-		List<String> userNameList = new Vector<String>();
+		List<String> userNameList = new ArrayList<>();
 
 		// Begin with the username
-		userNameList.add(ctx.getCallerPrincipal().getName().toString());
+		userNameList.add(ctx.getCallerPrincipal().getName());
 		// now construct role list
 		String roleList = "org.imixs.ACCESSLEVEL.READERACCESS,org.imixs.ACCESSLEVEL.AUTHORACCESS,org.imixs.ACCESSLEVEL.EDITORACCESS,org.imixs.ACCESSLEVEL.MANAGERACCESS,"
 				+ accessRoles;
@@ -243,7 +241,7 @@ public class DocumentService {
 				String testRole = roleListTokens.nextToken().trim();
 				if (!"".equals(testRole) && ctx.isCallerInRole(testRole))
 					userNameList.add(testRole);
-			} catch (Exception e) {
+			} catch (IllegalStateException e) {
 				// no operation - Role simply not defined
 				// this could be an configuration/test issue and need not to be
 				// handled as an error
@@ -253,7 +251,7 @@ public class DocumentService {
 		// To extend UserGroups we fire the CDI Event UserGroupEvent...
 		if (userGroupEvents != null) {
 			// create Group Event
-			UserGroupEvent groupEvent = new UserGroupEvent(ctx.getCallerPrincipal().getName().toString());
+			UserGroupEvent groupEvent = new UserGroupEvent(ctx.getCallerPrincipal().getName());
 			userGroupEvents.fire(groupEvent);
 			if (groupEvent.getGroups() != null) {
 				userNameList.addAll(groupEvent.getGroups());
@@ -304,7 +302,7 @@ public class DocumentService {
 	public boolean isUserInRole(String rolename) {
 		try {
 			return ctx.isCallerInRole(rolename);
-		} catch (Exception e) {
+		} catch (IllegalStateException e) {
 			// avoid a exception for a role request which is not defined
 			return false;
 		}
@@ -350,7 +348,7 @@ public class DocumentService {
 	 * status.
 	 * 
 	 * 
-	 * @param ItemCollection to be saved
+	 * @param document
 	 * @return updated ItemCollection
 	 * @throws AccessDeniedException
 	 */
@@ -473,7 +471,7 @@ public class DocumentService {
 		}
 
 		// finally update the data field by cloning the map object (deep copy)
-		ItemCollection clone = (ItemCollection) document.clone();
+		ItemCollection clone = document.clone();
 		persistedDocument.setData(clone.getAllItems());
 
 		/*
@@ -530,7 +528,7 @@ public class DocumentService {
 	 * will not read an uncommitted document from the Lucene index.
 	 * 
 	 * 
-	 * @param documentContext
+	 * @param document
 	 */
 	public void addDocumentToIndex(ItemCollection document) {
 		// skip if the flag 'noindex' = true
@@ -548,7 +546,6 @@ public class DocumentService {
 	 * 
 	 * 
 	 * @param uniqueID of the workitem to be removed
-	 * @throws PluginException
 	 */
 	public void removeDocumentFromIndex(String uniqueID) {
 		boolean debug = logger.isLoggable(Level.FINE);
@@ -611,7 +608,7 @@ public class DocumentService {
 	public ItemCollection load(String id) {
 		boolean debug = logger.isLoggable(Level.FINE);
 		long lLoadTime = System.currentTimeMillis();
-		Document persistedDocument = null;
+		Document persistedDocument;
 
 		if (id == null || id.isEmpty()) {
 			return null;
@@ -621,7 +618,7 @@ public class DocumentService {
 		// create instance of ItemCollection
 		if (persistedDocument != null && isCallerReader(persistedDocument)) {
 
-			ItemCollection result = null;// new ItemCollection();
+			ItemCollection result;
 			if (persistedDocument.isPending()) {
 				// we clone but do not detach
 				if (debug) {
@@ -664,7 +661,7 @@ public class DocumentService {
 	 * Also the method removes the document form the lucene index.
 	 * 
 	 * 
-	 * @param ItemCollection to be removed
+	 * @param document
 	 * @throws AccessDeniedException
 	 */
 	public void remove(ItemCollection document) throws AccessDeniedException {
@@ -672,7 +669,7 @@ public class DocumentService {
 			return;
 		}
 
-		Document persistedDocument = null;
+		Document persistedDocument;
 		String sID = document.getItemValueString("$uniqueid");
 		persistedDocument = manager.find(Document.class, sID);
 
@@ -705,9 +702,8 @@ public class DocumentService {
 	 * workitem matching the search term. The usernames and user roles will be
 	 * search lowercase!
 	 * 
+	 * @param searchTerm
 	 * @see search(String, int, int, Sort, Operator)
-	 * 
-	 * @param sSearchTerm
 	 * @return total hits of search result
 	 * @throws QueryException in case the searchterm is not understandable.
 	 */
@@ -728,7 +724,6 @@ public class DocumentService {
 	 * 
 	 * @param sSearchTerm
 	 * @param maxResult       - max search result
-	 * @param defaultOperator - optional to change the default search operator
 	 * 
 	 * @return total hits of search result
 	 * @throws QueryException in case the searchterm is not understandable.
@@ -826,7 +821,7 @@ public class DocumentService {
 		indexUpdateService.updateIndex();
 
 		// evaluate default index operator
-		DefaultOperator defaultOperator = null;
+		DefaultOperator defaultOperator;
 
 		if (indexDefaultOperator != null && "OR".equals(indexDefaultOperator.toUpperCase())) {
 			defaultOperator = DefaultOperator.OR;
@@ -882,8 +877,7 @@ public class DocumentService {
 		indexUpdateService.updateIndex();
 
 		// evaluate default index operator
-		DefaultOperator defaultOperator = null;
-		;
+		DefaultOperator defaultOperator;
 		if (indexDefaultOperator != null && "OR".equals(indexDefaultOperator.toUpperCase())) {
 			defaultOperator = DefaultOperator.OR;
 		} else {
@@ -996,8 +990,8 @@ public class DocumentService {
 	@TransactionAttribute(value = TransactionAttributeType.REQUIRES_NEW)
 	public List<ItemCollection> getDocumentsByQuery(String query, int firstResult, int maxResult) {
 		boolean debug = logger.isLoggable(Level.FINE);
-		List<ItemCollection> result = new ArrayList<ItemCollection>();
-		Query q = manager.createQuery(query);
+		List<ItemCollection> result = new ArrayList<>();
+		TypedQuery<Document> q = manager.createQuery(query, Document.class);
 
 		// setMaxResults ?
 		if (maxResult > 0) {
@@ -1009,8 +1003,7 @@ public class DocumentService {
 		}
 
 		long l = System.currentTimeMillis();
-		@SuppressWarnings("unchecked")
-		Collection<Document> documentList = q.getResultList();
+		List<Document> documentList = q.getResultList();
 
 		if (documentList == null) {
 			if (debug) {
@@ -1023,7 +1016,7 @@ public class DocumentService {
 		for (Document doc : documentList) {
 			if (isCallerReader(doc)) {
 
-				ItemCollection _tmp = null;
+				ItemCollection _tmp;
 
 				if (doc.isPending()) {
 					// we clone but do not detach
@@ -1088,45 +1081,45 @@ public class DocumentService {
 		}
 
 		FileOutputStream fos = new FileOutputStream(filePath);
-		ObjectOutputStream out = new ObjectOutputStream(fos);
-		while (hasMoreData) {
-			// read a junk....
+                try (ObjectOutputStream out = new ObjectOutputStream(fos)) {
+                    while (hasMoreData) {
+                        // read a junk....
 
-			Collection<ItemCollection> col = find(query, JUNK_SIZE, pageIndex);
-			totalcount = totalcount + col.size();
-			logger.log(Level.INFO, "backup - processing...... {0} documents read....", col.size());
+                        Collection<ItemCollection> col = find(query, JUNK_SIZE, pageIndex);
+                        totalcount = totalcount + col.size();
+                        logger.log(Level.INFO, "backup - processing...... {0} documents read....", col.size());
 
-			if (col.size() < JUNK_SIZE) {
-				hasMoreData = false;
-				logger.finest("......all data read.");
-			} else {
-				pageIndex++;
-				logger.finest("......next page...");
-			}
-
-            for (ItemCollection aworkitem : col) {
-                Map<?, ?> hmap=null;
-                if (snapshots==true) {
-                    // load the snapshot
-                    String snapshotID = aworkitem.getItemValueString("$snapshotid");
-                    if (!snapshotID.isEmpty()) {
-                        ItemCollection snapshotDoc = load(snapshotID);
-                        if (snapshotDoc!=null) {
-                            hmap = snapshotDoc.getAllItems();
+                        if (col.size() < JUNK_SIZE) {
+                            hasMoreData = false;
+                            logger.finest("......all data read.");
+                        } else {
+                            pageIndex++;
+                            logger.finest("......next page...");
                         }
-                    } 
+
+                        for (ItemCollection aworkitem : col) {
+                            Map<?, ?> hmap=null;
+                            if (snapshots==true) {
+                                // load the snapshot
+                                String snapshotID = aworkitem.getItemValueString("$snapshotid");
+                                if (!snapshotID.isEmpty()) {
+                                    ItemCollection snapshotDoc = load(snapshotID);
+                                    if (snapshotDoc!=null) {
+                                        hmap = snapshotDoc.getAllItems();
+                                    } 
+                                }
+                            }
+
+                            if (hmap==null) {
+                                // get serialized data
+                                hmap = aworkitem.getAllItems();
+                            }
+                            // write object
+                            out.writeObject(hmap);
+                            icount++;
+                        }
+                    }
                 }
-                
-                if (hmap==null) {
-                    // get serialized data
-                    hmap = aworkitem.getAllItems();
-                }
-                // write object
-                out.writeObject(hmap);
-                icount++;
-            }
-		}
-		out.close();
 		logger.log(Level.INFO, "backup - finished: {0} documents read totaly.", icount);
 	}
 
@@ -1138,10 +1131,10 @@ public class DocumentService {
 	 * This method restores a backup from the file system and imports the Documents
 	 * into the database.
 	 * 
-	 * @param filepath
+	 * @param filePath
 	 * @throws IOException
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({ "unchecked" })
 	public void restore(String filePath) throws IOException {
 		int JUNK_SIZE = 100;
 		long totalcount = 0;
@@ -1149,41 +1142,37 @@ public class DocumentService {
 		int icount = 0;
 
 		FileInputStream fis = new FileInputStream(filePath);
-		ObjectInputStream in = new ObjectInputStream(fis);
-		logger.log(Level.INFO, "...starting restor form file {0}...", filePath);
-		long l = System.currentTimeMillis();
-		while (true) {
-			try {
-				// read one more object
-				Map hmap = (Map) in.readObject();
-				ItemCollection itemCol = new ItemCollection(hmap);
-				// remove the $version property!
-				itemCol.removeItem(VERSION);
-				// now save imported data
-				// issue #407 - call new transaction context...
-				itemCol = ctx.getBusinessObject(DocumentService.class).saveByNewTransaction(itemCol);
+                try (ObjectInputStream in = new ObjectInputStream(fis)) {
+                    logger.log(Level.INFO, "...starting restor form file {0}...", filePath);
+                    long l = System.currentTimeMillis();
+                    while (true) {
+                        try {
+                            // read one more object
+                            Map<String, List<?>> hmap = (Map<String, List<?>>) in.readObject();
+                            ItemCollection itemCol = new ItemCollection(hmap);
+                            // remove the $version property!
+                            itemCol.removeItem(VERSION);
+                            // now save imported data
+                            // issue #407 - call new transaction context...
+                            ctx.getBusinessObject(DocumentService.class).saveByNewTransaction(itemCol);
 
-				totalcount++;
-				icount++;
-				if (icount >= JUNK_SIZE) {
-					icount = 0;
-					logger.log(Level.INFO, "...restored {0} document in {1}ms....", new Object[]{totalcount, System.currentTimeMillis() - l});
-					l = System.currentTimeMillis();
-				}
+                            totalcount++;
+                            icount++;
+                            if (icount >= JUNK_SIZE) {
+                                icount = 0;
+                                logger.log(Level.INFO, "...restored {0} document in {1}ms....", new Object[]{totalcount, System.currentTimeMillis() - l});
+                                l = System.currentTimeMillis();
+                            }
 
-			} catch (java.io.EOFException eofe) {
-				break;
-			} catch (ClassNotFoundException e) {
-				errorCount++;
-				logger.log(Level.WARNING, "...error importing workitem at position {0}{1} Error: {2}",
-                                        new Object[]{totalcount, errorCount, e.getMessage()});
-			} catch (AccessDeniedException e) {
-				errorCount++;
-				logger.log(Level.WARNING, "...error importing workitem at position {0}{1} Error: {2}",
-                                        new Object[]{totalcount, errorCount, e.getMessage()});
-			}
-		}
-		in.close();
+                        } catch (java.io.EOFException eofe) {
+                            break;
+                        } catch (ClassNotFoundException | AccessDeniedException e) {
+                            errorCount++;
+                            logger.log(Level.WARNING, "...error importing workitem at position {0}{1} Error: {2}",
+                                    new Object[]{totalcount, errorCount, e.getMessage()});
+                        }
+                    }
+                }
 
 		String loginfo = "Import successfull! " + totalcount + " Entities imported. " + errorCount
 				+ " Errors.  Import FileName:" + filePath;
@@ -1192,13 +1181,13 @@ public class DocumentService {
 	}
 
 	/**
-	 * Verifies if the caller has write access to the current ItemCollection
+	 * Verifies if
+	 * @param itemcol the caller has write access to the current ItemCollection
 	 * 
 	 * @return
 	 */
 	public boolean isAuthor(ItemCollection itemcol) {
-		@SuppressWarnings("unchecked")
-		List<String> writeAccessList = itemcol.getItemValue(WRITEACCESS);
+		List<String> writeAccessList = itemcol.getItemValueList(WRITEACCESS, String.class);
 
 		/**
 		 * 1.) org.imixs.ACCESSLEVEL.NOACCESS allways false - now write access!
@@ -1269,8 +1258,7 @@ public class DocumentService {
 
 		ItemCollection itemcol = ItemCollection.createByReference(document.getData());
 
-		@SuppressWarnings("unchecked")
-		List<String> readAccessList = itemcol.getItemValue(READACCESS);
+		List<String> readAccessList = itemcol.getItemValueList(READACCESS, String.class);
 
 		/**
 		 * 1.) org.imixs.ACCESSLEVEL.NOACCESS
@@ -1289,18 +1277,13 @@ public class DocumentService {
 
 		if (ctx.isCallerInRole(ACCESSLEVEL_MANAGERACCESS))
 			return true;
-
-		/**
-		 * 2.) org.imixs.ACCESSLEVEL.EDITOR org.imixs.ACCESSLEVEL.AUTHOR
-		 * ACCESSLEVEL.READER
-		 * 
-		 * check read access
-		 */
-		if (isEmptyList(readAccessList) || isUserContained(readAccessList)) {
-			return true;
-		}
-
-		return false;
+                /**
+                 * 2.) org.imixs.ACCESSLEVEL.EDITOR org.imixs.ACCESSLEVEL.AUTHOR
+                 * ACCESSLEVEL.READER
+                 *
+                 * check read access
+                 */
+		return isEmptyList(readAccessList) || isUserContained(readAccessList);
 	}
 
 	/**
@@ -1322,7 +1305,7 @@ public class DocumentService {
 	 * @return
 	 */
 	public boolean isEmptyList(List<String> aList) {
-		if (aList == null || aList.size() == 0) {
+		if (aList == null || aList.isEmpty()) {
 			return true;
 		}
 		// check each element

@@ -57,6 +57,7 @@ public class SelectItemComparator implements Comparator<SelectItem> {
         this.ascending = ascending;
     }
 
+    @Override
     public int compare(SelectItem a, SelectItem b) {
         int result = this.collator.compare(a.getLabel(), b.getLabel());
         if (!this.ascending) {

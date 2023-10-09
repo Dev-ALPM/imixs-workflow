@@ -38,7 +38,6 @@ import java.net.URLDecoder;
 import java.text.ParseException;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import jakarta.inject.Inject;
@@ -52,7 +51,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -74,8 +72,9 @@ import org.imixs.workflow.xml.XMLDocument;
 import org.imixs.workflow.xml.XMLDocumentAdapter;
 
 import jakarta.ejb.Stateless;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.logging.Level;
+import org.imixs.workflow.exceptions.ProcessingErrorException;
 
 /**
  * The WorkflowService Handler supports methods to process different kind of
@@ -95,45 +94,39 @@ public class WorkflowRestService {
     @Inject
     private DocumentRestService documentRestService;
 
-    @jakarta.ws.rs.core.Context
-    private HttpServletRequest servletRequest;
-
     private static final Logger logger = Logger.getLogger(WorkflowRestService.class.getName());
 
     @GET
     @Produces("text/html")
     public StreamingOutput getHelpHTML() {
 
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<html><head>".getBytes());
-                out.write("<style>".getBytes());
-                out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
-                out.write(
-                        "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
-                                .getBytes());
-                out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
-                        .getBytes());
-
-                out.write("table th,table td {font-size: 12px;}".getBytes());
-
-                out.write("table tr.a {background-color: #ddd;}".getBytes());
-
-                out.write("table tr.b {background-color: #eee;}".getBytes());
-
-                out.write("</style>".getBytes());
-                out.write("</head><body>".getBytes());
-
-                // body
-                out.write("<h1>Imixs-Workflow REST Service</h1>".getBytes());
-                out.write(
-                        "<p>See the <a href=\"http://www.imixs.org/doc/restapi/workflowservice.html\" target=\"_blank\">Imixs-Workflow REST API</a> for more information about this Service.</p>"
-                                .getBytes());
-
-                // end
-                out.write("</body></html>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<html><head>".getBytes());
+            out.write("<style>".getBytes());
+            out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
+            out.write(
+                    "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
+                            .getBytes());
+            out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
+                    .getBytes());
+            
+            out.write("table th,table td {font-size: 12px;}".getBytes());
+            
+            out.write("table tr.a {background-color: #ddd;}".getBytes());
+            
+            out.write("table tr.b {background-color: #eee;}".getBytes());
+            
+            out.write("</style>".getBytes());
+            out.write("</head><body>".getBytes());
+            
+            // body
+            out.write("<h1>Imixs-Workflow REST Service</h1>".getBytes());
+            out.write(
+                    "<p>See the <a href=\"http://www.imixs.org/doc/restapi/workflowservice.html\" target=\"_blank\">Imixs-Workflow REST API</a> for more information about this Service.</p>"
+                            .getBytes());
+            
+            // end
+            out.write("</body></html>".getBytes());
         };
 
     }
@@ -142,6 +135,8 @@ public class WorkflowRestService {
      * returns a single workitem defined by $uniqueid
      * 
      * @param uniqueid
+     * @param items
+     * @param format
      * @return
      */
     @GET
@@ -158,7 +153,7 @@ public class WorkflowRestService {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             workitem = null;
         }
 
@@ -173,6 +168,8 @@ public class WorkflowRestService {
      * different formats and searched in the file list. This is not a nice solution.
      * 
      * @param uniqueid
+     * @param file
+     * @param uriInfo
      * @return
      */
     @GET
@@ -190,9 +187,8 @@ public class WorkflowRestService {
                 String fileNameISO = URLDecoder.decode(file, "ISO-8859-1");
 
                 // fetch FileData object
-                FileData fileData = null;
                 // try to guess encodings.....
-                fileData = workItem.getFileData(fileNameUTF8);
+                FileData fileData = workItem.getFileData(fileNameUTF8);
                 if (fileData == null)
                     fileData = workItem.getFileData(fileNameISO);
                 if (fileData == null)
@@ -217,10 +213,9 @@ public class WorkflowRestService {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
 
-        } catch (Exception e) {
+        } catch (UnsupportedEncodingException e) {
             logger.log(Level.SEVERE, "WorkflowRestService unable to open file: ''{0}''"
                     + " in workitem ''{1}'' - error: {2}", new Object[]{file, uniqueid, e.getMessage()});
-            e.printStackTrace();
         }
 
         logger.log(Level.SEVERE, "WorkflowRestService unable to open file: ''{0}''"
@@ -233,6 +228,7 @@ public class WorkflowRestService {
      * Returns a collection of events of a workitem, visible to the current user
      * 
      * @param uniqueid of workitem
+     * @param format
      * @return list of event entities
      */
     @GET
@@ -241,8 +237,8 @@ public class WorkflowRestService {
         List<ItemCollection> result = null;
         try {
             result = workflowService.getEvents(this.workflowService.getDocumentService().load(uniqueid));
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
 
         return documentRestService.convertResultList(result, null, format);
@@ -252,10 +248,14 @@ public class WorkflowRestService {
      * Returns a collection of workitems representing the worklist by the current
      * user
      * 
-     * @param start
-     * @param count
      * @param type
-     * @param sortorder
+     * @param pageIndex
+     * @param pageSize
+     * @param sortBy
+     * @param sortReverse
+     * @param items
+     * @param format
+     * @return 
      */
     @GET
     @Path("/worklist")
@@ -287,8 +287,8 @@ public class WorkflowRestService {
                 owner = URLDecoder.decode(owner, "UTF-8");
 
             result = workflowService.getWorkListByOwner(owner, type, pageSize, pageIndex, sortBy, sortReverse);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            logger.severe(e.getMessage());
         }
 
         return documentRestService.convertResultList(result, items, format);
@@ -297,10 +297,15 @@ public class WorkflowRestService {
     /**
      * Returns a collection of workitems for which the specified user has explicit write permission.
      * 
-     * @param start
-     * @param count
+     * @param user
      * @param type
-     * @param sortorder
+     * @param pageIndex
+     * @param pageSize
+     * @param sortBy
+     * @param sortReverse
+     * @param items
+     * @param format
+     * @return 
      */
     @GET
     @Path("/tasklist/author/{user}")
@@ -321,8 +326,8 @@ public class WorkflowRestService {
 
             result = workflowService.getWorkListByAuthor(user, type, pageSize, pageIndex, sortBy, sortReverse);
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResultList(result, items, format);
     }
@@ -332,10 +337,14 @@ public class WorkflowRestService {
      * This means that the current userID or at least one of its roles is contained in
      * the $writeaccess property.
      * 
-     * @param start
-     * @param count
      * @param type
-     * @param sortorder
+     * @param pageIndex
+     * @param pageSize
+     * @param sortBy
+     * @param sortReverse
+     * @param items
+     * @param format
+     * @return 
      */
     @GET
     @Path("/tasklist/writeaccess")
@@ -343,13 +352,14 @@ public class WorkflowRestService {
             @DefaultValue("0") @QueryParam("pageIndex") int pageIndex,
             @DefaultValue("10") @QueryParam("pageSize") int pageSize,
             @DefaultValue("") @QueryParam("sortBy") String sortBy,
-            @DefaultValue("false") @QueryParam("sortReverse") Boolean sortReverse, @QueryParam("items") String items,
+            @DefaultValue("false") @QueryParam("sortReverse") Boolean sortReverse,
+            @QueryParam("items") String items,
             @QueryParam("format") String format) {
         List<ItemCollection> result = null;
         try {
             result = workflowService.getWorkListByWriteAccess(type, pageSize, pageIndex, sortBy, sortReverse);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResultList(result, items, format);
     }
@@ -373,8 +383,8 @@ public class WorkflowRestService {
 
             result = workflowService.getWorkListByCreator(creator, type, pageSize, pageIndex, sortBy, sortReverse);
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            logger.severe(e.getMessage());
         }
 
         return documentRestService.convertResultList(result, items, format);
@@ -392,7 +402,7 @@ public class WorkflowRestService {
         try {
             result = workflowService.getWorkListByProcessID(processid, type, pageSize, pageIndex, sortBy, sortReverse);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResultList(result, items, format);
     }
@@ -411,8 +421,8 @@ public class WorkflowRestService {
             if (processgroup != null)
                 processgroup = URLDecoder.decode(processgroup, "UTF-8");
             result = workflowService.getWorkListByGroup(processgroup, type, pageSize, pageIndex, sortBy, sortReverse);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            logger.severe(e.getMessage());
         }
 
         return documentRestService.convertResultList(result, items, format);
@@ -430,7 +440,7 @@ public class WorkflowRestService {
         try {
             result = workflowService.getWorkListByRef(uniqueid, type, pageSize, pageIndex, sortBy, sortReverse);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
 
         return documentRestService.convertResultList(result, items, format);
@@ -443,7 +453,7 @@ public class WorkflowRestService {
      * the Imixs Workflow ResutlPlugin
      * 
      * @param requestBodyStream - form content
-     * @param action            - return URI
+     * @param items
      * @return
      */
     @POST
@@ -462,6 +472,7 @@ public class WorkflowRestService {
      * request to the provided action URI. The action URI can also be computed by
      * the Imixs Workflow ResutlPlugin
      * 
+     * @param uid
      * @param requestBodyStream - form content
      * @param items             - optional item list to be returned in the result
      * @return
@@ -501,8 +512,9 @@ public class WorkflowRestService {
      * behavior is different to the method putWorkitem(). It need to be discussed if
      * the behavior is wrong or not.
      * 
-     * @param workitem - new workItem data
-     * @param items    - optional item list to be returned in the result
+     * @param xmlworkitem - new workItem data
+     * @param items       - optional item list to be returned in the result
+     * @return 
      */
     @POST
     @Path("/workitem")
@@ -542,7 +554,8 @@ public class WorkflowRestService {
     /**
      * Delegater for PUT postXMLWorkitemByUniqueID
      * 
-     * @param workitem
+     * @param uniqueid
+     * @param xmlworkitem
      * @param items    - optional item list to be returned in the result
      * @return
      */
@@ -560,7 +573,7 @@ public class WorkflowRestService {
      * the WorkflowManager.
      * 
      * @param worklist - workitem list data
-     * @param items    - optional item list to be returned in the result
+     * @return 
      */
     @POST
     @Path("/workitems")
@@ -573,15 +586,15 @@ public class WorkflowRestService {
         ItemCollection itemCollection;
         try {
             // save new entities into database and update modelversion.....
-            for (int i = 0; i < worklist.getDocument().length; i++) {
-                entity = worklist.getDocument()[i];
+            for (XMLDocument document : worklist.getDocument()) {
+                entity = document;
                 itemCollection = XMLDocumentAdapter.putDocument(entity);
                 // process entity
                 workflowService.processWorkItem(itemCollection);
             }
             return Response.status(Response.Status.OK).build();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (AccessDeniedException | ModelException | PluginException | ProcessingErrorException e) {
+            logger.severe(e.getMessage());
         }
         return Response.status(Response.Status.NOT_ACCEPTABLE).build();
     }
@@ -608,9 +621,9 @@ public class WorkflowRestService {
      * 
      * 
      * @param requestBodyStream
+     * @param error
      * @param items             - optional item list to be returned in the result
      * @return JSON object
-     * @throws Exception
      */
     @POST
     @Path("/workitem/typed")
@@ -623,17 +636,13 @@ public class WorkflowRestService {
         ItemCollection workitem = null;
         try {
             List<ItemCollection> result = ImixsJSONParser.parse(requestBodyStream);
-            if (result != null && result.size() > 0) {
+            if (result != null && !result.isEmpty()) {
                 workitem = result.get(0);
             }
             // workitem = JSONParser.parseWorkitem(requestBodyStream, encoding);
-        } catch (ParseException e) {
+        } catch (ParseException | UnsupportedEncodingException e) {
             logger.severe("postJSONWorkitem wrong json format!");
-            e.printStackTrace();
-            return Response.status(Response.Status.NOT_ACCEPTABLE).build();
-        } catch (UnsupportedEncodingException e) {
-            logger.severe("postJSONWorkitem wrong json format!");
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.NOT_ACCEPTABLE).build();
         }
         if (workitem == null) {
@@ -646,7 +655,8 @@ public class WorkflowRestService {
     /**
      * Delegater for PUT postJSONTypedWorkitem
      * 
-     * @param workitem
+     * @param requestBodyStream
+     * @param error
      * @param items    - optional item list to be returned in the result
      * @return
      */
@@ -670,17 +680,13 @@ public class WorkflowRestService {
         ItemCollection workitem = null;
         try {
             List<ItemCollection> result = ImixsJSONParser.parse(requestBodyStream);
-            if (result != null && result.size() > 0) {
+            if (result != null && !result.isEmpty()) {
                 workitem = result.get(0);
             }
             // workitem = JSONParser.parseWorkitem(requestBodyStream, encoding);
-        } catch (ParseException e) {
+        } catch (ParseException | UnsupportedEncodingException e) {
             logger.severe("postJSONWorkitemByUniqueID wrong json format!");
-            e.printStackTrace();
-            return Response.status(Response.Status.NOT_ACCEPTABLE).build();
-        } catch (UnsupportedEncodingException e) {
-            logger.severe("postJSONWorkitemByUniqueID wrong json format!");
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.NOT_ACCEPTABLE).build();
         }
         return processWorkitem(workitem, uniqueid, items);
@@ -689,7 +695,9 @@ public class WorkflowRestService {
     /**
      * Delegater for PUT postJSONWorkitemByUniqueID
      * 
-     * @param workitem
+     * @param uniqueid
+     * @param requestBodyStream
+     * @param error
      * @param items    - optional item list to be returned in the result
      * @return
      */
@@ -727,9 +735,8 @@ public class WorkflowRestService {
      * @param requestBodyStream
      * @return a workitem
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ItemCollection parseWorkitem(InputStream requestBodyStream) {
-        Vector<String> vMultiValueFieldNames = new Vector<String>();
+        List<String> vMultiValueFieldNames = new ArrayList<>();
         BufferedReader in = new BufferedReader(new InputStreamReader(requestBodyStream));
         String inputLine;
         ItemCollection workitem = new ItemCollection();
@@ -776,7 +783,7 @@ public class WorkflowRestService {
                             fieldName = fieldName.toLowerCase();
                             if (vMultiValueFieldNames.indexOf(fieldName) > -1) {
 
-                                List v = workitem.getItemValue(fieldName);
+                                List<String> v = workitem.getItemValueList(fieldName, String.class);
                                 v.add(fieldValue);
                                 logger.log(Level.FINE, "[WorkflowRestService] multivalue for ''{0}'' = ''{1}''",
                                         new Object[]{fieldName, fieldValue});
@@ -790,23 +797,21 @@ public class WorkflowRestService {
                             }
                         }
 
-                    } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    } catch (NumberFormatException | UnsupportedEncodingException e) {
+                        logger.severe(e.getMessage());
                     }
                 }
 
             }
         } catch (IOException e1) {
             logger.severe("[WorkflowRestService] Unable to parse workitem data!");
-            e1.printStackTrace();
+            logger.severe(e1.getMessage());
             return null;
         } finally {
             try {
                 in.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
 
         }
@@ -857,11 +862,7 @@ public class WorkflowRestService {
 
         } catch (AccessDeniedException e) {
             workitem = ImixsExceptionHandler.addErrorMessage(e, workitem);
-        } catch (PluginException e) {
-            workitem = ImixsExceptionHandler.addErrorMessage(e, workitem);
-        } catch (RuntimeException e) {
-            workitem = ImixsExceptionHandler.addErrorMessage(e, workitem);
-        } catch (ModelException e) {
+        } catch (PluginException | ModelException | RuntimeException e) {
             workitem = ImixsExceptionHandler.addErrorMessage(e, workitem);
         }
 
@@ -878,7 +879,7 @@ public class WorkflowRestService {
                         .build();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.NOT_ACCEPTABLE).build();
         }
 

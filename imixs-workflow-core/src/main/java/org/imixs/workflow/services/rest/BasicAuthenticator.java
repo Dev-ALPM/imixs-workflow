@@ -49,6 +49,7 @@ public class BasicAuthenticator implements RequestFilter {
         this.password = password;
     }
 
+    @Override
     public void filter(HttpURLConnection connection) throws IOException {
         connection.setRequestProperty("Authorization", "Basic " + getBasicAuthentication());
 
@@ -58,7 +59,7 @@ public class BasicAuthenticator implements RequestFilter {
      * This methos set the user password information for basic authentication
      */
     private String getBasicAuthentication() {
-        String sURLAccess = "";
+        String sURLAccess;
         // UserID:Passwort
         String sUserCode = user + ":" + password;
         // String convertieren

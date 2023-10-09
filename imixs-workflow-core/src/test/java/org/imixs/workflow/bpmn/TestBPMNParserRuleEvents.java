@@ -35,12 +35,8 @@ public class TestBPMNParserRuleEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -81,12 +77,8 @@ public class TestBPMNParserRuleEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -141,12 +133,8 @@ public class TestBPMNParserRuleEvents {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 

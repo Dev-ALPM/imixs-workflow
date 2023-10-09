@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +66,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import java.util.ArrayList;
 
 /**
  * This plug-in supports a Mail interface to send a email to a list of
@@ -121,8 +121,10 @@ public class MailPlugin extends AbstractPlugin {
      * method. This mechanism avoids that a mail is send before all plug-ins were
      * processed correctly.
      * 
+     * @param documentContext
+     * @param documentActivity
      */
-    @SuppressWarnings({ "rawtypes" })
+    @Override
     public ItemCollection run(ItemCollection documentContext, ItemCollection documentActivity) throws PluginException {
         boolean debug = logger.isLoggable(Level.FINE);
         mailMessage = null;
@@ -136,8 +138,8 @@ public class MailPlugin extends AbstractPlugin {
             return documentContext;
         }
 
-        List vectorRecipients = getRecipients(documentContext, documentActivity);
-        if (vectorRecipients.isEmpty()) {
+        List<String> recipients = getRecipients(documentContext, documentActivity);
+        if (recipients.isEmpty()) {
             if (debug) {
                 logger.finest("......No Receipients defined for this Activity - cancel mail message.");
             }
@@ -168,7 +170,7 @@ public class MailPlugin extends AbstractPlugin {
             mailMessage.setFrom(adr);
 
             // set Recipient
-            mailMessage.setRecipients(Message.RecipientType.TO, getInternetAddressArray(vectorRecipients));
+            mailMessage.setRecipients(Message.RecipientType.TO, getInternetAddressArray(recipients));
 
             // build CC
             mailMessage.setRecipients(Message.RecipientType.CC,
@@ -212,7 +214,9 @@ public class MailPlugin extends AbstractPlugin {
     /**
      * Send the mail if the object 'mailMessage' is not null.
      * 
-     * The method lookups the mail session from the session context.
+     * The method lookups the mail session from the session
+     * @param rollbackTransaction
+     * @throws org.imixs.workflow.exceptions.PluginException
      */
     @Override
     public void close(boolean rollbackTransaction) throws PluginException {
@@ -225,7 +229,7 @@ public class MailPlugin extends AbstractPlugin {
 
                 // test if TestReceipiens are defined...
                 if (mailTestRecipients.isPresent() && !mailTestRecipients.get().isEmpty()) {
-                    List<String> vRecipients = new Vector<String>();
+                    List<String> vRecipients = new ArrayList<>();
                     // split multivalues
                     StringTokenizer st = new StringTokenizer(mailTestRecipients.get(), ",", false);
                     while (st.hasMoreElements()) {
@@ -260,28 +264,28 @@ public class MailPlugin extends AbstractPlugin {
                 // authentification. Therefore we use a manual SMTP connection
                 if (mailSession.getProperty("mail.smtp.password") != null
                         && !mailSession.getProperty("mail.smtp.password").isEmpty()) {
-                    // create transport object with authentication data
-                    Transport trans = mailSession.getTransport("smtp");
-                    trans.connect(mailSession.getProperty("mail.smtp.user"),
-                            mailSession.getProperty("mail.smtp.password"));
-                    trans.sendMessage(mailMessage, mailMessage.getAllRecipients());
-                    trans.close();
+                    try ( // create transport object with authentication data
+                            Transport trans = mailSession.getTransport("smtp")) {
+                        trans.connect(mailSession.getProperty("mail.smtp.user"),
+                                mailSession.getProperty("mail.smtp.password"));
+                        trans.sendMessage(mailMessage, mailMessage.getAllRecipients());
+                    }
                 } else {
                     long l = System.currentTimeMillis();
-                    // no authentication - so we simple send the mail...
+                    try ( // no authentication - so we simple send the mail...
                     // Transport.send(mailMessage);
                     // issue #467
-                    Transport trans = mailSession.getTransport("smtp");// ("smtp");
-                    trans.connect();
-                    trans.sendMessage(mailMessage, mailMessage.getAllRecipients());
-                    trans.close();
+                            Transport trans = mailSession.getTransport("smtp")) {
+                        trans.connect();
+                        trans.sendMessage(mailMessage, mailMessage.getAllRecipients());
+                    }
                     if (debug) {
                         logger.log(Level.FINEST, "...mail transfer in {0}ms", System.currentTimeMillis() - l);
                     }
                 }
                 logger.log(Level.INFO, "...send mail: MessageID={0}", mailMessage.getMessageID());
 
-            } catch (Exception esend) {
+            } catch (MessagingException | PluginException esend) {
                 logger.log(Level.WARNING, "close failed with exception: {0}", esend.toString());
             }
         }
@@ -325,7 +329,7 @@ public class MailPlugin extends AbstractPlugin {
      * @return String - replyTo address
      */
     public String getReplyTo(ItemCollection documentContext, ItemCollection documentActivity) {
-        String sReplyTo = null;
+        String sReplyTo;
         boolean debug = logger.isLoggable(Level.FINE);
 
         // check for ReplyTo...
@@ -366,26 +370,25 @@ public class MailPlugin extends AbstractPlugin {
      * @param documentActivity
      * @return String list of Recipients
      */
-    @SuppressWarnings("unchecked")
     public List<String> getRecipients(ItemCollection documentContext, ItemCollection documentActivity) {
 
         // build Recipient from Activity ...
-        List<String> vectorRecipients = (List<String>) documentActivity.getItemValue("namMailReceiver");
-        if (vectorRecipients == null)
-            vectorRecipients = new Vector<String>();
+        List<String> recipients = documentActivity.getItemValueList("namMailReceiver", String.class);
+        if (recipients == null)
+            recipients = new ArrayList<>();
 
         // read keyMailReceiverFields (multi value)
         // here are the field names defined
-        mergeFieldList(documentContext, vectorRecipients, documentActivity.getItemValue("keyMailReceiverFields"));
+        mergeFieldList(documentContext, recipients, documentActivity.getItemValueList("keyMailReceiverFields", String.class));
 
         // write debug Log
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINEST, "......{0} Receipients: ", vectorRecipients.size());
-            for (String rez : vectorRecipients)
+            logger.log(Level.FINEST, "......{0} Receipients: ", recipients.size());
+            for (String rez : recipients)
                 logger.log(Level.FINEST, "     {0}", rez);
         }
 
-        return vectorRecipients;
+        return recipients;
     }
 
     /**
@@ -396,24 +399,23 @@ public class MailPlugin extends AbstractPlugin {
      * @param documentActivity
      * @return String list of Recipients
      */
-    @SuppressWarnings("unchecked")
     public List<String> getRecipientsCC(ItemCollection documentContext, ItemCollection documentActivity) {
 
-        // build Recipient Vector from namMailReceiver
-        List<String> vectorRecipients = (List<String>) documentActivity.getItemValue("namMailReceiverCC");
-        if (vectorRecipients == null)
-            vectorRecipients = new Vector<String>();
+        // build Recipient List from namMailReceiverCC
+        List<String> recipients = documentActivity.getItemValueList("namMailReceiverCC", String.class);
+        if (recipients == null)
+            recipients = new ArrayList<>();
 
         // now read keyMailReceiverFieldsCC (multiValue)
-        mergeFieldList(documentContext, vectorRecipients, documentActivity.getItemValue("keyMailReceiverFieldsCC"));
+        mergeFieldList(documentContext, recipients, documentActivity.getItemValueList("keyMailReceiverFieldsCC", String.class));
 
         // write debug Log
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINEST, "......{0} ReceipientsCC: ", vectorRecipients.size());
-            for (String rez : vectorRecipients)
+            logger.log(Level.FINEST, "......{0} ReceipientsCC: ", recipients.size());
+            for (String rez : recipients)
                 logger.log(Level.FINEST, "     {0}", rez);
         }
-        return vectorRecipients;
+        return recipients;
     }
 
     /**
@@ -424,24 +426,23 @@ public class MailPlugin extends AbstractPlugin {
      * @param documentActivity
      * @return String list of Recipients
      */
-    @SuppressWarnings("unchecked")
     public List<String> getRecipientsBCC(ItemCollection documentContext, ItemCollection documentActivity) {
 
-        // build Recipient Vector from namMailReceiver
-        List<String> vectorRecipients = (List<String>) documentActivity.getItemValue("namMailReceiverBCC");
-        if (vectorRecipients == null)
-            vectorRecipients = new Vector<String>();
+        // build Recipient List from namMailReceiverBCC
+        List<String> recipients = documentActivity.getItemValueList("namMailReceiverBCC", String.class);
+        if (recipients == null)
+            recipients = new ArrayList<>();
 
         // now read keyMailReceiverFieldsCC (multiValue)
-        mergeFieldList(documentContext, vectorRecipients, documentActivity.getItemValue("keyMailReceiverFieldsBCC"));
+        mergeFieldList(documentContext, recipients, documentActivity.getItemValueList("keyMailReceiverFieldsBCC", String.class));
 
         // write debug Log
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINEST, "......{0} ReceipientsBCC: ", vectorRecipients.size());
-            for (String rez : vectorRecipients)
+            logger.log(Level.FINEST, "......{0} ReceipientsBCC: ", recipients.size());
+            for (String rez : recipients)
                 logger.log(Level.FINEST, "     {0}", rez);
         }
-        return vectorRecipients;
+        return recipients;
     }
 
     /**
@@ -467,10 +468,7 @@ public class MailPlugin extends AbstractPlugin {
         // Test if mail body contains HTML content and updates the flag
         // 'isHTMLMail'.
         String sTestHTML = aBodyText.trim().toLowerCase();
-        if (sTestHTML.startsWith("<!doctype") || sTestHTML.startsWith("<html") || sTestHTML.startsWith("<?xml")) {
-            bHTMLMail = true;
-        } else
-            bHTMLMail = false;
+        bHTMLMail = sTestHTML.startsWith("<!doctype") || sTestHTML.startsWith("<html") || sTestHTML.startsWith("<?xml");
 
         // xsl transformation...?
         if (sTestHTML.contains("<xsl:stylesheet")) {
@@ -487,6 +485,8 @@ public class MailPlugin extends AbstractPlugin {
      * 
      * encoding is set to UTF-8
      * 
+     * @param documentContext
+     * @param xslTemplate
      * @return translated email body
      * @throws PluginException
      * 
@@ -522,7 +522,7 @@ public class MailPlugin extends AbstractPlugin {
             try {
                 outputStream.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
         }
 
@@ -583,64 +583,64 @@ public class MailPlugin extends AbstractPlugin {
      * @throws AddressException
      */
     public InternetAddress getInternetAddress(String aAddr) throws AddressException {
-        InternetAddress inetAddr = null;
+        InternetAddress inetAddr;
         if (aAddr == null) {
             return null;
         }
         aAddr=aAddr.trim();
         try {
             // surround with "" if space
-            if (aAddr.indexOf(" ") > -1)
+            if (aAddr.contains(" "))
                 inetAddr = new InternetAddress("\"" + aAddr + "\"");
             else
                 inetAddr = new InternetAddress(aAddr);
 
         } catch (AddressException ae) {
             // return empty address part
-            ae.printStackTrace();
+            logger.severe(ae.getMessage());
             return null;
         }
         return inetAddr;
     }
 
     /**
-     * This method transforms a vector of E-Mail addresses into an InternetAddress
+     * This method transforms a List of E-Mail addresses into an InternetAddress
      * Array. Null values will be removed from list
      * 
      * @param String List of adresses
      * @return array of InternetAddresses
      */
-    @SuppressWarnings("rawtypes")
-    private InternetAddress[] getInternetAddressArray(List aList) {
+    private InternetAddress[] getInternetAddressArray(List<String> aList) {
         // set TO Recipient
-        // store valid addresses into atemp vector to avoid null values
-        InternetAddress inetAddr = null;
+        // store valid addresses into atemp list to avoid null values
+        InternetAddress inetAddr;
         if (aList == null) {
             return null;
         }
 
-        Vector<InternetAddress> vReceipsTemp = new Vector<InternetAddress>();
+        List<InternetAddress> receipsTemp = new ArrayList<>();
         for (int i = 0; i < aList.size(); i++) {
             try {
-                inetAddr = getInternetAddress(aList.get(i).toString());
+                inetAddr = getInternetAddress(aList.get(i));
                 if (inetAddr != null && !"".equals(inetAddr.getAddress()))
-                    vReceipsTemp.add(inetAddr);
+                    receipsTemp.add(inetAddr);
             } catch (AddressException e) {
                 // no todo
             }
 
         }
 
-        // rebuild new InternetAddress array from TempVector...
-        InternetAddress[] receipsAdrs = new InternetAddress[vReceipsTemp.size()];
-        for (int i = 0; i < vReceipsTemp.size(); i++) {
-            receipsAdrs[i] = (InternetAddress) vReceipsTemp.elementAt(i);
+        // rebuild new InternetAddress array from TempList...
+        InternetAddress[] receipsAdrs = new InternetAddress[receipsTemp.size()];
+        for (int i = 0; i < receipsTemp.size(); i++) {
+            receipsAdrs[i] = receipsTemp.get(i);
         }
         return receipsAdrs;
     }
 
     /**
      * This method returns the mail session object.
+     * @return the mail session object
      */
     public Session getMailSession() {
         return mailSession;
@@ -684,16 +684,17 @@ public class MailPlugin extends AbstractPlugin {
      * @return
      */
     public String getContentType() {
-        String sContentType = "";
+        StringBuilder sContentType = new StringBuilder();
         if (bHTMLMail) {
-            sContentType = CONTENTTYPE_TEXT_HTML;
+            sContentType.append(CONTENTTYPE_TEXT_HTML);
         } else {
-            sContentType = CONTENTTYPE_TEXT_PLAIN;
+            sContentType.append(CONTENTTYPE_TEXT_PLAIN);
         }
-        if (this.getCharSet() != null && !this.getCharSet().isEmpty()) {
-            sContentType = sContentType + "; charset=" + this.getCharSet();
+        if (getCharSet() != null && !getCharSet().isEmpty()) {
+            sContentType.append("; charset=")
+            .append(getCharSet());
         }
-        return sContentType;
+        return sContentType.toString();
     }
 
 }

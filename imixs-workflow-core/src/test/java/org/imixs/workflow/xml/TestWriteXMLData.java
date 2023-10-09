@@ -48,6 +48,7 @@ public class TestWriteXMLData {
 	 */
 	@Test
 	// @Ignore
+        @SuppressWarnings("AssertEqualsBetweenInconvertibleTypes")
 	public void testWrite() {
 		byte[] empty = { 0 };
 		// PHASE I.
@@ -56,14 +57,14 @@ public class TestWriteXMLData {
 		itemColSource.replaceItemValue("txtTitel", "Hello");
 
 		// create list of list...
-		List<List<String>> valueList = new ArrayList<List<String>>();
+		List<List<String>> valueList = new ArrayList<>();
 
-		List<String> list1 = new ArrayList<String>();
+		List<String> list1 = new ArrayList<>();
 		list1.add("Berlin");
 		list1.add("Munich");
 		valueList.add(list1);
 
-		List<String> list2 = new ArrayList<String>();
+		List<String> list2 = new ArrayList<>();
 		list2.add("John");
 		list2.add("Sam");
 		valueList.add(list2);
@@ -71,7 +72,7 @@ public class TestWriteXMLData {
 		itemColSource.replaceItemValue("_listdata", valueList);
 
 		// create list of map...
-		List<Map<String, List<Object>>> mapList = new ArrayList<Map<String, List<Object>>>();
+		List<Map<String, List<?>>> mapList = new ArrayList<>();
 
 		ItemCollection i1 = new ItemCollection();
 		i1.replaceItemValue("_name", "some data");
@@ -91,13 +92,12 @@ public class TestWriteXMLData {
 		// write the write-example.xml....
 
 		// create JAXB object
-		XMLDocument xmlCol = null;
+		XMLDocument xmlCol;
 		try {
 			xmlCol = XMLDocumentAdapter.getDocument(itemColSource);
-		} catch (Exception e1) {
-
-			e1.printStackTrace();
-			Assert.fail();
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+                        return;
 		}
 
 		// now write back to file
@@ -115,8 +115,7 @@ public class TestWriteXMLData {
 			jaxbMarshaller.marshal(xmlCol, System.out);
 
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		Assert.assertNotNull(file);
@@ -125,9 +124,7 @@ public class TestWriteXMLData {
 		// Read the write-example.xml....
 
 		try {
-			FileInputStream fis = null;
-
-			fis = new FileInputStream(file);
+			FileInputStream fis = new FileInputStream(file);
 			ItemCollection resultItemCollection = XMLDocumentAdapter.readItemCollectionFromInputStream(fis);
 
 			Assert.assertNotNull(resultItemCollection);
@@ -140,13 +137,10 @@ public class TestWriteXMLData {
 			FileData afileData = itemColSource.getFileData("test.txt");
 			Assert.assertNotNull(afileData);
 			Assert.assertEquals("application/unknown",afileData.getContentType());
-			Assert.assertEquals(empty,afileData.getContent());
+			Assert.assertArrayEquals(empty,afileData.getContent());
 
-		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (IOException e) {
-			Assert.fail();
+		} catch (JAXBException | IOException e) {
+			Assert.fail(e.getMessage());
 		}
 
 	}

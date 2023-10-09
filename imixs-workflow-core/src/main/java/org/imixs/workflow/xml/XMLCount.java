@@ -30,6 +30,7 @@ package org.imixs.workflow.xml;
 
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlValue;
+import java.io.Serializable;
 
 /**
  * Represents a basic object type Long
@@ -38,7 +39,7 @@ import jakarta.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlRootElement(name = "count")
-public class XMLCount implements java.io.Serializable {
+public class XMLCount implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @XmlValue

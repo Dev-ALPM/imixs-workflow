@@ -55,6 +55,7 @@ import org.imixs.workflow.xml.XMLDocumentAdapter;
 @Provider
 public class DocumentTableWriter implements MessageBodyWriter<DocumentTable> {
 
+    @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return DocumentTable.class.isAssignableFrom(type);
     }
@@ -63,8 +64,9 @@ public class DocumentTableWriter implements MessageBodyWriter<DocumentTable> {
      * This method prints the collection data into a HTML table
      * 
      * 
+     * @param documentTable
      */
-    @SuppressWarnings({ "rawtypes" })
+    @Override
     public void writeTo(DocumentTable documentTable, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
@@ -94,7 +96,7 @@ public class DocumentTableWriter implements MessageBodyWriter<DocumentTable> {
         // print table body
         try {
 
-            for (XMLDocument xmlworkItem : documentTable.getDocument()) {
+            for (XMLDocument xmlworkItem : documentTable.getDocuments()) {
                 /* Print row */
                 if (trClass)
                     bw.write("<tr class=\"a\">");
@@ -105,7 +107,7 @@ public class DocumentTableWriter implements MessageBodyWriter<DocumentTable> {
                 ItemCollection itemCol = XMLDocumentAdapter.putDocument(xmlworkItem);
                 for (String itemName : documentTable.getItems()) {
                     // test if item name contains format or converter definition
-                    List vValues = itemCol.getItemValue(itemName);
+                    List<?> vValues = itemCol.getItemValue(itemName);
                     bw.write("<td>" + XMLItemCollectionWriter.convertValuesToString(vValues) + "</td>");
                 }
                 bw.write("</tr>");
@@ -114,7 +116,7 @@ public class DocumentTableWriter implements MessageBodyWriter<DocumentTable> {
             bw.write("</tbody></table>");
         } catch (
 
-        Exception e) {
+        IOException e) {
             bw.write("ERROR<br>");
             // e.printStackTrace(bw.);
         }
@@ -125,6 +127,7 @@ public class DocumentTableWriter implements MessageBodyWriter<DocumentTable> {
         bw.flush();
     }
 
+    @Override
     public long getSize(DocumentTable arg0, Class<?> arg1, Type arg2, Annotation[] arg3, MediaType arg4) {
         return -1;
     }

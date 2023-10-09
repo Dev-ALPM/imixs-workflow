@@ -43,6 +43,7 @@ public class MokModelManager implements ModelManager {
 
 	/** 
 	 * Load a test model by filename
+	 * @param sModelPath
 	 * @throws IOException 
 	 * @throws SAXException 
 	 * @throws ParserConfigurationException 

@@ -110,7 +110,7 @@ public class WorkflowMockEnvironment {
 
     @Before
     public void setup() throws PluginException, ModelException {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         // setup db
         createTestDatabase();
 
@@ -124,33 +124,27 @@ public class WorkflowMockEnvironment {
         // mock Entity service
         documentService = Mockito.mock(DocumentService.class);
         // Simulate fineProfile("1.0.0") -> entityService.load()...
-        when(documentService.load(Mockito.anyString())).thenAnswer(new Answer<ItemCollection>() {
-            @Override
-            public ItemCollection answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                String id = (String) args[0];
-                ItemCollection result = database.get(id);
-                if (result != null) {
-                    // set author access=true
-                    result.replaceItemValue(DocumentService.ISAUTHOR, true);
-                }
-                return result;
+        when(documentService.load(Mockito.anyString())).thenAnswer((InvocationOnMock invocation) -> {
+            Object[] args = invocation.getArguments();
+            String id = (String) args[0];
+            ItemCollection result = database.get(id);
+            if (result != null) {
+                // set author access=true
+                result.replaceItemValue(DocumentService.ISAUTHOR, true);
             }
+            return result;
         });
 
         // simulate save() method
-        when(documentService.save(Mockito.any(ItemCollection.class))).thenAnswer(new Answer<ItemCollection>() {
-            @Override
-            public ItemCollection answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                ItemCollection entity = (ItemCollection) args[0];
-                // test if uniqueid is available
-                if (entity.getUniqueID().isEmpty()) {
-                    entity.replaceItemValue(WorkflowKernel.UNIQUEID, WorkflowKernel.generateUniqueID());
-                }
-                database.put(entity.getItemValueString(WorkflowKernel.UNIQUEID), entity);
-                return entity;
+        when(documentService.save(Mockito.any(ItemCollection.class))).thenAnswer((InvocationOnMock invocation) -> {
+            Object[] args = invocation.getArguments();
+            ItemCollection entity = (ItemCollection) args[0];
+            // test if uniqueid is available
+            if (entity.getUniqueID().isEmpty()) {
+                entity.replaceItemValue(WorkflowKernel.UNIQUEID, WorkflowKernel.generateUniqueID());
             }
+            database.put(entity.getItemValueString(WorkflowKernel.UNIQUEID), entity);
+            return entity;
         });
 
         // Mock modelService (using the @spy) annotation
@@ -165,7 +159,7 @@ public class WorkflowMockEnvironment {
             when(modelManager.getModel(Mockito.anyString())).thenReturn(this.getModel());
             when(modelManager.getModelByWorkitem(Mockito.any(ItemCollection.class))).thenReturn(this.getModel());
         } catch (ModelException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
 
         // Mock context
@@ -180,65 +174,53 @@ public class WorkflowMockEnvironment {
 
         workflowService.modelService = modelService;
         when(workflowService.getModelManager()).thenReturn(modelService);
-        when(workflowService.getWorkListByRef(Mockito.anyString())).thenAnswer(new Answer<List<ItemCollection>>() {
-            @Override
-            public List<ItemCollection> answer(InvocationOnMock invocation) throws Throwable {
-
-                List<ItemCollection> result = new ArrayList<>();
-                Object[] args = invocation.getArguments();
-                String id = (String) args[0];
-
-                // iterate over all data and return matching workitems.
-                Collection<ItemCollection> allEntities = database.values();
-                for (ItemCollection aentity : allEntities) {
-                    if (aentity.getItemValueString(WorkflowService.UNIQUEIDREF).equals(id)) {
-                        result.add(aentity);
-                    }
+        when(workflowService.getWorkListByRef(Mockito.anyString())).thenAnswer((InvocationOnMock invocation) -> {
+            List<ItemCollection> result = new ArrayList<>();
+            Object[] args = invocation.getArguments();
+            String id = (String) args[0];
+            
+            // iterate over all data and return matching workitems.
+            Collection<ItemCollection> allEntities = database.values();
+            for (ItemCollection aentity : allEntities) {
+                if (aentity.getItemValueString(WorkflowService.UNIQUEIDREF).equals(id)) {
+                    result.add(aentity);
                 }
-                return result;
             }
+            return result;
         });
 
         // AdaptText
         when(workflowService.adaptText(Mockito.anyString(), Mockito.any(ItemCollection.class)))
-                .thenAnswer(new Answer<String>() {
-                    @Override
-                    public String answer(InvocationOnMock invocation) throws Throwable, PluginException {
-
-                        Object[] args = invocation.getArguments();
-                        String text = (String) args[0];
-                        ItemCollection document = (ItemCollection) args[1];
-
-                        TextEvent textEvent = new TextEvent(text, document);
-
-                        // for-each adapter
-                        TextForEachAdapter tfea = new TextForEachAdapter();
-                        tfea.onEvent(textEvent);
-
-                        // ItemValue adapter
-                        TextItemValueAdapter tiva = new TextItemValueAdapter();
-                        tiva.onEvent(textEvent);
-
-                        return textEvent.getText();
-                    }
-                });
+                .thenAnswer((InvocationOnMock invocation) -> {
+                    Object[] args = invocation.getArguments();
+                    String text = (String) args[0];
+                    ItemCollection document = (ItemCollection) args[1];
+                    
+                    TextEvent textEvent = new TextEvent(text, document);
+                    
+                    // for-each adapter
+                    TextForEachAdapter tfea = new TextForEachAdapter();
+                    tfea.onEvent(textEvent);
+                    
+                    // ItemValue adapter
+                    TextItemValueAdapter tiva = new TextItemValueAdapter();
+                    tiva.onEvent(textEvent);
+                    
+                    return textEvent.getText();
+        });
         when(workflowService.adaptTextList(Mockito.anyString(), Mockito.any(ItemCollection.class)))
-                .thenAnswer(new Answer<List<String>>() {
-                    @Override
-                    public List<String> answer(InvocationOnMock invocation) throws Throwable, PluginException {
-
-                        Object[] args = invocation.getArguments();
-                        String text = (String) args[0];
-                        ItemCollection document = (ItemCollection) args[1];
-
-                        TextEvent textEvent = new TextEvent(text, document);
-
-                        TextItemValueAdapter tiva = new TextItemValueAdapter();
-                        tiva.onEvent(textEvent);
-
-                        return textEvent.getTextList();
-                    }
-                });
+                .thenAnswer((InvocationOnMock invocation) -> {
+                    Object[] args = invocation.getArguments();
+                    String text = (String) args[0];
+                    ItemCollection document = (ItemCollection) args[1];
+                    
+                    TextEvent textEvent = new TextEvent(text, document);
+                    
+                    TextItemValueAdapter tiva = new TextItemValueAdapter();
+                    tiva.onEvent(textEvent);
+                    
+                    return textEvent.getTextList();
+        });
 
 //		when(workflowService.evalNextTask(Mockito.any(ItemCollection.class), Mockito.any(ItemCollection.class)))
 //				.thenCallRealMethod();
@@ -257,29 +239,24 @@ public class WorkflowMockEnvironment {
         Mockito.doCallRealMethod().when(workflowService).updateMetadata(Mockito.any(ItemCollection.class));
 
         // register static Adapters: ParticipantAdapter
-        doAnswer(new Answer<Void>() {
-
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] arguments = invocation.getArguments();
-                if (arguments != null && arguments.length == 1 && arguments[0] != null) {
-
-                    WorkflowKernel workflowKernel = (WorkflowKernel) arguments[0];
-
-                    // Spy ParticipantAdapter after construction....
-                    AccessAdapter participantAdapter = new AccessAdapter(workflowService);
-                    workflowKernel.registerAdapter(Mockito.spy(participantAdapter));
-
-                }
-                return null;
+        doAnswer((Answer<Void>) (InvocationOnMock invocation) -> {
+            Object[] arguments = invocation.getArguments();
+            if (arguments != null && arguments.length == 1 && arguments[0] != null) {
+                
+                WorkflowKernel workflowKernel = (WorkflowKernel) arguments[0];
+                
+                // Spy ParticipantAdapter after construction....
+                AccessAdapter participantAdapter = new AccessAdapter(workflowService);
+                workflowKernel.registerAdapter(Mockito.spy(participantAdapter));
+                
             }
+            return null;
         }).when(workflowService).registerAdapters(Mockito.any(WorkflowKernel.class));
 
         try {
             when(workflowService.getEvents(Mockito.any(ItemCollection.class))).thenCallRealMethod();
         } catch (ModelException e) {
-
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
 
     }
@@ -289,15 +266,13 @@ public class WorkflowMockEnvironment {
      */
     protected void createTestDatabase() {
 
-        database = new HashMap<String, ItemCollection>();
-
-        ItemCollection entity = null;
+        database = new HashMap<>();
 
         logger.info("createSimpleDatabase....");
 
         // create workitems
         for (int i = 1; i < 6; i++) {
-            entity = new ItemCollection();
+            ItemCollection entity = new ItemCollection();
             entity.replaceItemValue("type", "workitem");
             entity.replaceItemValue(WorkflowKernel.UNIQUEID, "W0000-0000" + i);
             entity.replaceItemValue("txtName", "Workitem " + i);
@@ -338,7 +313,7 @@ public class WorkflowMockEnvironment {
                 this.modelService.addModel(model);
                 logger.log(Level.FINE, "...loadModel processing time={0}ms", System.currentTimeMillis() - lLoadTime);
             } catch (ModelException | ParseException | ParserConfigurationException | SAXException | IOException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
 
         }

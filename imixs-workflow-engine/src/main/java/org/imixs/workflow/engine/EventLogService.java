@@ -28,7 +28,6 @@
 
 package org.imixs.workflow.engine;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -47,8 +46,8 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.TypedQuery;
 
 /**
  * The EventLogService is a service to create and access an event log .
@@ -103,7 +102,7 @@ public class EventLogService {
      * @return - generated event log entry
      */
     public EventLog createEvent(String topic, String refID) {
-        return createEvent(topic, refID, (Map<String, List<Object>>) null, null);
+        return createEvent(topic, refID, (Map<String, List<?>>) null, null);
     }
 
     /**
@@ -115,7 +114,7 @@ public class EventLogService {
      * @return - generated event log entry
      */
     public EventLog createEvent(String topic, String refID, Calendar timeout) {
-        return createEvent(topic, refID, (Map<String, List<Object>>) null, timeout);
+        return createEvent(topic, refID, (Map<String, List<?>>) null, timeout);
     }
 
     /**
@@ -149,9 +148,10 @@ public class EventLogService {
      * @param refID - uniqueId of the document to be assigned to the event
      * @param topic - the topic of the event.
      * @param data  - optional data map
+     * @param timeout
      * @return - generated event log entry
      */
-    public EventLog createEvent(String topic, String refID, Map<String, List<Object>> data, Calendar timeout) {
+    public EventLog createEvent(String topic, String refID, Map<String, List<?>> data, Calendar timeout) {
         boolean debug = logger.isLoggable(Level.FINE);
         if (refID == null || refID.isEmpty()) {
             logger.warning("create EventLog failed - given ref-id is empty!");
@@ -178,10 +178,8 @@ public class EventLogService {
      * @param topic    - list of topics
      * @return - list of eventLogEntries
      */
-    @SuppressWarnings("unchecked")
     public List<EventLog> findEventsByTopic(int maxCount, String... topic) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<EventLog> result = new ArrayList<>();
         String query = "SELECT eventlog FROM EventLog AS eventlog ";
         query += "WHERE (";
         for (String _topic : topic) {
@@ -194,9 +192,9 @@ public class EventLogService {
         query += ") ORDER BY eventlog.created ASC";
 
         // find all eventLogEntries....
-        Query q = manager.createQuery(query);
+        TypedQuery<EventLog> q = manager.createQuery(query, EventLog.class);
         q.setMaxResults(maxCount);
-        result = q.getResultList();
+        List<EventLog> result = q.getResultList();
         if (debug) {
             logger.log(Level.FINE, "found {0} event for topic {1}", new Object[]{result.size(), topic});
         }
@@ -214,10 +212,8 @@ public class EventLogService {
      * @param topic    - list of topics
      * @return - list of eventLogEntries
      */
-    @SuppressWarnings("unchecked")
     public List<EventLog> findEventsByTimeout(int maxCount, String... topic) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<EventLog> result = new ArrayList<>();
         String query = "SELECT eventlog FROM EventLog AS eventlog ";
         query += "WHERE (eventlog.timeout <= :now) AND ";
         query += " (";
@@ -231,12 +227,12 @@ public class EventLogService {
         query += ") ORDER BY eventlog.created ASC";
 
         // find all eventLogEntries....
-        Query q = manager.createQuery(query);
+        TypedQuery<EventLog> q = manager.createQuery(query, EventLog.class);
         // set timestamp
         q.setParameter("now", new Date(), TemporalType.TIMESTAMP);
 
         q.setMaxResults(maxCount);
-        result = q.getResultList();
+        List<EventLog> result = q.getResultList();
         if (debug) {
             logger.log(Level.FINE, "found {0} event for topic {1}", new Object[]{result.size(), topic});
         }
@@ -256,10 +252,8 @@ public class EventLogService {
      * 
      * @return - list of eventLogEntries
      */
-    @SuppressWarnings("unchecked")
     public List<EventLog> findEventsByRef(int maxCount, String ref, String... topic) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<EventLog> result = null;
         String query = "SELECT eventlog FROM EventLog AS eventlog ";
         query += "WHERE (eventlog.ref = '" + ref + "' AND (";
         for (String _topic : topic) {
@@ -270,9 +264,9 @@ public class EventLogService {
         query += ") ORDER BY eventlog.created ASC";
 
         // find all eventLogEntries....
-        Query q = manager.createQuery(query);
+        TypedQuery<EventLog> q = manager.createQuery(query, EventLog.class);
         q.setMaxResults(maxCount);
-        result = q.getResultList();
+        List<EventLog> result = q.getResultList();
         if (debug) {
             logger.log(Level.FINE, "found {0} event for topic {1}", new Object[]{result.size(), topic});
         }
@@ -287,15 +281,13 @@ public class EventLogService {
      * @param maxResult   - maximum count of events to be returned
      * @return - list of eventLogEntries
      */
-    @SuppressWarnings("unchecked")
     public List<EventLog> findAllEvents(int firstResult, int maxResult) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<EventLog> result = new ArrayList<>();
         String query = "SELECT eventlog FROM EventLog AS eventlog ";
         query += " ORDER BY eventlog.created ASC";
 
         // find all eventLogEntries....
-        Query q = manager.createQuery(query);
+        TypedQuery<EventLog> q = manager.createQuery(query, EventLog.class);
 
         // setMaxResults ?
         if (maxResult > 0) {
@@ -306,7 +298,7 @@ public class EventLogService {
             q.setFirstResult(firstResult);
         }
 
-        result = q.getResultList();
+        List<EventLog> result = q.getResultList();
         if (debug) {
             logger.log(Level.FINE, "found {0} event log entries", result.size());
         }
@@ -319,7 +311,7 @@ public class EventLogService {
      * jakarta.persistence.OptimisticLockException as this may occur during parallel
      * requests.
      * 
-     * @param eventLog
+     * @param _eventLog
      */
     public void removeEvent(final EventLog _eventLog) {
         boolean debug = logger.isLoggable(Level.FINE);
@@ -345,13 +337,12 @@ public class EventLogService {
      * jakarta.persistence.OptimisticLockException as this may occur during parallel
      * requests.
      * 
-     * @param eventLog
+     * @param id
      */
     public void removeEvent(final String id) {
-        EventLog eventLog = null;
         boolean debug = logger.isLoggable(Level.FINE);
         // lookup the entity....
-        eventLog = manager.find(EventLog.class, id);
+        EventLog eventLog = manager.find(EventLog.class, id);
 
         if (eventLog != null) {
             try {
@@ -385,7 +376,7 @@ public class EventLogService {
      * The method adds a item 'eventlog.lock.date' with a timestamp. This timestamp
      * is used by the method 'autoUnlock' to release locked entries.
      * 
-     * @param eventLogEntry
+     * @param _eventLogEntry
      * @return - true if lock was successful
      */
     public boolean lock(EventLog _eventLogEntry) {
@@ -411,7 +402,7 @@ public class EventLogService {
      * This method unlocks an eventLog entry. The topic suffix '.lock' will be
      * removed.
      * 
-     * @param eventLogEntry
+     * @param _eventLogEntry
      * @return - true if unlock was successful
      */
     public boolean unlock(EventLog _eventLogEntry) {
@@ -440,6 +431,8 @@ public class EventLogService {
     /**
      * This method unlocks eventlog entries which are older than 1 minute. We assume
      * that these events are deadlocks.
+     * @param deadLockInterval
+     * @param topic
      */
     @TransactionAttribute(value = TransactionAttributeType.REQUIRES_NEW)
     public void releaseDeadLocks(long deadLockInterval, String... topic) {
@@ -455,9 +448,8 @@ public class EventLogService {
             // test if event.lock.date is older than the deadLockInterval
             ItemCollection data = new ItemCollection(eventLogEntry.getData());
             Date lockDate = data.getItemValueDate(EVENTLOG_LOCK_DATE);
-            long age = 0;
             if (lockDate != null) {
-                age = now.getTime() - lockDate.getTime();
+                long age = now.getTime() - lockDate.getTime();
                 if (age > deadLockInterval) {
                     logger.log(Level.WARNING, "Deadlock detected! - eventlog.id={0} will be unlocked!"
                             + " (deadlock since {1}ms)", new Object[]{eventLogEntry.getId(), age});

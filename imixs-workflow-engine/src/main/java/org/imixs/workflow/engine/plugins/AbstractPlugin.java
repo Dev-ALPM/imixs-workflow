@@ -28,9 +28,9 @@
 
 package org.imixs.workflow.engine.plugins;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.Plugin;
 import org.imixs.workflow.WorkflowContext;
@@ -55,13 +55,16 @@ public abstract class AbstractPlugin implements Plugin {
 
     /**
      * Initialize Plugin and get an instance of the EJB Session Context
+     * @param actx
+     * @throws org.imixs.workflow.exceptions.PluginException
      */
+    @Override
     public void init(WorkflowContext actx) throws PluginException {
         ctx = actx;
         // get WorkflowService by check for an instance of WorkflowService
-        if (actx instanceof WorkflowService) {
+        if (actx instanceof WorkflowService workflowService1) {
             // yes we are running in a WorkflowService EJB
-            workflowService = (WorkflowService) actx;
+            workflowService = workflowService1;
         }
     }
 
@@ -100,15 +103,15 @@ public abstract class AbstractPlugin implements Plugin {
      * Also Curly brackets are allowed '{user1,user2}'
      * 
      * 
+     * @param documentContext
      * @param valueList
      * @param fieldList
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void mergeFieldList(ItemCollection documentContext, List valueList, List<String> fieldList) {
+    public void mergeFieldList(ItemCollection documentContext, List<String> valueList, List<String> fieldList) {
         if (valueList == null || fieldList == null)
             return;
-        List<?> values = null;
-        if (fieldList.size() > 0) {
+        List<String> values;
+        if (!fieldList.isEmpty()) {
             // iterate over the fieldList
             for (String key : fieldList) {
                 if (key == null) {
@@ -124,11 +127,11 @@ public abstract class AbstractPlugin implements Plugin {
                     values = Arrays.asList(key.substring(1, key.length() - 1).split("\\s*,\\s*"));
                 } else {
                     // extract value list form documentContext
-                    values = documentContext.getItemValue(key);
+                    values = documentContext.getItemValueList(key, String.class);
                 }
-                // now append the values into p_VectorDestination
-                if ((values != null) && (values.size() > 0)) {
-                    for (Object o : values) {
+                // now append the values into valueList
+                if ((values != null) && (!values.isEmpty())) {
+                    for (String o : values) {
                         // append only if not used
                         if (valueList.indexOf(o) == -1)
                             valueList.add(o);
@@ -140,26 +143,28 @@ public abstract class AbstractPlugin implements Plugin {
     }
 
     /**
-     * This method removes duplicates and null values from a vector.
+     * This method removes duplicates and null values from a list.
      * 
+     * @param <T>
      * @param valueList - list of elements
+     * @return 
      */
-    public List<?> uniqueList(List<Object> valueList) {
-        int iVectorSize = valueList.size();
-        Vector<Object> cleanedVector = new Vector<Object>();
+    public <T> List<T> uniqueList(List<T> valueList) {
+        int iListSize = valueList.size();
+        List<T> cleanedList = new ArrayList<>();
 
-        for (int i = 0; i < iVectorSize; i++) {
-            Object o = valueList.get(i);
-            if (o == null || cleanedVector.indexOf(o) > -1 || "".equals(o.toString()))
+        for (int i = 0; i < iListSize; i++) {
+            T o = valueList.get(i);
+            if (o == null || cleanedList.indexOf(o) > -1 || "".equals(o.toString()))
                 continue;
 
             // add unique object
-            cleanedVector.add(o);
+            cleanedList.add(o);
         }
-        valueList = cleanedVector;
-        // do not work with empty vectors....
-        if (valueList.size() == 0)
-            valueList.add("");
+        valueList = cleanedList;
+//        // do not work with empty list....
+//        if (valueList.isEmpty())
+//            valueList.add("");
 
         return valueList;
     }

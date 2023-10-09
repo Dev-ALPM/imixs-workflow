@@ -28,10 +28,10 @@
 
 package org.imixs.workflow.xml;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 import jakarta.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 
 /**
  * The XMLitemCollection is a basic serializable representation of a pojo to map
@@ -47,7 +47,7 @@ public class XMLDocument implements Serializable {
     private XMLItem[] item;
 
     public XMLDocument() {
-        this.setItem(new XMLItem[] {});
+        this.item = new XMLItem[] {};
     }
 
     public XMLItem[] getItem() {
@@ -59,12 +59,22 @@ public class XMLDocument implements Serializable {
     }
 
     /**
-     * This method compares the item array
+     * {@inheritDoc}
      */
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof XMLDocument))
             return false;
         return Arrays.equals(item, ((XMLDocument) o).item);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + Arrays.deepHashCode(this.item);
+        return hash;
+    }
 }

@@ -60,6 +60,10 @@ import jakarta.ejb.LocalBean;
 import jakarta.ejb.SessionContext;
 import jakarta.ejb.Singleton;
 import jakarta.inject.Inject;
+import java.io.IOException;
+import java.text.ParseException;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
 
 /**
  * The ModelManager is independent form the IX JEE Entity EJBs and uses the
@@ -144,7 +148,7 @@ public class ModelService implements ModelManager {
                             addModel(model);
                         }
                     }
-                } catch (Exception e) {
+                } catch (IOException | ParseException | ParserConfigurationException | ModelException | SAXException e) {
                     logger.log(Level.WARNING, "Failed to load model ''{0}'' : {1}", new Object[]{file.getName(), e.getMessage()});
                 }
             }
@@ -175,8 +179,10 @@ public class ModelService implements ModelManager {
      * removed from the database. Use deleteModel to delete the model from the
      * database.
      * 
+     * @param modelversion
      * @throws AccessDeniedException
      */
+    @Override
     public void removeModel(String modelversion) {
         boolean debug = logger.isLoggable(Level.FINE);
         getModelStore().remove(modelversion);
@@ -216,12 +222,12 @@ public class ModelService implements ModelManager {
             workflowGroup = workitem.getItemValueString("txtworkflowgroup");
         }
 
-        Model model = null;
+        Model model;
         try {
             model = getModel(modelVersion);
         } catch (ModelException me) {
             model = null;
-            List<String> versions = null;
+            List<String> versions;
             if (debug) {
                 logger.finest(me.getMessage());
             }
@@ -243,7 +249,7 @@ public class ModelService implements ModelManager {
                 versions = findVersionsByGroup(workflowGroup);
                 if (!versions.isEmpty()) {
                     String newVersion = versions.get(0);
-                    if (!modelVersion.isEmpty()) {
+                    if (modelVersion != null && !modelVersion.isEmpty()) {
                         logger.log(Level.WARNING, "Deprecated model version: ''{0}'' -> migrating to ''{1}'',"
                                 + "  $workflowgroup: ''{2}'', $uniqueid: {3}",
                                 new Object[]{modelVersion, newVersion, workflowGroup, workitem.getUniqueID()});
@@ -272,7 +278,7 @@ public class ModelService implements ModelManager {
     public List<String> getVersions() {
         // convert Set to List
         Set<String> set = getModelStore().keySet();
-        List<String> result = new ArrayList<String>(set);
+        List<String> result = new ArrayList<>(set);
         return result;
     }
 
@@ -282,11 +288,11 @@ public class ModelService implements ModelManager {
      * @return
      */
     public List<String> getLatestVersions() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         List<String> groups = getGroups();
         for (String group : groups) {
             List<String> versions = findVersionsByGroup(group);
-            if (versions != null && versions.size() > 0) {
+            if (versions != null && !versions.isEmpty()) {
                 // add the latest version
                 String version = versions.get(0);
                 if (!result.contains(version)) {
@@ -305,7 +311,7 @@ public class ModelService implements ModelManager {
      * @return
      */
     public List<String> getGroups() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         Collection<Model> models = getModelStore().values();
         for (Model amodel : models) {
             for (String group : amodel.getGroups()) {
@@ -329,7 +335,7 @@ public class ModelService implements ModelManager {
      */
     public List<String> findVersionsByGroup(String group) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if (debug) {
             logger.log(Level.FINEST, "......searching model versions for workflowgroup ''{0}''...", group);
         }
@@ -350,12 +356,12 @@ public class ModelService implements ModelManager {
      * for a model version. The result is sorted in reverse order, so the highest
      * version number is the first in the result list.
      * 
-     * @param group
+     * @param modelRegex
      * @return
      */
     public List<String> findVersionsByRegEx(String modelRegex) {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if (debug) {
             logger.log(Level.FINEST, "......searching model versions for regex ''{0}''...", modelRegex);
         }
@@ -397,6 +403,7 @@ public class ModelService implements ModelManager {
      * document.
      * 
      * @param model
+     * @param _filename
      * @throws ModelException
      */
     public void saveModel(BPMNModel model, String _filename) throws ModelException {
@@ -408,7 +415,7 @@ public class ModelService implements ModelManager {
             if (debug) {
                 logger.log(Level.FINEST, "......save BPMNModel ''{0}''...", model.getVersion());
             }
-            BPMNModel bpmnModel = (BPMNModel) model;
+            BPMNModel bpmnModel = model;
             addModel(model);
             ItemCollection modelItemCol = new ItemCollection();
             modelItemCol.replaceItemValue("type", "model");
@@ -442,9 +449,9 @@ public class ModelService implements ModelManager {
      * version). After the model entity was deleted form the database, the method
      * will also remove the model from the ModelManager
      * 
-     * @param model
+     * @param version
      */
-    public void deleteModel(String version) {
+    public void deleteModel(String version) throws InvalidAccessException {
         if (version != null && !version.isEmpty()) {
             boolean debug = logger.isLoggable(Level.FINE);
             if (debug) {
@@ -470,7 +477,8 @@ public class ModelService implements ModelManager {
      * This method loads an existing Model Entities from the database. A model
      * entity is identified by its name (model version).
      * 
-     * @param model
+     * @param version
+     * @return 
      */
     public ItemCollection loadModelEntity(String version) {
 
@@ -504,14 +512,14 @@ public class ModelService implements ModelManager {
      * element
      * 
      * @param bpmnElement
+     * @param name
      * @return
      */
-    @SuppressWarnings("unchecked")
     public String getDataObject(ItemCollection bpmnElement, String name) {
 
-        List<List<String>> dataObjects = bpmnElement.getItemValue("dataObjects");
+        List<List<String>> dataObjects = bpmnElement.getItemValueListList("dataObjects", String.class);
 
-        if (dataObjects != null && dataObjects.size() > 0) {
+        if (dataObjects != null && !dataObjects.isEmpty()) {
             for (List<String> dataObject : dataObjects) {
                 String key = dataObject.get(0);
                 if (name.equals(key)) {
@@ -532,7 +540,7 @@ public class ModelService implements ModelManager {
     private Map<String, Model> getModelStore() {
         if (modelStore == null) {
             // create store (sorted map)
-            modelStore = new ConcurrentHashMap<String, Model>();
+            modelStore = new ConcurrentHashMap<>();
             init();
         }
         return modelStore;

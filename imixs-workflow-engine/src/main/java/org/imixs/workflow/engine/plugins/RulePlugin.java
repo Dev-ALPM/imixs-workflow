@@ -119,7 +119,9 @@ public class RulePlugin extends AbstractPlugin {
      * If a script changes properties of the activity entity the method will
      * evaluate these changes and update the ItemCollection for further processing.
      * 
+     * @param workitem
      */
+    @Override
     public ItemCollection run(ItemCollection workitem, ItemCollection event)
             throws PluginException {
 
@@ -146,7 +148,7 @@ public class RulePlugin extends AbstractPlugin {
                 result.removeItem("isValid");
             }
             // if isValid==false then throw a PluginException
-            if (isValidActivity != null && !isValidActivity) {
+            if (!isValidActivity) {
                 // test if a error code is provided!
                 String sErrorCode = VALIDATION_ERROR;
                 Object oErrorCode = null;
@@ -171,19 +173,11 @@ public class RulePlugin extends AbstractPlugin {
             }
 
             // now test the variable 'followUp'
-            Object followUp = null;
-            // first test result object
             if (result.hasItem("followUp")) {
-                followUp = result.getItemValueString("followUp");
+                String followUp = result.getItemValueString("followUp");
                 result.removeItem("followUp");
-            }
-
-            // If followUp is defined we update now the activityEntity....
-            if (followUp != null) {
-                // try to get double value...
-                Double d = Double.valueOf(followUp.toString());
-                Long followUpActivity = d.longValue();
-                if (followUpActivity != null && followUpActivity > 0) {
+                Long followUpActivity = Long.valueOf(followUp);
+                if (followUpActivity > 0) {
                     event.replaceItemValue("keyFollowUp", "1");
                     event.replaceItemValue("numNextActivityID", followUpActivity);
                 }
@@ -192,7 +186,7 @@ public class RulePlugin extends AbstractPlugin {
             // if result has item values then we update now the current
             // workitem iterate over all entries
 
-            for (Map.Entry<String, List<Object>> entry : result.getAllItems().entrySet()) {
+            for (Map.Entry<String, List<?>> entry : result.getAllItems().entrySet()) {
                 String itemName = entry.getKey();
                 // skip fieldnames starting with '$'
                 if (!itemName.startsWith("$")) {

@@ -207,7 +207,6 @@ public class SolrIndexService {
      * thrown.
      * 
      * @param schema - existing schema defintion
-     * @return - an update Schema definition to be POST to the Solr rest api.
      * @throws RestAPIException
      */
     public void updateSchema(String schema) throws RestAPIException {
@@ -245,7 +244,7 @@ public class SolrIndexService {
     public void indexDocuments(List<ItemCollection> documents) throws RestAPIException {
         long ltime = System.currentTimeMillis();
         boolean debug = logger.isLoggable(Level.FINE);
-        if (documents == null || documents.size() == 0) {
+        if (documents == null || documents.isEmpty()) {
             // no op!
             return;
         } else {
@@ -272,11 +271,11 @@ public class SolrIndexService {
      * control, it is recommended to use instead the the method
      * solrUpdateService.updateDocuments() which takes care of uncommitted reads.
      * 
-     * @param documents of ItemCollections to be indexed
+     * @param document of ItemCollections to be indexed
      * @throws RestAPIException
      */
     public void indexDocument(ItemCollection document) throws RestAPIException {
-        List<ItemCollection> col = new ArrayList<ItemCollection>();
+        List<ItemCollection> col = new ArrayList<>();
         col.add(document);
         indexDocuments(col);
     }
@@ -284,21 +283,21 @@ public class SolrIndexService {
     /**
      * This method removes a collection of documents from the Lucene Solr index.
      * 
-     * @param documents of collection of UniqueIDs to be removed from the index
+     * @param documentIDs of collection of UniqueIDs to be removed from the index
      * @throws RestAPIException
      */
     public void removeDocuments(List<String> documentIDs) throws RestAPIException {
         boolean debug = logger.isLoggable(Level.FINE);
         long ltime = System.currentTimeMillis();
 
-        if (documentIDs == null || documentIDs.size() == 0) {
+        if (documentIDs == null || documentIDs.isEmpty()) {
             // no op!
             return;
         } else {
-            StringBuffer xmlDelete = new StringBuffer();
+            StringBuilder xmlDelete = new StringBuilder();
             xmlDelete.append("<delete>");
             for (String id : documentIDs) {
-                xmlDelete.append("<id>" + id + "</id>");
+                xmlDelete.append("<id>").append(id).append("</id>");
             }
             xmlDelete.append("</delete>");
             String xmlRequest = xmlDelete.toString();
@@ -318,12 +317,12 @@ public class SolrIndexService {
     /**
      * This method removes a single document from the Lucene Solr index.
      * 
-     * @param document - UniqueID of the document to be removed from the index
+     * @param id - UniqueID of the document to be removed from the index
      * 
      * @throws RestAPIException
      */
     public void removeDocument(String id) throws RestAPIException {
-        List<String> col = new ArrayList<String>();
+        List<String> col = new ArrayList<>();
         col.add(id);
         removeDocuments(col);
     }
@@ -353,7 +352,12 @@ public class SolrIndexService {
      * 
      * 
      * 
-     * @param searchterm
+     * @param searchTerm
+     * @param pageSize
+     * @param pageIndex
+     * @param sortOrder
+     * @param defaultOperator
+     * @param loadStubs
      * @return
      * @throws QueryException
      */
@@ -363,15 +367,15 @@ public class SolrIndexService {
         if (debug) {
             logger.log(Level.FINE, "...search solr index: {0}...", searchTerm);
         }
-        StringBuffer uri = new StringBuffer();
+        StringBuilder uri = new StringBuilder();
 
         // URL Encode the query string....
         try {
-            uri.append(api + "/solr/" + core + "/query");
+            uri.append(api).append("/solr/").append(core).append("/query");
 
             // set default operator?
             if (defaultOperator == DefaultOperator.OR) {
-                uri.append("?q.op=" + defaultOperator);
+                uri.append("?q.op=").append(defaultOperator);
             } else {
                 // if not define we default in any case to AND
                 uri.append("?q.op=AND");
@@ -386,9 +390,9 @@ public class SolrIndexService {
                     sortField = "_" + sortField.substring(1);
                 }
                 if (sortOrder.isReverse()) {
-                    uri.append("&sort=" + sortField + "%20desc");
+                    uri.append("&sort=").append(sortField).append("%20desc");
                 } else {
-                    uri.append("&sort=" + sortField + "%20asc");
+                    uri.append("&sort=").append(sortField).append("%20asc");
                 }
             }
 
@@ -402,9 +406,9 @@ public class SolrIndexService {
                 pageIndex = 0;
             }
 
-            uri.append("&rows=" + (pageSize));
+            uri.append("&rows=").append(pageSize);
             if (pageIndex > 0) {
-                uri.append("&start=" + (pageIndex * pageSize));
+                uri.append("&start=").append(pageIndex * pageSize);
             }
 
             // if loadStubs is true, then we only request the field '$uniqueid' here.
@@ -413,13 +417,11 @@ public class SolrIndexService {
             }
 
             // append query
-            uri.append("&q=" + URLEncoder.encode(searchTerm, "UTF-8"));
+            uri.append("&q=").append(URLEncoder.encode(searchTerm, "UTF-8"));
             if (debug) {
                 logger.log(Level.FINEST, "...... uri={0}", uri.toString());
             }
-            String result = restClient.get(uri.toString());
-
-            return result;
+            return restClient.get(uri.toString());
         } catch (RestAPIException | UnsupportedEncodingException e) {
             logger.log(Level.SEVERE, "Solr search error: {0}", e.getMessage());
             throw new QueryException(QueryException.QUERY_NOT_UNDERSTANDABLE, e.getMessage(), e);
@@ -504,6 +506,7 @@ public class SolrIndexService {
      * combine both attributes. In case of a non-stored field we set also
      * docValues=false to avoid unnecessary storing of fields. </strong>
      * 
+     * @param oldSchema
      * @see https://lucene.apache.org/solr/guide/8_0/docvalues.html
      * @return
      */
@@ -556,9 +559,9 @@ public class SolrIndexService {
     /**
      * This method returns a XML structure to add new documents into the solr index.
      * 
+     * @param documents
      * @return xml content to update documents
      */
-    @SuppressWarnings("unchecked")
     protected String buildAddDoc(List<ItemCollection> documents) {
         boolean debug = logger.isLoggable(Level.FINE);
         List<String> fieldList = schemaService.getFieldList();
@@ -578,15 +581,14 @@ public class SolrIndexService {
             }
 
             xmlContent.append("<doc>");
-            xmlContent.append("<field name=\"id\">" + document.getUniqueID() + "</field>");
+            xmlContent.append("<field name=\"id\">").append(document.getUniqueID()).append("</field>");
 
             // add all content fields defined in the schema
-            String textContent = "";
+            StringBuilder sbTextContent = new StringBuilder();
             for (String field : fieldList) {
-                String sValue = "";
                 // check value list - skip empty fields
                 List<?> vValues = document.getItemValue(field);
-                if (vValues.size() == 0)
+                if (vValues.isEmpty())
                     continue;
                 // get all values of a value list field
                 for (Object o : vValues) {
@@ -598,21 +600,20 @@ public class SolrIndexService {
 
                         // convert calendar to string
                         String sDateValue;
-                        if (o instanceof Calendar)
-                            sDateValue = dateformat.format(((Calendar) o).getTime());
+                        if (o instanceof Calendar calendar)
+                            sDateValue = dateformat.format(calendar.getTime());
                         else
                             sDateValue = dateformat.format((Date) o);
-                        sValue += sDateValue + ",";
+                        sbTextContent.append(sDateValue).append(",");
 
                     } else
                         // simple string representation
-                        sValue += o.toString() + ",";
+                        sbTextContent.append(o.toString()).append(",");
                 }
-                if (sValue != null) {
-                    textContent += sValue + ",";
-                }
+                sbTextContent.append(",");
             }
             
+            String textContent = sbTextContent.toString();
             // fire IndexEvent to update the text content if needed
             if (indexEvents != null) {
                 IndexEvent indexEvent=new IndexEvent(IndexEvent.ON_INDEX_UPDATE,document);
@@ -632,7 +633,7 @@ public class SolrIndexService {
             // strip control codes..
             textContent = stripControlCodes(textContent);
             // We need to add a wrapping CDATA, allow xml in general..
-            xmlContent.append("<field name=\"" + DEFAULT_SEARCH_FIELD + "\"><![CDATA[" + textContent + "]]></field>");
+            xmlContent.append("<field name=\"" + DEFAULT_SEARCH_FIELD + "\"><![CDATA[").append(textContent).append("]]></field>");
 
             // now add all analyzed fields...
             for (String aFieldname : fieldListAnalyze) {
@@ -648,10 +649,10 @@ public class SolrIndexService {
                     document.getItemValue(WorkflowKernel.UNIQUEID));
 
             // add $readAccess not analyzed
-            List<String> vReadAccess = (List<String>) document.getItemValue(DocumentService.READACCESS);
-            if (vReadAccess.size() == 0 || (vReadAccess.size() == 1 && "".equals(vReadAccess.get(0).toString()))) {
+            List<String> vReadAccess = document.getItemValueList(DocumentService.READACCESS, String.class);
+            if (vReadAccess.isEmpty() || (vReadAccess.size() == 1 && "".equals(vReadAccess.get(0)))) {
                 // if empty than we add the ANONYMOUS default entry
-                vReadAccess = new ArrayList<String>();
+                vReadAccess = new ArrayList<>();
                 vReadAccess.add(ANONYMOUS);
             }
             addFieldValuesToUpdateRequest(xmlContent, DocumentService.READACCESS, vReadAccess);
@@ -679,7 +680,6 @@ public class SolrIndexService {
      * @see https://rosettacode.org/wiki/Strip_control_codes_and_extended_characters_from_a_string
      * 
      * @param s
-     * @param include
      * @return
      */
     protected String stripControlCodes(String s) {
@@ -730,7 +730,7 @@ public class SolrIndexService {
         List<EventLog> events = eventLogService.findEventsByTopic(count + 1, DocumentService.EVENTLOG_TOPIC_INDEX_ADD,
                 DocumentService.EVENTLOG_TOPIC_INDEX_REMOVE);
 
-        if (events != null && events.size() > 0) {
+        if (events != null && !events.isEmpty()) {
             try {
 
                 int _counter = 0;
@@ -791,7 +791,7 @@ public class SolrIndexService {
 
         if (debug) {
             logger.log(Level.FINE, "...flushEventLog - {0} events in {1} ms - last log entry: {2}",
-                    new Object[]{events.size(), System.currentTimeMillis() - l, lastEventDate});
+                    new Object[]{events != null ? events.size() : 0, System.currentTimeMillis() - l, lastEventDate});
         }
         return cacheIsEmpty;
 
@@ -810,6 +810,7 @@ public class SolrIndexService {
      * method which runs always in a new transaction. The goal of this mechanism is
      * to reduce the event log even in cases the outer transaction breaks.
      * 
+     * @param junkSize
      * @see LuceneSearchService
      * @return true if the the complete event log was flushed. If false the method
      *         must be recalled.
@@ -898,11 +899,11 @@ public class SolrIndexService {
         String testSchemaField = "{\"name\":\"" + name + "\",";
         if (oldSchema == null || !oldSchema.contains(testSchemaField)) {
             // add new field to updateSchema....
-            updateSchema.append("\"add-field\":" + fieldDefinition + ",");
+            updateSchema.append("\"add-field\":").append(fieldDefinition).append(",");
         } else {
             // the field exists in the schema - so replace it if the definition has changed
             if (!oldSchema.contains(fieldDefinition)) {
-                updateSchema.append("\"replace-field\":" + fieldDefinition + ",");
+                updateSchema.append("\"replace-field\":").append(fieldDefinition).append(",");
             }
         }
     }
@@ -927,7 +928,7 @@ public class SolrIndexService {
             return;
         }
 
-        if (vValues.size() == 0) {
+        if (vValues.isEmpty()) {
             return;
         }
         if (vValues.get(0) == null) {
@@ -936,12 +937,14 @@ public class SolrIndexService {
 
         String itemName = _itemName.toLowerCase().trim();
         for (Object singleValue : vValues) {
-            String convertedValue = "";
-            if (singleValue instanceof Calendar || singleValue instanceof Date) {
+            String convertedValue;
+            if(singleValue == null) {
+                convertedValue = "";
+            } else if (singleValue instanceof Calendar || singleValue instanceof Date) {
                 // convert calendar to lucene string representation
                 String sDateValue;
-                if (singleValue instanceof Calendar) {
-                    sDateValue = dateformat.format(((Calendar) singleValue).getTime());
+                if (singleValue instanceof Calendar calendar) {
+                    sDateValue = dateformat.format(calendar.getTime());
                 } else {
                     sDateValue = dateformat.format((Date) singleValue);
                 }
@@ -958,7 +961,7 @@ public class SolrIndexService {
             // wrapp value into CDATA
             convertedValue = "<![CDATA[" + stripControlCodes(convertedValue) + "]]>";
 
-            xmlContent.append("<field name=\"" + adaptImixsItemName(itemName) + "\">" + convertedValue + "</field>");
+            xmlContent.append("<field name=\"").append(adaptImixsItemName(itemName)).append("\">").append(convertedValue).append("</field>");
         }
 
     }

@@ -54,10 +54,12 @@ import org.imixs.workflow.xml.XMLDocument;
 @Produces(MediaType.TEXT_HTML)
 public class DocumentCollectionWriter implements MessageBodyWriter<XMLDataCollection> {
 
+    @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return XMLDataCollection.class.isAssignableFrom(type);
     }
 
+    @Override
     public void writeTo(XMLDataCollection entityCollection, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
@@ -74,7 +76,7 @@ public class DocumentCollectionWriter implements MessageBodyWriter<XMLDataCollec
                 XMLItemCollectionWriter.printXMLItemCollectionHTML(bw, xmlworkItem);
 
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             bw.write("ERROR<br>");
             // e.printStackTrace(bw.);
         }
@@ -85,6 +87,7 @@ public class DocumentCollectionWriter implements MessageBodyWriter<XMLDataCollec
         bw.flush();
     }
 
+    @Override
     public long getSize(XMLDataCollection arg0, Class<?> arg1, Type arg2, Annotation[] arg3, MediaType arg4) {
         return -1;
     }

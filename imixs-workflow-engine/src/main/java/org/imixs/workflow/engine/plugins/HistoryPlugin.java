@@ -35,7 +35,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
 import java.util.logging.Logger;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.WorkflowKernel;
@@ -75,8 +74,11 @@ public class HistoryPlugin extends AbstractPlugin {
      * The method tests if the deprecated property 'txtworkflowhistorylogrev'
      * exists. In this case the old log format will be transformed into the new
      * format see method convertOldFormat
+     * @param adocumentContext
+     * @param adocumentActivity
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+    @SuppressWarnings("unchecked")
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection adocumentActivity)
             throws PluginException {
         String rtfItemLog;
@@ -98,7 +100,7 @@ public class HistoryPlugin extends AbstractPlugin {
         rtfItemLog = getWorkflowService().adaptText(rtfItemLog, documentContext);
 
         List<?> temp = documentContext.getItemValue("txtworkflowhistory");
-        historyList = new Vector();
+        historyList = new ArrayList<>();
         // clear null and empty values
         Iterator<?> i = temp.iterator();
         while (i.hasNext()) {
@@ -107,7 +109,7 @@ public class HistoryPlugin extends AbstractPlugin {
                 historyList.add((List<Object>) o);
         }
 
-        List<Object> newEntry = new ArrayList<Object>();
+        List<Object> newEntry = new ArrayList<>();
         newEntry.add(documentContext.getItemValueDate(WorkflowKernel.LASTEVENTDATE));
         newEntry.add(rtfItemLog);
         newEntry.add(this.getWorkflowService().getUserName());
@@ -139,19 +141,18 @@ public class HistoryPlugin extends AbstractPlugin {
      * </ul>
      * 
      */
-    @SuppressWarnings("unchecked")
     protected void convertOldFormat() {
-        List<List<Object>> newList = new ArrayList<List<Object>>();
+        List<List<Object>> newList = new ArrayList<>();
 
         try {
-            List<String> oldList = (List<String>) documentContext.getItemValue("txtworkflowhistorylog");
+            List<String> oldList = documentContext.getItemValueList("txtworkflowhistorylog", String.class);
 
             for (String oldEntry : oldList) {
-                if (oldEntry != null && !oldEntry.isEmpty() && oldEntry.indexOf(" : ") > -1) {
+                if (oldEntry != null && !oldEntry.isEmpty() && oldEntry.contains(" : ")) {
                     String sDate = oldEntry.substring(0, oldEntry.indexOf(" : "));
                     String sComment = oldEntry.substring(oldEntry.indexOf(" : ") + 3);
                     String sUser = "";
-                    List<Object> newEntry = new ArrayList<Object>();
+                    List<Object> newEntry = new ArrayList<>();
                     newEntry.add(convertDate(sDate));
                     newEntry.add(sComment);
                     newEntry.add(sUser);
@@ -174,7 +175,7 @@ public class HistoryPlugin extends AbstractPlugin {
      */
     private Date convertDate(String aDateString) {
         Date result;
-        DateFormat df = null;
+        DateFormat df;
 
         try {
             df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, new Locale("de", "DE"));

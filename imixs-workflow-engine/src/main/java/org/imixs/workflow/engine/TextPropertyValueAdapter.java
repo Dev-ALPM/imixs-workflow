@@ -40,7 +40,6 @@ import jakarta.ejb.Stateless;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
-import org.imixs.workflow.engine.plugins.AbstractPlugin;
 import org.imixs.workflow.util.XMLParser;
 
 /**
@@ -60,10 +59,11 @@ public class TextPropertyValueAdapter {
 
     /**
      * This method reacts on CDI events of the type TextEvent and parses a string
-     * for xml tag <propertyvalue>. Those tags will be replaced with the
+     * for xml tag {@code <propertyvalue>}. Those tags will be replaced with the
      * corresponding system property value.
      * 
      * 
+     * @param event
      */
     public void onEvent(@Observes TextEvent event) {
         String text = event.getText();
@@ -93,7 +93,6 @@ public class TextPropertyValueAdapter {
                 vValue = config.getValue(sPropertyKey, String.class);
             } catch (java.util.NoSuchElementException e) {
                 logger.log(Level.WARNING, "propertyvalue ''{0}'' is not defined in imixs.properties!", sPropertyKey);
-                vValue = "";
             }
 
             // now replace the tag with the result string
@@ -119,12 +118,18 @@ public class TextPropertyValueAdapter {
      * The format and locale attributes can be used to format number and date
      * values.
      * 
+     * @param aItem
+     * @param aSeparator
+     * @param sFormat
+     * @param locale
+     * @param sPosition
+     * @return 
      */
     public String formatItemValues(List<?> aItem, String aSeparator, String sFormat, Locale locale, String sPosition) {
 
-        StringBuffer sBuffer = new StringBuffer();
+        StringBuilder sBuffer = new StringBuilder();
 
-        if (aItem == null || aItem.size() == 0)
+        if (aItem == null || aItem.isEmpty())
             return "";
 
         // test if a position was defined?
@@ -179,23 +184,26 @@ public class TextPropertyValueAdapter {
 
         Date dateValue = null;
 
+        if(o == null) {
+            return "";
+        }
+        
         // now test the objct type to date
-        if (o instanceof Date) {
-            dateValue = (Date) o;
+        if (o instanceof Date date) {
+            dateValue = date;
         }
 
-        if (o instanceof Calendar) {
-            Calendar cal = (Calendar) o;
+        if (o instanceof Calendar cal) {
             dateValue = cal.getTime();
         }
 
         // format date string?
         if (dateValue != null) {
-            String singleValue = "";
+            String singleValue;
             if (format != null && !"".equals(format)) {
                 // format date with provided formater
                 try {
-                    SimpleDateFormat formatter = null;
+                    SimpleDateFormat formatter;
                     if (locale != null) {
                         formatter = new SimpleDateFormat(format, locale);
                     } else {

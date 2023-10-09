@@ -33,15 +33,14 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemCollection);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		ItemCollection col2 = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemCollection.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemCollection.getItemValueString("txttitel"));
 
-		Assert.assertEquals(col2.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", col2.getItemValueString("txttitel"));
 	}
 
 	/**
@@ -58,16 +57,15 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemCollection);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		ItemCollection col2 = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
 		// test if date is equals
-		Assert.assertEquals(col2.getItemValueDate("datDate"), itemCollection.getItemValueDate("datDate"));
+		Assert.assertEquals(itemCollection.getItemValueDate("datDate"), col2.getItemValueDate("datDate"));
 
-		Assert.assertEquals(col2.getItemValueDate("datDate"), datTest);
+		Assert.assertEquals(datTest,col2.getItemValueDate("datDate"));
 
 	}
 
@@ -95,7 +93,7 @@ public class TestXMLItemCollectionAdapter {
 		xmlItemCollection.setItem(xmlItemList);
 
 		ItemCollection itemCollection = XMLDocumentAdapter.putDocument(xmlItemCollection);
-		Assert.assertEquals(itemCollection.getItemValueDate("datdate"), datTest);
+		Assert.assertEquals(datTest, itemCollection.getItemValueDate("datdate"));
 
 		/*
 		 * Test phase II.
@@ -108,9 +106,7 @@ public class TestXMLItemCollectionAdapter {
 			c.setTime(datTest);
 			xmlDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
 		} catch (DatatypeConfigurationException e) {
-
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 		xmlItemCollection = new XMLDocument();
 		xmlItem = new XMLItem();
@@ -131,7 +127,7 @@ public class TestXMLItemCollectionAdapter {
 		Assert.assertFalse(resultDate.get(0) instanceof XMLGregorianCalendar);
 		Assert.assertTrue(resultDate.get(0) instanceof Date);
 
-		Assert.assertEquals(itemCollection.getItemValueDate("datdate"), datTest);
+		Assert.assertEquals(datTest, itemCollection.getItemValueDate("datdate"));
 
 	}
 
@@ -149,15 +145,14 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemCollection);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		ItemCollection col2 = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemCollection.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemCollection.getItemValueString("txttitel"));
 
-		Assert.assertEquals(col2.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", col2.getItemValueString("txttitel"));
 
 		List listOfMap = col2.getItemValue("_mapdata");
 		Assert.assertEquals(1, listOfMap.size());
@@ -177,14 +172,14 @@ public class TestXMLItemCollectionAdapter {
 		ItemCollection itemColSource = new ItemCollection();
 		itemColSource.replaceItemValue("txtTitel", "Hello");
 
-		List<List<String>> valueList = new ArrayList<List<String>>();
+		List<List<String>> valueList = new ArrayList<>();
 
-		List<String> list1 = new ArrayList<String>();
+		List<String> list1 = new ArrayList<>();
 		list1.add("Berlin");
 		list1.add("Munich");
 		valueList.add(list1);
 
-		List<String> list2 = new ArrayList<String>();
+		List<String> list2 = new ArrayList<>();
 		list2.add("John");
 		list2.add("Sam");
 		valueList.add(list2);
@@ -195,14 +190,13 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
 		ItemCollection itemColTest = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemColTest.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemColTest.getItemValueString("txttitel"));
 
 		List listOfList = itemColTest.getItemValue("_listdata");
 		Assert.assertEquals(2, listOfList.size());
@@ -246,13 +240,12 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
 		ItemCollection itemColTest = XMLDocumentAdapter.putDocument(xmlItemCollection);
-		Assert.assertEquals(itemColTest.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemColTest.getItemValueString("txttitel"));
 
 		// test String array...
 		List listOfList = itemColTest.getItemValue("_stringArrayData");
@@ -289,7 +282,7 @@ public class TestXMLItemCollectionAdapter {
 	 * Test conversion of a ItemCollection containing a Item which value is a array
 	 * of mixed raw types (String and long)
 	 */
-	@SuppressWarnings({ "rawtypes" })
+	@SuppressWarnings({ "rawtypes", "UnnecessaryBoxing" })
 	@Test
 	public void testItemCollectionContainingListOfMixedArray() {
 		ItemCollection itemColSource = new ItemCollection();
@@ -302,13 +295,12 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
 		ItemCollection itemColTest = XMLDocumentAdapter.putDocument(xmlItemCollection);
-		Assert.assertEquals(itemColTest.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemColTest.getItemValueString("txttitel"));
 
 		// test String array...
 		List listOfList = itemColTest.getItemValue("_mixedArrayData");
@@ -316,7 +308,7 @@ public class TestXMLItemCollectionAdapter {
 		Object[] resultStringArray = (Object[]) listOfList.get(0);
 		Assert.assertNotNull(resultStringArray);
 		Assert.assertEquals("ABC", resultStringArray[0]);
-		Assert.assertEquals(4, resultStringArray[1]);
+		Assert.assertEquals(Integer.valueOf(4), resultStringArray[1]);
 		Assert.assertEquals(Long.valueOf(5), resultStringArray[2]);
 
 		
@@ -334,7 +326,7 @@ public class TestXMLItemCollectionAdapter {
 		ItemCollection itemColSource = new ItemCollection();
 		itemColSource.replaceItemValue("txtTitel", "Hello");
 
-		List<Map<String, List<Object>>> mapList = new ArrayList<Map<String, List<Object>>>();
+		List<Map<String, List<Object>>> mapList = new ArrayList<>();
 
 		Map map1 = new HashMap<>();
 		map1.put("_name", "some data");
@@ -348,14 +340,13 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
 		ItemCollection itemColTest = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemColTest.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemColTest.getItemValueString("txttitel"));
 
 		List listOfMap = itemColTest.getItemValue("_mapdata");
 		Assert.assertEquals(1, listOfMap.size());
@@ -384,7 +375,7 @@ public class TestXMLItemCollectionAdapter {
 		
 		Date date=new Date();
 
-		List<Map<String, List<Object>>> mapList = new ArrayList<Map<String, List<Object>>>();
+		List<Map<String, List<Object>>> mapList = new ArrayList<>();
 
 		Map map1 = new HashMap<>();
 		map1.put("_date", date);
@@ -397,8 +388,7 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
@@ -433,14 +423,13 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
 		ItemCollection itemColTest = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemColTest.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemColTest.getItemValueString("txttitel"));
 
 		// test file
 		FileData afileData = itemColTest.getFileData("test.txt");
@@ -462,7 +451,7 @@ public class TestXMLItemCollectionAdapter {
 		ItemCollection itemColSource = new ItemCollection();
 		itemColSource.replaceItemValue("txtTitel", "Hello");
 
-		List<Map<String, List<Object>>> mapList = new ArrayList<Map<String, List<Object>>>();
+		List<Map<String, List<?>>> mapList = new ArrayList<>();
 
 		ItemCollection i1 = new ItemCollection();
 		i1.replaceItemValue("_name", "some data");
@@ -478,14 +467,13 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemColSource);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// now reconstruct the xmlItemCollection into a ItemCollection...
 		ItemCollection itemColTest = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemColTest.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemColTest.getItemValueString("txttitel"));
 
 		List listOfMap = itemColTest.getItemValue("_mapdata");
 		Assert.assertEquals(2, listOfMap.size());
@@ -526,15 +514,14 @@ public class TestXMLItemCollectionAdapter {
 		try {
 			xmlItemCollection = XMLDocumentAdapter.getDocument(itemCollection);
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// reconvert inot itemcollection
 		ItemCollection col2 = XMLDocumentAdapter.putDocument(xmlItemCollection);
 
-		Assert.assertEquals(itemCollection.getItemValueString("txttitel"), "Hello");
-		Assert.assertEquals(col2.getItemValueString("txttitel"), "Hello");
+		Assert.assertEquals("Hello", itemCollection.getItemValueString("txttitel"));
+		Assert.assertEquals("Hello", col2.getItemValueString("txttitel"));
 
 		// verify file data....
 		List<FileData> files = col2.getFileData();

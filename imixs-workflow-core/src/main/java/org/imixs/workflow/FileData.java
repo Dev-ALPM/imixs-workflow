@@ -50,16 +50,19 @@ public class FileData {
     private String name;
     private byte[] content;
     private String contentType;
-    private Map<String, List<Object>> attributes;
+    private Map<String, List<?>> attributes;
 
     public static final String DEFAULT_CONTENT_TYPE = "application/unknown";
 
-    public FileData(String name, byte[] content, String contentType, Map<String, List<Object>> attributes) {
+    public FileData(String name, byte[] content, String contentType, Map<String, List<?>> attributes) {
         super();
         this.content = content;
-        this.setName(name);
-        this.setContentType(contentType);
-        this.setAttributes(attributes);
+        this.name = name;
+        this.contentType = contentType;
+        if (this.contentType == null || "".equals(this.contentType)) {
+            this.contentType = DEFAULT_CONTENT_TYPE;
+        }
+        this.attributes = attributes;
     }
 
     public String getName() {
@@ -90,14 +93,14 @@ public class FileData {
         this.contentType = contentType;
     }
 
-    public Map<String, List<Object>> getAttributes() {
+    public Map<String, List<?>> getAttributes() {
         if (attributes == null) {
-            attributes = new LinkedHashMap<String, List<Object>>();
+            attributes = new LinkedHashMap<>();
         }
         return attributes;
     }
 
-    public void setAttributes(Map<String, List<Object>> attributes) {
+    public void setAttributes(Map<String, List<?>> attributes) {
         this.attributes = attributes;
     }
 
@@ -107,7 +110,7 @@ public class FileData {
      * method setAttribute().
      * 
      * @param name a String specifying the name of the custom attribute
-     * @return: an Object containing the value of the attribute, or null if the
+     * @return an Object containing the value of the attribute, or null if the
      *          attribute does not exist
      **/
     public Object getAttribute(String name) {
@@ -126,7 +129,7 @@ public class FileData {
      */
     public void setAttribute(String name, List<Object> values) {
         if (attributes == null) {
-            attributes = new LinkedHashMap<String, List<Object>>();
+            attributes = new LinkedHashMap<>();
         }
         attributes.put(name, values);
     }

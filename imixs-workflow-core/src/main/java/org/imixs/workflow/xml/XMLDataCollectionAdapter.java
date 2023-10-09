@@ -66,15 +66,14 @@ public class XMLDataCollectionAdapter {
      * 
      * The method returns an empty list if the collection is empty or null
      * 
-     * @param entity
+     * @param xmlDocuments
      * @return ItemCollection
      */
     public static List<ItemCollection> putDataCollection(XMLDataCollection xmlDocuments) {
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
 
         if (xmlDocuments != null && xmlDocuments.getDocument() != null) {
-            for (int i = 0; i < xmlDocuments.getDocument().length; i++) {
-                XMLDocument xmlItemCol = xmlDocuments.getDocument()[i];
+            for (XMLDocument xmlItemCol : xmlDocuments.getDocument()) {
                 result.add(XMLDocumentAdapter.putDocument(xmlItemCol));
             }
         }
@@ -82,7 +81,7 @@ public class XMLDataCollectionAdapter {
     }
 
     /**
-     * This method transforms a Collection<ItemCollection> into a DocumentCollection
+     * This method transforms a {@code Collection<ItemCollection>} into a DocumentCollection
      * 
      * @param documents
      * @return
@@ -92,7 +91,7 @@ public class XMLDataCollectionAdapter {
     }
 
     /**
-     * This method transforms a Collection<ItemCollection> into a
+     * This method transforms a {@code Collection<ItemCollection>} into a
      * XMLDocumentCollection
      * 
      * If the attribute List is provided only the corresponding properties will be
@@ -111,7 +110,7 @@ public class XMLDataCollectionAdapter {
         int i = 0;
         XMLDocument[] entities = new XMLDocument[max];
         while (it.hasNext()) {
-            ItemCollection icw = (ItemCollection) it.next();
+            ItemCollection icw = it.next();
             if (icw != null) {
                 XMLDocument entity = XMLDocumentAdapter.getDocument(icw, itemNames);
                 entities[i] = entity;
@@ -126,9 +125,11 @@ public class XMLDataCollectionAdapter {
     /**
      * This method transforms a single ItemCollection into a XMLDocumentCollection
      * 
+     * @param document
+     * @return 
      */
     public static XMLDataCollection getDataCollection(final ItemCollection document) {
-        List<ItemCollection> col = new ArrayList<ItemCollection>();
+        List<ItemCollection> col = new ArrayList<>();
         col.add(document);
         return getDataCollection(col, null);
     }
@@ -136,9 +137,12 @@ public class XMLDataCollectionAdapter {
     /**
      * This method transforms a single ItemCollection into a XMLDocumentCollection
      * 
+     * @param document
+     * @param itemNames
+     * @return 
      */
     public static XMLDataCollection getDataCollection(final ItemCollection document, final List<String> itemNames) {
-        List<ItemCollection> col = new ArrayList<ItemCollection>();
+        List<ItemCollection> col = new ArrayList<>();
         col.add(document);
         return getDataCollection(col, itemNames);
     }
@@ -155,12 +159,10 @@ public class XMLDataCollectionAdapter {
      */
     public static List<ItemCollection> readCollectionFromInputStream(InputStream inputStream)
             throws JAXBException, IOException {
-        byte[] byteInput = null;
-
         if (inputStream == null) {
             return null;
         }
-        byteInput = getBytesFromStream(inputStream);
+        byte[] byteInput = getBytesFromStream(inputStream);
         return readCollection(byteInput);
 
     }
@@ -170,20 +172,19 @@ public class XMLDataCollectionAdapter {
      * ItemCollection objects. The method can import any kind of entity data like
      * model or configuration data an xml export of workitems.
      * 
-     * @param inputStream xml input stream
+     * @param byteInput
      * @throws JAXBException
      * @throws IOException
      * @return List of ItemCollection objects
      */
     public static List<ItemCollection> readCollection(byte[] byteInput) throws JAXBException, IOException {
         boolean debug = logger.isLoggable(Level.FINE);
-        List<ItemCollection> resultList = new ArrayList<ItemCollection>();
+        List<ItemCollection> resultList = new ArrayList<>();
 
         if (byteInput == null || byteInput.length == 0) {
             return null;
         }
 
-        XMLDataCollection ecol = null;
         if (debug) {
             logger.finest("......readCollection importXmlEntityData - verifing  content....");
         }
@@ -196,7 +197,7 @@ public class XMLDataCollectionAdapter {
             throw new RuntimeException("readCollection error - wrong xml file format - unable to read content!");
         }
 
-        ecol = (XMLDataCollection) jaxbObject;
+        XMLDataCollection ecol = (XMLDataCollection) jaxbObject;
 
         // convert entities....
         if (ecol.getDocument().length > 0) {
@@ -215,14 +216,14 @@ public class XMLDataCollectionAdapter {
      * This method writes a collection of ItemCollection into a Byte array
      * representing a XMLDataCollection
      * 
-     * @param inputStream xml input stream
+     * @param documents
      * @throws JAXBException
      * @throws IOException
      * @return List of ItemCollection objects
      */
     public static byte[] writeItemCollection(final Collection<ItemCollection> documents)
             throws JAXBException, IOException {
-        if (documents == null || documents.size() == 0) {
+        if (documents == null || documents.isEmpty()) {
             return null;
         }
         XMLDataCollection ecol = XMLDataCollectionAdapter.getDataCollection(documents);
@@ -237,7 +238,7 @@ public class XMLDataCollectionAdapter {
      * This method writes a ItemCollection into a Byte array representing a
      * XMLDataCollection
      * 
-     * @param inputStream xml input stream
+     * @param document
      * @throws JAXBException
      * @throws IOException
      * @return List of ItemCollection objects
@@ -256,13 +257,13 @@ public class XMLDataCollectionAdapter {
 
     public static byte[] getBytesFromStream(InputStream is) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int nRead;
-        byte[] data = new byte[0x4000];
-        while ((nRead = is.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
+        try (is) {
+            int nRead;
+            byte[] data = new byte[0x4000];
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }   buffer.flush();
         }
-        buffer.flush();
-        is.close();
         return buffer.toByteArray();
     }
 

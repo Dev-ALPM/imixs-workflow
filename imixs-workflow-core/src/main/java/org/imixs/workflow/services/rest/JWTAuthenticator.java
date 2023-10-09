@@ -48,6 +48,7 @@ public class JWTAuthenticator implements RequestFilter {
         this.jwt = jwt;
     }
 
+    @Override
     public void filter(HttpURLConnection connection) throws IOException {
 
         URL uri = connection.getURL();// .getUri();

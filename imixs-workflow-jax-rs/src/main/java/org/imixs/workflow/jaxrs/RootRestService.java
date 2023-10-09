@@ -28,21 +28,18 @@
 
 package org.imixs.workflow.jaxrs;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Logger;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.StreamingOutput;
 
 import jakarta.ejb.Stateless;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.logging.Level;
 
@@ -60,10 +57,6 @@ public class RootRestService {
     @jakarta.ws.rs.core.Context
     private HttpServletRequest servletRequest;
    
-    @jakarta.ws.rs.core.Context
-    private HttpServletResponse servletResponse;
-   
-    
     private static final Logger logger = Logger.getLogger(RootRestService.class.getName());
 
 
@@ -72,18 +65,15 @@ public class RootRestService {
     // @Path("/") generates jersey warning
     public StreamingOutput getRoot() {
 
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<div class=\"root\">".getBytes());
-                out.write("<a href=\"/documents\" type=\"application/xml\" rel=\"documents\"/>".getBytes());
-                out.write("<a href=\"/workflow\" type=\"application/xml\" rel=\"workflow\"/>".getBytes());
-                out.write("<a href=\"/model\" type=\"application/xml\" rel=\"model\"/>".getBytes());
-                out.write("<a href=\"/report\" type=\"application/xml\" rel=\"report\"/>".getBytes());
-                out.write("<a href=\"/adminp\" type=\"application/xml\" rel=\"adminp\"/>".getBytes());
-                out.write("<a href=\"/eventlog\" type=\"application/xml\" rel=\"eventlog\"/>".getBytes());
-                out.write("</div>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<div class=\"root\">".getBytes());
+            out.write("<a href=\"/documents\" type=\"application/xml\" rel=\"documents\"/>".getBytes());
+            out.write("<a href=\"/workflow\" type=\"application/xml\" rel=\"workflow\"/>".getBytes());
+            out.write("<a href=\"/model\" type=\"application/xml\" rel=\"model\"/>".getBytes());
+            out.write("<a href=\"/report\" type=\"application/xml\" rel=\"report\"/>".getBytes());
+            out.write("<a href=\"/adminp\" type=\"application/xml\" rel=\"adminp\"/>".getBytes());
+            out.write("<a href=\"/eventlog\" type=\"application/xml\" rel=\"eventlog\"/>".getBytes());
+            out.write("</div>".getBytes());
         };
 
     }

@@ -29,6 +29,7 @@
 package org.imixs.workflow.xml;
 
 import jakarta.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 
 /**
  * The XMLDataCollection represents a list of XMLItemCollections. This root
@@ -38,13 +39,13 @@ import jakarta.xml.bind.annotation.XmlRootElement;
  * @version 0.0.1
  */
 @XmlRootElement(name = "data")
-public class XMLDataCollection implements java.io.Serializable {
+public class XMLDataCollection implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private XMLDocument[] document;
 
     public XMLDataCollection() {
-        setDocument(new XMLDocument[] {});
+        this.document = new XMLDocument[] {};
     }
 
     public XMLDocument[] getDocument() {

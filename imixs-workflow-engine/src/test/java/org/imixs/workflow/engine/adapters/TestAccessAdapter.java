@@ -1,7 +1,7 @@
 package org.imixs.workflow.engine.adapters;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -39,7 +39,7 @@ public class TestAccessAdapter {
 	
 	@Before
 	public void setUp() throws PluginException, ModelException {
-		MockitoAnnotations.initMocks(this);
+		MockitoAnnotations.openMocks(this);
 		workflowMockEnvironment = new WorkflowMockEnvironment();
 		workflowMockEnvironment.setModelPath("/bpmn/TestAccessPlugin.bpmn");
 
@@ -61,7 +61,7 @@ public class TestAccessAdapter {
 		try {
 			participantAdapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -80,7 +80,7 @@ public class TestAccessAdapter {
 		try {
 			participantAdapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -96,7 +96,7 @@ public class TestAccessAdapter {
 		documentActivity = workflowMockEnvironment.getModel().getEvent(100, 10);
 		documentContext.setEventID(10);
 		logger.info("[TestAccessPlugin] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -106,7 +106,7 @@ public class TestAccessAdapter {
 		try {
 			participantAdapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -134,7 +134,7 @@ public class TestAccessAdapter {
 		try {
 			participantAdapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 		List writeAccess = documentContext.getItemValue(WorkflowService.WRITEACCESS);
@@ -156,7 +156,7 @@ public class TestAccessAdapter {
 		try {
 			participantAdapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -186,7 +186,7 @@ public class TestAccessAdapter {
 		try {
 			documentContext = workflowMockEnvironment.processWorkItem(documentContext);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -205,7 +205,7 @@ public class TestAccessAdapter {
 		try {
 			documentContext = workflowMockEnvironment.processWorkItem(documentContext);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 

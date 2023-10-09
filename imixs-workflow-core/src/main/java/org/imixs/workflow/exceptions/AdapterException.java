@@ -36,7 +36,7 @@ package org.imixs.workflow.exceptions;
 public class AdapterException extends WorkflowException {
 
     private static final long serialVersionUID = 1L;
-    private Object[] params = null;
+    private transient Object[] params = null;
 
     public AdapterException(String aErrorContext, String aErrorCode, String message) {
         super(aErrorContext, aErrorCode, message);

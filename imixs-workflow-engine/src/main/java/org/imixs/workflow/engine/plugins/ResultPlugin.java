@@ -64,6 +64,7 @@ public class ResultPlugin extends AbstractPlugin {
 
     private static final Logger logger = Logger.getLogger(ResultPlugin.class.getName());
 
+    @Override
     public ItemCollection run(ItemCollection documentContext, ItemCollection event) throws PluginException {
         // evaluate new items....
         ItemCollection evalItemCollection = getWorkflowService().evalWorkflowResult(event, "item", documentContext,
@@ -90,7 +91,7 @@ public class ResultPlugin extends AbstractPlugin {
     /**
      * Returns true if the given itemName is valid to be set by this plugin.
      * 
-     * @param itemname
+     * @param itemName
      * @return
      */
     public boolean isValidItemName(String itemName) {

@@ -71,7 +71,7 @@ public class XSLHandler {
      * @param xmlSource -
      * @param xslSource
      * @param encoding  (default UTF-8)
-     * @return
+     * @param output
      * @throws UnsupportedEncodingException 
      * @throws TransformerException
      */
@@ -114,10 +114,10 @@ public class XSLHandler {
      * result based on a provided XSL template. The result will be written into a
      * output stream.
      * 
-     * @param xmlSource -
+     * @param dataSource
      * @param xslSource
      * @param encoding  (default UTF-8)
-     * @return
+     * @param output
      * @throws JAXBException
      * @throws TransformerException
      * @throws IOException
@@ -145,10 +145,10 @@ public class XSLHandler {
      * translates the result based on a provided XSL template. The result will be
      * written into a output stream.
      * 
-     * @param xmlSource -
+     * @param dataSource
      * @param xslSource
      * @param encoding  (default UTF-8)
-     * @return
+     * @param output
      * @throws JAXBException
      * @throws TransformerException
      * @throws IOException

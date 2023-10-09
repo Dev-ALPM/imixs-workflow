@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -71,12 +72,11 @@ public class ImixsJSONBuilder {
     	}
      * </code>
      * 
-     * @param worktiem - ItemCollection to be translated into JSON
+     * @param workitem - ItemCollection to be translated into JSON
      * @return a JSON string
      * @throws ParseException
      * @throws UnsupportedEncodingException
      */
-    @SuppressWarnings("unchecked")
     public final static String build(final ItemCollection workitem)
             throws ParseException, UnsupportedEncodingException {
 
@@ -89,11 +89,11 @@ public class ImixsJSONBuilder {
         for (int i = 0; i < itemNames.size(); i++) {
 
             String itemName = itemNames.get(i);
-            List<Object> values = workitem.getItemValue(itemName);
-            if (values == null || values.size() == 0) {
+            List<Object> values = new ArrayList<>(workitem.getItemValue(itemName));
+            if (values.isEmpty()) {
                 continue;
             }
-            out.append("{\"name\":\"" + itemName + "\",\"value\":");
+            out.append("{\"name\":\"").append(itemName).append("\",\"value\":");
             buildValues(values, out);
 
             // add comma?
@@ -126,7 +126,7 @@ public class ImixsJSONBuilder {
      * @throws ParseException
      */
     private static void buildValues(List<Object> values, StringBuffer out) {
-        if (values == null || values.size() == 0) {
+        if (values == null || values.isEmpty()) {
             out.append("{}");
             return;
         }
@@ -172,16 +172,16 @@ public class ImixsJSONBuilder {
                 type = "\"@type\":\"xs:decimal\"";
             }
 
-            out.append(type + ",");
+            out.append(type).append(",");
 
             // print the value...
             // "$":"worklist"}
             String valueString = null;
             if (valueObject instanceof Date || valueObject instanceof Calendar) {
                 // convert 2013-10-07T22:18:55.476+02:00
-                Date date = null;
-                if (valueObject instanceof Calendar) {
-                    date = ((Calendar) valueObject).getTime();
+                Date date;
+                if (valueObject instanceof Calendar calendar) {
+                    date = calendar.getTime();
                 } else {
                     date = (Date) valueObject;
                 }
@@ -190,10 +190,12 @@ public class ImixsJSONBuilder {
                 valueString = sdf.format(date);
             } else {
                 // simple convert to string
-                valueString = valueObject.toString();
+                if(valueObject != null) {
+                    valueString = valueObject.toString();
+                }
             }
 
-            out.append("\"$\":\"" + valueString + "\"");
+            out.append("\"$\":\"").append(valueString).append("\"");
 
             out.append("}");
             // add comma?

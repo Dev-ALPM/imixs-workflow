@@ -128,7 +128,7 @@ public class WorkflowController extends AbstractDataController implements Serial
     @Inject
     LoginController loginController;
 
-    public static final String DEFAULT_TYPE = "workitem";
+    private static final String DEFAULT_TYPE = "workitem";
 
     public WorkflowController() {
         super();
@@ -164,8 +164,6 @@ public class WorkflowController extends AbstractDataController implements Serial
      * attributes '$WriteAccess','$workflowgroup', '$workflowStatus',
      * 'txtWorkflowImageURL' and 'txtWorkflowEditorid'.
      * 
-     * @param action - the action returned by this method
-     * @return - action
      * @throws ModelException is thrown in case not valid workflow task if defined
      *                        by the current model.
      */
@@ -175,7 +173,7 @@ public class WorkflowController extends AbstractDataController implements Serial
             return;
         }
 
-        ItemCollection startProcessEntity = null;
+        ItemCollection startProcessEntity;
         // if no process id was set fetch the first start workitem
         if (data.getTaskID() <= 0) {
             // get ProcessEntities by version
@@ -249,8 +247,9 @@ public class WorkflowController extends AbstractDataController implements Serial
      * WorkfowEvent WORKITEM_CREATED.
      * 
      * @param modelVersion - model version
-     * @param processID    - processID
-     * @param processRef   - uniqueid ref
+     * @param taskID
+     * @param uniqueIdRef
+     * @throws org.imixs.workflow.exceptions.ModelException
      */
 
     public void create(String modelVersion, int taskID, String uniqueIdRef) throws ModelException {
@@ -353,17 +352,15 @@ public class WorkflowController extends AbstractDataController implements Serial
         } catch (ObserverException oe) {
             actionResult = null;
             // test if we can handle the exception...
-            if (oe.getCause() instanceof PluginException) {
+            if (oe.getCause() instanceof PluginException pluginException) {
                 // add error message into current form
-                ErrorHandler.addErrorMessage((PluginException) oe.getCause());
-            } else {
-                if (oe.getCause() instanceof ValidationException) {
+                ErrorHandler.addErrorMessage(pluginException);
+            } else if (oe.getCause() instanceof ValidationException validationException) {
                     // add error message into current form
-                    ErrorHandler.addErrorMessage((ValidationException) oe.getCause());
-                } else {
-                    // throw unknown exception
-                    throw oe;
-                }
+                    ErrorHandler.addErrorMessage(validationException);
+            } else {
+                // throw unknown exception
+                throw oe;
             }
         } catch (PluginException pe) {
             actionResult = null;
@@ -386,7 +383,6 @@ public class WorkflowController extends AbstractDataController implements Serial
                 externalContext.redirect(externalURL);
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to redirect action result: {0} - Error: {1}", new Object[]{externalURL, e.getMessage()});
-                e.printStackTrace();
             }
         }
 
@@ -400,6 +396,8 @@ public class WorkflowController extends AbstractDataController implements Serial
      * method can be used as an action or actionListener.
      * 
      * @param id - activityID to be processed
+     * @return 
+     * @throws org.imixs.workflow.exceptions.ModelException
      * @throws PluginException
      * 
      * @see WorkflowController#process()
@@ -422,7 +420,7 @@ public class WorkflowController extends AbstractDataController implements Serial
      * @return
      */
     public List<ItemCollection> getEvents() {
-        List<ItemCollection> activityList = new ArrayList<ItemCollection>();
+        List<ItemCollection> activityList = new ArrayList<>();
 
         if (getWorkitem() == null || (getWorkitem().getModelVersion().isEmpty()
                 && getWorkitem().getItemValueString(WorkflowKernel.WORKFLOWGROUP).isEmpty())) {
@@ -446,6 +444,7 @@ public class WorkflowController extends AbstractDataController implements Serial
      * 
      * @param uniqueid
      */
+    @Override
     public void load(String uniqueid) {
         super.load(uniqueid);
         if (data != null) {

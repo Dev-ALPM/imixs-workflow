@@ -44,7 +44,6 @@ import org.imixs.workflow.xml.XMLDocumentAdapter;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.persistence.OptimisticLockException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -54,7 +53,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.logging.Level;
@@ -74,9 +72,6 @@ public class EventLogRestService {
     @Inject
     private EventLogService eventLogService;
 
-    @Context
-    private HttpServletRequest servletRequest;
-
     private static final Logger logger = Logger.getLogger(EventLogRestService.class.getName());
 
     /**
@@ -84,11 +79,7 @@ public class EventLogRestService {
      * 
      * @param pageSize  - page size
      * @param pageIndex - page index (default = 0)
-     * @param items     - optional list of items
      * @return result set.
-     * 
-     * @param maxCount - max count of returned eventLogEntries (default 99)
-     * @return - xmlDataCollection containing all matching eventLog entries
      */
     @GET
     @Path("/")
@@ -101,7 +92,7 @@ public class EventLogRestService {
         // we split the topic by swung dash if multiple topics are provided
         List<EventLog> eventLogEntries = eventLogService.findAllEvents(firstResult, pageSize);
 
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
         for (EventLog eventLog : eventLogEntries) {
             // Build a ItemCollection for each EventLog
             result.add(buildItemCollection(eventLog));
@@ -127,7 +118,7 @@ public class EventLogRestService {
         String[] topicList = topic.split("~");
         List<EventLog> eventLogEntries = eventLogService.findEventsByTopic(maxCount, topicList);
 
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
         for (EventLog eventLog : eventLogEntries) {
             // Build a ItemCollection for each EventLog
             result.add(buildItemCollection(eventLog));
@@ -170,6 +161,7 @@ public class EventLogRestService {
      * removed.
      * 
      * @param id - id of the event log entry
+     * @return 
      */
     @POST
     @Path("/unlock/{id}")
@@ -195,7 +187,7 @@ public class EventLogRestService {
      * This method unlocks eventlog entries which are older than 1 minute. We assume
      * that these events are deadlocks.
      *
-     * @param interval - interval in millis
+     * @param deadLockInterval
      * @param topic    - topic to search event log entries.
      */
     @POST
@@ -210,7 +202,7 @@ public class EventLogRestService {
     /**
      * Deletes a eventLog entry by its $uniqueID
      * 
-     * @param name of report or uniqueid
+     * @param id
      */
     @DELETE
     @Path("/{id}")
@@ -222,9 +214,9 @@ public class EventLogRestService {
     /**
      * Creates/updates a new event log entry.
      *
-     * @param topic    - the topic of the event.
-     * @param id       - uniqueId of the document to be assigned to the event
-     * @param document - optional document data to be stored in the event log entry
+     * @param topic        - the topic of the event.
+     * @param refID        - uniqueId of the document to be assigned to the event
+     * @param xmlworkitem  - optional document data to be stored in the event log entry
      */
     @PUT
     @Path("/{topic}/{id}")

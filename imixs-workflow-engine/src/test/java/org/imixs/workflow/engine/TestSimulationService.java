@@ -27,6 +27,7 @@ public class TestSimulationService {
 	 * 
 	 * @throws ProcessingErrorException
 	 * @throws AccessDeniedException
+         * @throws org.imixs.workflow.exceptions.PluginException
 	 * @throws ModelException 
 	 */
 	@Test
@@ -52,14 +53,14 @@ public class TestSimulationService {
 		workitem.setTaskID(1000);
 		workitem.replaceItemValue("_budget", 99);
 		workitem.setEventID(10);
-		workitem = wse.simulationService.processWorkItem(workitem, null);
+		workitem = wse.processWorkItem(workitem);
 		Assert.assertEquals(1200, workitem.getTaskID());
 
 		// test _budget>100
 		workitem.setTaskID(1000);
 		workitem.replaceItemValue("_budget", 9999);
 		workitem.setEventID(10);
-		workitem = wse.simulationService.processWorkItem(workitem, null);
+		workitem = wse.processWorkItem(workitem);
 		Assert.assertEquals(1100, workitem.getTaskID());
 
 	}

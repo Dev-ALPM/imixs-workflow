@@ -31,14 +31,12 @@ package org.imixs.workflow.jaxrs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,7 +53,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -84,11 +81,12 @@ import org.imixs.workflow.xml.XMLDocumentAdapter;
 import org.imixs.workflow.xml.XSLHandler;
 
 import jakarta.ejb.Stateless;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.Marshaller;
 import java.util.logging.Level;
+import org.imixs.workflow.exceptions.AccessDeniedException;
+import org.imixs.workflow.exceptions.QueryException;
 
 /**
  * The WorkflowService Handler supports methods to process different kind of
@@ -108,44 +106,38 @@ public class ReportRestService {
     @Inject
     private ReportService reportService;
 
-    @Context
-    private HttpServletRequest servletRequest;
-
     private static final Logger logger = Logger.getLogger(ReportRestService.class.getName());
 
     @GET
     @Produces("text/html")
     public StreamingOutput getHelpHTML() {
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<html><head>".getBytes());
-                out.write("<style>".getBytes());
-                out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
-                out.write(
-                        "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
-                                .getBytes());
-                out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
-                        .getBytes());
-
-                out.write("table th,table td {font-size: 12px;}".getBytes());
-
-                out.write("table tr.a {background-color: #ddd;}".getBytes());
-
-                out.write("table tr.b {background-color: #eee;}".getBytes());
-
-                out.write("</style>".getBytes());
-                out.write("</head><body>".getBytes());
-
-                // body
-                out.write("<h1>Imixs-Workflow REST Service</h1>".getBytes());
-                out.write(
-                        "<p>See the <a href=\"http://www.imixs.org/doc/restapi/reportservice.html\" target=\"_blank\">Imixs-Workflow REST API</a> for more information about this Service.</p>"
-                                .getBytes());
-
-                // end
-                out.write("</body></html>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<html><head>".getBytes());
+            out.write("<style>".getBytes());
+            out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
+            out.write(
+                    "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
+                            .getBytes());
+            out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
+                    .getBytes());
+            
+            out.write("table th,table td {font-size: 12px;}".getBytes());
+            
+            out.write("table tr.a {background-color: #ddd;}".getBytes());
+            
+            out.write("table tr.b {background-color: #eee;}".getBytes());
+            
+            out.write("</style>".getBytes());
+            out.write("</head><body>".getBytes());
+            
+            // body
+            out.write("<h1>Imixs-Workflow REST Service</h1>".getBytes());
+            out.write(
+                    "<p>See the <a href=\"http://www.imixs.org/doc/restapi/reportservice.html\" target=\"_blank\">Imixs-Workflow REST API</a> for more information about this Service.</p>"
+                            .getBytes());
+            
+            // end
+            out.write("</body></html>".getBytes());
         };
 
     }
@@ -154,12 +146,10 @@ public class ReportRestService {
     @Path("/definitions")
     public XMLDataCollection getReportsDefinitions() {
         try {
-
-            Collection<ItemCollection> col = null;
-            col = reportService.findAllReports();
+            Collection<ItemCollection> col = reportService.findAllReports();
             return XMLDataCollectionAdapter.getDataCollection(col);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
         return new XMLDataCollection();
     }
@@ -177,7 +167,7 @@ public class ReportRestService {
             ItemCollection itemCol = reportService.findReport(name);
             return XMLDataCollectionAdapter.getDataCollection(itemCol);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
         return null;
     }
@@ -192,7 +182,13 @@ public class ReportRestService {
      * instat of xslTransformation. The FOP API need to be provided by the main
      * application.
      * 
-     * @param name reportname of the report to be executed
+     * @param reportName
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
+     * @param encoding
+     * @param uriInfo
      * @return a collection of entiteis
      * 
      */
@@ -203,10 +199,6 @@ public class ReportRestService {
             @DefaultValue("0") @QueryParam("pageIndex") int pageIndex, @QueryParam("sortBy") String sortBy,
             @QueryParam("sortReverse") boolean sortReverse, @DefaultValue("") @QueryParam("encoding") String encoding,
             @Context UriInfo uriInfo) {
-        Collection<ItemCollection> col = null;
-
-        String sXSL;
-        String sContentType;
 
         try {
 
@@ -216,8 +208,8 @@ public class ReportRestService {
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
             }
 
-            sXSL = report.getItemValueString("XSL").trim();
-            sContentType = report.getItemValueString("contenttype");
+            String sXSL = report.getItemValueString("XSL").trim();
+            String sContentType = report.getItemValueString("contenttype");
             if ("".equals(sContentType))
                 sContentType = "text/html";
 
@@ -232,7 +224,7 @@ public class ReportRestService {
 
             // execute report
             Map<String, String> params = getQueryParams(uriInfo);
-            col = reportService.getDataSource(report, pageSize, pageIndex, sortBy, sortReverse, params);
+            Collection<ItemCollection> col = reportService.getDataSource(report, pageSize, pageIndex, sortBy, sortReverse, params);
 
             // if no XSL is provided return standard html format...?
             if ("".equals(sXSL)) {
@@ -280,8 +272,7 @@ public class ReportRestService {
             // outputStream.toString(encoding), sContentType);
             return builder.build();
         } catch (Exception e) {
-            e.printStackTrace();
-
+            logger.severe(e.getMessage());
         }
 
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
@@ -291,7 +282,13 @@ public class ReportRestService {
     /**
      * helper method for .pdf file extention
      * 
-     * @param name reportname of the report to be executed
+     * @param reportName of the report to be executed
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
+     * @param encoding
+     * @param uriInfo
      * @return a collection of entiteis
      * 
      */
@@ -309,12 +306,16 @@ public class ReportRestService {
      * Returns an HTML Stream with a HTML Datatable corresponding to the report
      * query.
      * 
-     * @param name
-     * @param start
-     * @param count
+     * @param reportName
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
+     * @param encoding
+     * @param uriInfo
+     * @param servlerResponse
      * @return
      */
-    @SuppressWarnings("unchecked")
     @GET
     @Produces({ MediaType.TEXT_HTML, MediaType.APPLICATION_XHTML_XML })
     @Path("/{name}.html")
@@ -323,13 +324,12 @@ public class ReportRestService {
             @DefaultValue("0") @QueryParam("pageIndex") int pageIndex, @QueryParam("sortBy") String sortBy,
             @QueryParam("sortReverse") boolean sortReverse, @DefaultValue("") @QueryParam("encoding") String encoding,
             @Context UriInfo uriInfo, @Context HttpServletResponse servlerResponse) {
-        Collection<ItemCollection> col = null;
 
         try {
             ItemCollection report = reportService.findReport(reportName);
-            List<List<String>> attributes = (List<List<String>>) report.getItemValue("attributes");
-            List<String> items = new ArrayList<String>();
-            List<String> labels = new ArrayList<String>();
+            List<List<String>> attributes = report.getItemValueListList("attributes", String.class);
+            List<String> items = new ArrayList<>();
+            List<String> labels = new ArrayList<>();
             for (List<String> attribute : attributes) {
                 items.add(attribute.get(0));
                 String label = attribute.get(0);
@@ -341,7 +341,7 @@ public class ReportRestService {
 
             // execute report
             Map<String, String> params = getQueryParams(uriInfo);
-            col = reportService.getDataSource(report, pageSize, pageIndex, sortBy, sortReverse, params);
+            Collection<ItemCollection> col = reportService.getDataSource(report, pageSize, pageIndex, sortBy, sortReverse, params);
 
             XMLDataCollection documentCollection = XMLDataCollectionAdapter.getDataCollection(col);
             DocumentTable documentTable = new DocumentTable(documentCollection.getDocument(), items, labels, encoding);
@@ -358,8 +358,8 @@ public class ReportRestService {
             servlerResponse.setContentType(MediaType.TEXT_HTML + "; charset=" + encoding);
 
             return documentTable;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (QueryException e) {
+            logger.severe(e.getMessage());
         }
         return null;
     }
@@ -370,9 +370,14 @@ public class ReportRestService {
      * <p>
      * The path annotation allows any file extension.
      * 
-     * @param name
-     * @param start
-     * @param count
+     * @param reportName
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
+     * @param encoding
+     * @param uriInfo
+     * @param servlerResponse
      * @return
      */
     @GET
@@ -421,9 +426,14 @@ public class ReportRestService {
      * If the query param 'items' is provided the attribute list in the report will
      * be ignored.
      * 
-     * @param name  reportname of the report to be executed
-     * @param start
-     * @param count
+     * @param reportName
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
+     * @param encoding
+     * @param uriInfo
+     * @param servlerResponse
      * @return
      * @throws Exception
      */
@@ -436,13 +446,12 @@ public class ReportRestService {
             @QueryParam("sortReverse") boolean sortReverse, @DefaultValue("") @QueryParam("encoding") String encoding,
 
             @Context UriInfo uriInfo, @Context HttpServletResponse servlerResponse) throws Exception {
-        Collection<ItemCollection> col = null;
 
         try {
             // execute report
             ItemCollection report = reportService.findReport(reportName);
             Map<String, String> params = getQueryParams(uriInfo);
-            col = reportService.getDataSource(report, pageSize, pageIndex, sortBy, sortReverse, params);
+            Collection<ItemCollection> col = reportService.getDataSource(report, pageSize, pageIndex, sortBy, sortReverse, params);
 
             // set content type and character encoding
             if (encoding == null || "".equals(encoding)) {
@@ -458,8 +467,8 @@ public class ReportRestService {
 
             return XMLDataCollectionAdapter.getDataCollection(col);
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (QueryException e) {
+            logger.severe(e.getMessage());
         }
         return null;
     }
@@ -472,8 +481,13 @@ public class ReportRestService {
      * 
      * 
      * @param name  reportname of the report to be executed
-     * @param start
-     * @param count
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
+     * @param encoding
+     * @param uriInfo
+     * @param servlerResponse
      * @return
      * @throws Exception
      */
@@ -509,8 +523,8 @@ public class ReportRestService {
         try {
             ItemCollection itemCol = reportService.findReport(name);
             entityService.remove(itemCol);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (AccessDeniedException e) {
+            logger.severe(e.getMessage());
         }
 
     }
@@ -530,8 +544,8 @@ public class ReportRestService {
         try {
             itemCollection = XMLDocumentAdapter.putDocument(reportCol);
             reportService.updateReport(itemCollection);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (AccessDeniedException e) {
+            logger.severe(e.getMessage());
         }
     }
 
@@ -548,7 +562,8 @@ public class ReportRestService {
      * @param xmlSource
      * @param xslSource
      * @param aEncoding
-     * @param outputWriter
+     * @param output
+     * @throws java.lang.Exception
      */
     public void fopTranformation(String xmlSource, String xslSource, String aEncoding, OutputStream output)
             throws Exception {
@@ -619,12 +634,10 @@ public class ReportRestService {
     private Map<String, String> getQueryParams(UriInfo uriInfo) {
         // test each given QueryParam if it is contained in the EQL Query...
         MultivaluedMap<String, String> mvm = uriInfo.getQueryParameters();
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         Set<String> keys = mvm.keySet();
-        Iterator<String> iter = keys.iterator();
-        while (iter.hasNext()) {
+        for (String sKeyName : keys) {
             // read key
-            String sKeyName = iter.next().toString();
             result.put(sKeyName, mvm.getFirst(sKeyName));
         }
 

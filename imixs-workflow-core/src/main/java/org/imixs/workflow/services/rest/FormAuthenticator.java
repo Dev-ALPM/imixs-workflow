@@ -81,10 +81,10 @@ public class FormAuthenticator implements RequestFilter {
             // Send post request
             con.setDoOutput(true);
             con.setDoInput(true);
-            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-            wr.writeBytes(urlParameters);
-            wr.flush();
-            wr.close();
+            try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+                wr.writeBytes(urlParameters);
+                wr.flush();
+            }
             int responseCode = con.getResponseCode();
             logger.log(Level.FINEST, ".....Response Code : {0}", responseCode);
             con.connect();
@@ -92,27 +92,30 @@ public class FormAuthenticator implements RequestFilter {
             CookieStore cookieJar = manager.getCookieStore();
             cookies = cookieJar.getCookies();
 
-            // get stream and read from it, just to close the response which is important
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            try ( // get stream and read from it, just to close the response which is important
+                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+                String inputLine;
+                StringBuilder response = new StringBuilder();
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
             }
-            in.close();
 
         } catch (IOException e) {
             // something went wrong...
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
 
     }
 
     /**
      * In the filter method we put the cookies form the login into the request.
+     * @param connection
+     * @throws java.io.IOException
      */
+    @Override
     public void filter(HttpURLConnection connection) throws IOException {
-        if (cookies != null && cookies.size() > 0) {
+        if (cookies != null && !cookies.isEmpty()) {
             String values = "";
             for (HttpCookie acookie : cookies) {
                 values = values + acookie + ",";

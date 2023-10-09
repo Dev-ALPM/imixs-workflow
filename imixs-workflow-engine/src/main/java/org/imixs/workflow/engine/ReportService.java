@@ -56,7 +56,6 @@ import jakarta.xml.bind.JAXBException;
 import org.imixs.workflow.FileData;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.ItemCollectionComparator;
-import org.imixs.workflow.engine.plugins.AbstractPlugin;
 import org.imixs.workflow.exceptions.AccessDeniedException;
 import org.imixs.workflow.exceptions.PluginException;
 import org.imixs.workflow.exceptions.QueryException;
@@ -110,9 +109,8 @@ public class ReportService {
      */
     public ItemCollection findReport(String reportID) {
 
-        ItemCollection result = null;
         // try to load report by uniqueid
-        result = documentService.load(reportID);
+        ItemCollection result = documentService.load(reportID);
         if (result == null) {
             // try to search for name
             String searchTerm = "(type:\"ReportEntity\" AND txtname:\"" + reportID + "\")";
@@ -123,7 +121,7 @@ public class ReportService {
                 logger.log(Level.SEVERE, "findReport - invalid id: {0}", e.getMessage());
                 return null;
             }
-            if (col.size() > 0) {
+            if (!col.isEmpty()) {
                 result = col.iterator().next();
             }
         }
@@ -152,8 +150,7 @@ public class ReportService {
      * The method checks if a report with the same key allready exists. If so this
      * report will be updated. If no report exists the new report will be created
      * 
-     * @param report
-     * @throws InvalidItemValueException
+     * @param aReport
      * @throws AccessDeniedException
      * 
      */
@@ -206,22 +203,21 @@ public class ReportService {
      * value provided in the param map.
      * <p>
      * 
-     * @param reportName - name of the report to be executed
-     * 
-     * @param startPos   - optional start position to query entities
-     * @param maxcount   - optional max count of entities to query
+     * @param reportEntity - report to be executed
+     * @param pageSize
+     * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
      * @param params     - optional parameter list to be mapped to the JQPL
      *                   statement
-     * @param itemList   - optional attribute list of items to be returned
      * @return collection of entities
      * @throws QueryException
      * 
      */
-    @SuppressWarnings("unchecked")
     public List<ItemCollection> getDataSource(ItemCollection reportEntity, int pageSize, int pageIndex, String sortBy,
             boolean sortReverse, Map<String, String> params) throws QueryException {
 
-        List<ItemCollection> clonedResult = new ArrayList<ItemCollection>();
+        List<ItemCollection> clonedResult = new ArrayList<>();
 
         long l = System.currentTimeMillis();
         logger.log(Level.FINEST, "......executeReport: {0}", reportEntity.getItemValueString("txtname"));
@@ -234,15 +230,15 @@ public class ReportService {
             Iterator<String> iter = keys.iterator();
             while (iter.hasNext()) {
                 // read key
-                String sKeyName = iter.next().toString().trim();
+                String sKeyName = iter.next().trim();
                 String sParamValue = params.get(sKeyName);
                 // test if key is contained in query
-                if (query.indexOf("{" + sKeyName + "}") > -1) {
+                if (query.contains("{" + sKeyName + "}")) {
                     query = query.replace("{" + sKeyName + "}", sParamValue);
                     logger.log(Level.FINEST, "......executeReport set param {0}={1}", new Object[]{sKeyName, sParamValue});
                 } else {
                     // support old param format
-                    if (query.indexOf("?" + sKeyName) > -1) {
+                    if (query.contains("?" + sKeyName)) {
                         query = query.replace("?" + sKeyName, sParamValue);
                         logger.log(Level.WARNING, "......query definition in Report ''{0}'' is deprecated!"
                                 + " Please replace the param ''?{1}'' with '''{'{2}'}'''",
@@ -261,8 +257,8 @@ public class ReportService {
         List<ItemCollection> result = documentService.find(query, pageSize, pageIndex, sortBy, sortReverse);
 
         // test if a itemList is provided or defined in the reportEntity...
-        List<List<String>> attributes = (List<List<String>>) reportEntity.getItemValue("attributes");
-        List<String> itemNames = new ArrayList<String>();
+        List<List<String>> attributes = reportEntity.getItemValueListList("attributes", String.class);
+        List<String> itemNames = new ArrayList<>();
         for (List<String> attribute : attributes) {
             itemNames.add(attribute.get(0));
         }
@@ -319,7 +315,7 @@ public class ReportService {
             encoding = "UTF-8";
         }
 
-        byte[] _bytes = null;
+        byte[] _bytes;
         // create a ByteArray Output Stream
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             XSLHandler.transform(data, xslTemplate, encoding, outputStream);
@@ -332,7 +328,7 @@ public class ReportService {
     }
 
     /**
-     * This method parses a <date /> xml tag and computes a dynamic date by parsing
+     * This method parses a {@code <date />} xml tag and computes a dynamic date by parsing
      * the attributes:
      * 
      * DAY_OF_MONTH
@@ -456,11 +452,12 @@ public class ReportService {
      * </pre>
      * 
      * @param pattern
+     * @param locale
      * @param value
      * @return
      */
     public String customNumberFormat(String pattern, String locale, double value) {
-        DecimalFormat formatter = null;
+        DecimalFormat formatter;
         Locale _locale = getLocaleFromString(locale);
         // test if we have a locale
         if (_locale != null) {
@@ -469,9 +466,7 @@ public class ReportService {
             formatter = (DecimalFormat) DecimalFormat.getInstance();
         }
         formatter.applyPattern(pattern);
-        String output = formatter.format(value);
-
-        return output;
+        return formatter.format(value);
     }
 
     /**
@@ -482,19 +477,17 @@ public class ReportService {
      * @param entity
      * @return
      */
-    @SuppressWarnings({ "unused", "unchecked" })
     private ItemCollection cloneEntity(ItemCollection entity, List<List<String>> attributes) {
-        ItemCollection clone = null;
+        ItemCollection clone;
 
         // if we have a itemList we clone each entity of the result set
-        if (attributes != null && attributes.size() > 0) {
+        if (attributes != null && !attributes.isEmpty()) {
             clone = new ItemCollection();
             for (List<String> attribute : attributes) {
 
                 String field = attribute.get(0);
-                String label = "field";
                 if (attribute.size() >= 1) {
-                    label = attribute.get(1);
+                    attribute.get(1);
                 }
                 String convert = "";
                 if (attribute.size() >= 2) {
@@ -506,15 +499,10 @@ public class ReportService {
                     format = attribute.get(3);
                 }
 
-                String agregate = "";
-                if (attribute.size() >= 4) {
-                    agregate = attribute.get(4);
-                }
-
                 // first look for converter
 
                 // did we have a format definition?
-                List<Object> values = entity.getItemValue(field);
+                List<? super Object> values = new ArrayList<>(entity.getItemValue(field));
                 if (!convert.isEmpty()) {
                     values = convertItemValue(entity, field, convert);
                 }
@@ -524,12 +512,12 @@ public class ReportService {
                     String sLocale = XMLParser.findAttribute(format, "locale");
                     // test if we have a XML format tag
                     List<String> content = XMLParser.findTagValues(format, "format");
-                    if (content.size() > 0) {
+                    if (!content.isEmpty()) {
                         format = content.get(0);
                     }
                     // create string array of formated values
                     List<?> rawValues = values;
-                    values = new ArrayList<Object>();
+                    values = new ArrayList<>();
                     for (Object rawValue : rawValues) {
                         values.add(formatObjectValue(rawValue, format, sLocale));
                     }
@@ -540,7 +528,7 @@ public class ReportService {
             }
         } else {
             // clone all attributes
-            clone = (ItemCollection) entity.clone();
+            clone = entity.clone();
 
         }
         return clone;
@@ -553,12 +541,9 @@ public class ReportService {
      * @param aworkitem
      * 
      */
-    @SuppressWarnings("rawtypes")
     private ItemCollection updateReport(ItemCollection newReport, ItemCollection oldReport) {
-        Iterator iter = newReport.getAllItems().entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry mapEntry = (Map.Entry) iter.next();
-            String sName = mapEntry.getKey().toString();
+        for (Map.Entry<String, List<?>> mapEntry : newReport.getAllItems().entrySet()) {
+            String sName = mapEntry.getKey();
             Object o = mapEntry.getValue();
             if (isValidAttributeName(sName)) {
                 oldReport.replaceItemValue(sName, o);
@@ -585,10 +570,7 @@ public class ReportService {
             return false;
         if ("$uniqueID".equalsIgnoreCase(aName))
             return false;
-        if ("$isAuthor".equalsIgnoreCase(aName))
-            return false;
-
-        return true;
+        return !"$isAuthor".equalsIgnoreCase(aName);
 
     }
 
@@ -611,12 +593,11 @@ public class ReportService {
         Date dateValue = null;
 
         // now test the objct type to date
-        if (o instanceof Date) {
-            dateValue = (Date) o;
+        if (o instanceof Date date) {
+            dateValue = date;
         }
 
-        if (o instanceof Calendar) {
-            Calendar cal = (Calendar) o;
+        if (o instanceof Calendar cal) {
             dateValue = cal.getTime();
         }
 
@@ -625,7 +606,7 @@ public class ReportService {
             if (format != null && !"".equals(format)) {
                 // format date with provided formater
                 try {
-                    SimpleDateFormat formatter = null;
+                    SimpleDateFormat formatter;
                     if (locale != null && !locale.isEmpty()) {
                         formatter = new SimpleDateFormat(format, getLocaleFromString(locale));
                     } else {
@@ -643,19 +624,21 @@ public class ReportService {
             }
 
         } else {
-            // test if number formater is provided....
-            if (format.contains("#")) {
-                try {
-                    double d = Double.parseDouble(o.toString());
-                    singleValue = customNumberFormat(format, locale, d);
-                } catch (IllegalArgumentException e) {
-                    logger.log(Level.WARNING, "Format Error ({0}) = {1}", new Object[]{format, e.getMessage()});
-                    singleValue = "0";
-                }
+            if(o != null) {
+                // test if number formater is provided....
+                if (format.contains("#")) {
+                    try {
+                        double d = Double.parseDouble(o.toString());
+                        singleValue = customNumberFormat(format, locale, d);
+                    } catch (IllegalArgumentException e) {
+                        logger.log(Level.WARNING, "Format Error ({0}) = {1}", new Object[]{format, e.getMessage()});
+                        singleValue = "0";
+                    }
 
-            } else {
-                // return object as string
-                singleValue = o.toString();
+                } else {
+                    // return object as string
+                    singleValue = o.toString();
+                }
             }
         }
 
@@ -675,12 +658,12 @@ public class ReportService {
     private List<Object> convertItemValue(ItemCollection itemcol, String itemName, String converter) {
 
         if (converter == null || converter.isEmpty()) {
-            return itemcol.getItemValue(itemName);
+            return new ArrayList<>(itemcol.getItemValue(itemName));
         }
 
         List values = itemcol.getItemValue(itemName);
-        // if vector is empty we add a dummy null value here!
-        if (values.size() == 0) {
+        // if list is empty we add a dummy null value here!
+        if (values.isEmpty()) {
             values.add(null);
         }
 
@@ -712,7 +695,7 @@ public class ReportService {
                     }
                     values.set(i, d);
                 } catch (NumberFormatException e) {
-                    values.set(i, new Double(0));
+                    values.set(i, 0.0d);
                 }
             }
 
@@ -724,7 +707,7 @@ public class ReportService {
                     }
                     values.set(i, d);
                 } catch (NumberFormatException e) {
-                    values.set(i, new Integer(0));
+                    values.set(i, 0);
                 }
             }
 
@@ -776,8 +759,8 @@ public class ReportService {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private List<ItemCollection> getEmbeddedChildItems(ItemCollection entity, List<String> fieldNames) {
-        List<String> embeddedItemNames = new ArrayList<String>();
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<String> embeddedItemNames = new ArrayList<>();
+        List<ItemCollection> result = new ArrayList<>();
         // first find all items containing a child element
         for (String field : fieldNames) {
             field = field.toLowerCase();
@@ -790,11 +773,11 @@ public class ReportService {
         }
         if (!embeddedItemNames.isEmpty()) {
             for (String field : embeddedItemNames) {
-                List<Object> mapChildItems = entity.getItemValue(field);
+                List<Object> mapChildItems = new ArrayList<>(entity.getItemValue(field));
                 // try to convert
                 for (Object mapOderItem : mapChildItems) {
-                    if (mapOderItem instanceof Map) {
-                        ItemCollection child = new ItemCollection((Map) mapOderItem);
+                    if (mapOderItem instanceof Map map) {
+                        ItemCollection child = new ItemCollection(map);
                         // clone entity and add all map entries
                         ItemCollection clone = new ItemCollection(entity);
                         Set<String> childFieldNameList = child.getAllItems().keySet();

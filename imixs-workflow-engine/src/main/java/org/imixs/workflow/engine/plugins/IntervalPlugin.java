@@ -76,10 +76,12 @@ public class IntervalPlugin extends AbstractPlugin {
 
     /**
      * The method paresed for a fields with the prafix 'keyitnerval'
+     * @param adocumentContext
      */
+    @Override
     public ItemCollection run(ItemCollection adocumentContext, ItemCollection event) throws PluginException {
 
-        LocalDateTime result = null;
+        LocalDateTime result;
 
         documentContext = adocumentContext;
         // test if activity is a schedule activity...
@@ -158,7 +160,7 @@ public class IntervalPlugin extends AbstractPlugin {
      * @throws PluginException
      */
     public LocalDateTime evalCron(String cron, LocalDateTime baseDateTime) throws PluginException {
-        LocalDateTime result=null;
+        LocalDateTime result;
         
         // split conr
         String[] cronDef = cron.split(" ");
@@ -244,33 +246,25 @@ public class IntervalPlugin extends AbstractPlugin {
      * <li>@weekly</li>
      * <li>@daily</li>
      * <li>@hourly</li>
-     *
+     *</ul>
+     * 
      * @param macro
-     * @param date
+     * @param ldt
      * @return
      * @throws PluginException
      */
     public LocalDateTime evalMacro(String macro, LocalDateTime ldt) throws PluginException {
     
         switch (macro) {
-        case "@yearly":
-            ldt = ldt.plusYears(1);
-            break;
-        case "@monthly":
-            ldt = ldt.plusMonths(1);
-            break;
-        case "@weekly":
-            ldt = ldt.plusWeeks(1);
-            break;
-        case "@daily":
-            ldt = ldt.plusDays(1);
-            break;
-        case "@hourly":
-            ldt = ldt.plusHours(1);
-            break;
-        default:
-        	// unknown makro return null
-        	return null;
+        case "@yearly" -> ldt = ldt.plusYears(1);
+        case "@monthly" -> ldt = ldt.plusMonths(1);
+        case "@weekly" -> ldt = ldt.plusWeeks(1);
+        case "@daily" -> ldt = ldt.plusDays(1);
+        case "@hourly" -> ldt = ldt.plusHours(1);
+        default -> {
+            // unknown makro return null
+            return null;
+            }
         }
     
         return ldt;

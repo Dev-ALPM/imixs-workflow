@@ -74,9 +74,9 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class MetricService {
 
-	public static final String METRIC_DOCUMENTS = "documents";
-	public static final String METRIC_WORKITEMS = "workitems";
-	public static final String METRIC_TRANSACTIONS = "transactions";
+	private static final String METRIC_DOCUMENTS = "documents";
+	private static final String METRIC_WORKITEMS = "workitems";
+	private static final String METRIC_TRANSACTIONS = "transactions";
 
 	@Inject
 	@ConfigProperty(name = "metrics.enabled", defaultValue = "false")
@@ -150,7 +150,7 @@ public class MetricService {
 		} catch (IncompatibleClassChangeError | ObserverException oe) {
 			mpMetricNoSupport = true;
 			logger.warning("...Microprofile Metrics not supported!");
-			oe.printStackTrace();
+			logger.fine(oe.getMessage());
 		}
 	}
 
@@ -225,7 +225,7 @@ public class MetricService {
 		} else {
 			// AFTER_PROCESS
 			// build workflow tags...
-			List<Tag> tags = new ArrayList<Tag>();
+			List<Tag> tags = new ArrayList<>();
 			tags.add(new Tag("type", event.getDocument().getType()));
 			tags.add(new Tag("modelversion", event.getDocument().getModelVersion()));
 			tags.add(new Tag("task", event.getDocument().getTaskID() + ""));
@@ -241,10 +241,8 @@ public class MetricService {
 			tags.add(new Tag("event", event.getDocument().getItemValueInteger("$lastevent") + ""));
 			Metadata metadata = Metadata.builder().withName(METRIC_WORKITEMS)
 					.withDescription("Imixs-Workflow count processed workitems").build();
-			Tag[] tagArr = tags.toArray(new Tag[tags.size()]);
-			Counter counter = metricRegistry.counter(metadata, tagArr);
-
-			return counter;
+			Tag[] tagArr = tags.toArray(Tag[]::new);
+			return metricRegistry.counter(metadata, tagArr);
 
 		}
 

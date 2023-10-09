@@ -29,7 +29,6 @@ public class MokPlugin implements Plugin {
 
 	@Override
 	public void close(boolean rollbackTransaction) throws PluginException {
-		// TODO Auto-generated method stub
 
 	}
 

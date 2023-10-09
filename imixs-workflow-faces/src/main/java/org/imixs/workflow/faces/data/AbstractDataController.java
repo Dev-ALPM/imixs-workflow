@@ -98,6 +98,7 @@ public abstract class AbstractDataController implements Serializable {
 
     /**
      * This method returns the Default 'type' attribute of the local workitem.
+     * @return 
      */
     public String getDefaultType() {
         return defaultType;

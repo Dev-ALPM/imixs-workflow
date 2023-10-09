@@ -45,9 +45,6 @@ public class SchedulerException extends WorkflowException {
     public static final String INVALID_WORKITEM = "INVALID_WORKITEM";
     public static final String INVALID_PROCESSID = "INVALID_PROCESSID";
 
-    protected String errorContext = "UNDEFINED";
-    protected String errorCode = "UNDEFINED";
-
     public SchedulerException(String aErrorCode, String message) {
         super(aErrorCode, message);
     }
@@ -62,10 +59,6 @@ public class SchedulerException extends WorkflowException {
 
     public SchedulerException(String aErrorCode, String message, Exception e) {
         super(aErrorCode, message, e);
-    }
-
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
     }
 
 }

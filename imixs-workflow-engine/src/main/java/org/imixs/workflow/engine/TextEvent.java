@@ -43,7 +43,7 @@ import org.imixs.workflow.ItemCollection;
  */
 public class TextEvent {
 
-    private ItemCollection document;
+    private final ItemCollection document;
     private String text;
     private List<String> textList;
 
@@ -58,7 +58,7 @@ public class TextEvent {
 
     public String getText() {
         // In case we have a textlist return the first entry
-        if (text == null && textList != null && textList.size() > 0) {
+        if (text == null && textList != null && !textList.isEmpty()) {
             text = textList.get(0);
         }
         return text;
@@ -71,7 +71,7 @@ public class TextEvent {
     public List<String> getTextList() {
         // In case we have no textlist return temp list
         if (textList == null && text != null) {
-            textList = new ArrayList<String>();
+            textList = new ArrayList<>();
             textList.add(text);
         }
 

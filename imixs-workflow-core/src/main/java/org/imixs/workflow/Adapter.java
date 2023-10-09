@@ -29,7 +29,6 @@
 package org.imixs.workflow;
 
 import org.imixs.workflow.exceptions.AdapterException;
-import org.imixs.workflow.exceptions.PluginException;
 
 /**
  * An Adapter defines an adapter pattern used by the WorkflowKernel to call
@@ -50,6 +49,6 @@ public abstract interface Adapter {
      * @return updated workitem for further processing
      * @throws AdapterException interrupt processing
      */
-    public ItemCollection execute(ItemCollection document, ItemCollection event) throws AdapterException, PluginException;
+    public ItemCollection execute(ItemCollection document, ItemCollection event) throws AdapterException;
 
 }

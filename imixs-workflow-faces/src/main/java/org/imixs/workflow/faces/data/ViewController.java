@@ -132,7 +132,7 @@ public class ViewController implements Serializable {
     /**
      * set the maximum size of a search result
      * 
-     * @param searchCount
+     * @param pageSize
      */
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
@@ -148,8 +148,6 @@ public class ViewController implements Serializable {
 
     /**
      * resets the current result and set the page pointer to 0.
-     * 
-     * @return
      */
     public void reset() {
         pageIndex = 0;
@@ -197,13 +195,13 @@ public class ViewController implements Serializable {
         if (_query == null || _query.isEmpty()) {
             // no query defined
             logger.warning("no query defined!");
-            return new ArrayList<ItemCollection>();
+            return new ArrayList<>();
         }
 
         // load data
         logger.log(Level.FINEST, "...... load data - query={0} pageIndex={1}", new Object[]{_query, getPageIndex()});
 
-        List<ItemCollection> result = null;
+        List<ItemCollection> result;
         if (this.isLoadStubs()) {
             result = documentService.findStubs(_query, getPageSize(), getPageIndex(), getSortBy(), isSortReverse());
 

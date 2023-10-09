@@ -1,7 +1,7 @@
 package org.imixs.workflow.engine.adapters;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
@@ -65,7 +65,7 @@ public class TestAccessAdapterProcessEntity {
 		// prepare data
 		documentContext = new ItemCollection().model(WorkflowMockEnvironment.DEFAULT_MODEL_VERSION).task(100);
 		logger.info("[TestAccessAdapterProcessEntity] setup test data...");
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("manfred");
 		list.add("anna");
 		documentContext.replaceItemValue("namTeam", list);
@@ -81,7 +81,7 @@ public class TestAccessAdapterProcessEntity {
 	 ***/
 	@Test
 	public void testACLNoUpdate() throws ModelException {
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(WorkflowService.WRITEACCESS, list);
@@ -91,12 +91,12 @@ public class TestAccessAdapterProcessEntity {
 		try {
 			adapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		@SuppressWarnings("unchecked")
-		List<String> writeAccess = documentContext.getItemValue(WorkflowService.WRITEACCESS);
+		List<String> writeAccess = documentContext.getItemValueList(WorkflowService.WRITEACCESS, String.class);
 
 		Assert.assertEquals(2, writeAccess.size());
 		Assert.assertTrue(writeAccess.contains("Kevin"));
@@ -120,12 +120,12 @@ public class TestAccessAdapterProcessEntity {
 		try {
 			adapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		@SuppressWarnings("unchecked")
-		List<String> writeAccess = documentContext.getItemValue(WorkflowService.WRITEACCESS);
+		List<String> writeAccess = documentContext.getItemValueList(WorkflowService.WRITEACCESS, String.class);
 
 		Assert.assertEquals(2, writeAccess.size());
 		Assert.assertTrue(writeAccess.contains("joe"));
@@ -148,12 +148,12 @@ public class TestAccessAdapterProcessEntity {
 		try {
 			adapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		@SuppressWarnings("unchecked")
-		List<String> writeAccess = documentContext.getItemValue(WorkflowService.WRITEACCESS);
+		List<String> writeAccess = documentContext.getItemValueList(WorkflowService.WRITEACCESS, String.class);
 
 		Assert.assertEquals(3, writeAccess.size());
 		Assert.assertTrue(writeAccess.contains("joe"));
@@ -173,7 +173,7 @@ public class TestAccessAdapterProcessEntity {
 	public void testACLfromProcessEntityAndActivityEntity() throws ModelException {
 
 		// set some old values
-		Vector<String> list = new Vector<String>();
+		List<String> list = new ArrayList<>();
 		list.add("Kevin");
 		list.add("Julian");
 		documentContext.replaceItemValue(OwnerPlugin.OWNER, list);
@@ -185,12 +185,12 @@ public class TestAccessAdapterProcessEntity {
 		try {
 			adapter.execute(documentContext, documentActivity);
 		} catch (AdapterException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
 		// $writeAccess= anna , manfred, joe, sam
-		List<String> writeAccess = documentContext.getItemValue(WorkflowService.WRITEACCESS);
+		List<String> writeAccess = documentContext.getItemValueList(WorkflowService.WRITEACCESS, String.class);
 		Assert.assertEquals(3, writeAccess.size());
 		Assert.assertTrue(writeAccess.contains("joe"));
 		// Assert.assertTrue(writeAccess.contains("sam"));
@@ -198,7 +198,7 @@ public class TestAccessAdapterProcessEntity {
 		Assert.assertTrue(writeAccess.contains("anna"));
 
 		// $readAccess= anna , manfred, joe, sam
-		writeAccess = documentContext.getItemValue(WorkflowService.READACCESS);
+		writeAccess = documentContext.getItemValueList(WorkflowService.READACCESS, String.class);
 		Assert.assertEquals(2, writeAccess.size());
 		Assert.assertTrue(writeAccess.contains("tom"));
 		Assert.assertTrue(writeAccess.contains("manfred"));

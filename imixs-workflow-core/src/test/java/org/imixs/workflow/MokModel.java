@@ -1,9 +1,9 @@
 package org.imixs.workflow;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.imixs.workflow.exceptions.InvalidAccessException;
 
@@ -39,7 +39,7 @@ public class MokModel implements Model {
 		ItemCollection entity;
 
 		// build list
-		entities = new HashMap<String, ItemCollection>();
+		entities = new HashMap<>();
 
 		// ProcessEntity 'OPEN'
 		entity = new ItemCollection();
@@ -111,7 +111,7 @@ public class MokModel implements Model {
 
 	@Override
 	public List<ItemCollection> findAllTasks() {
-		Vector<ItemCollection> list = new Vector<ItemCollection>();
+		List<ItemCollection> list = new ArrayList<>();
 		list.add(getTask(100));
 		list.add(getTask(200));
 		return list;
@@ -133,13 +133,11 @@ public class MokModel implements Model {
 
 	@Override
 	public List<String> getGroups() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<ItemCollection> findTasksByGroup(String group) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

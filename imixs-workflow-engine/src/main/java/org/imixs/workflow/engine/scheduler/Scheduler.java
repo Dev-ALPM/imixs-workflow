@@ -73,8 +73,9 @@ public interface Scheduler {
      * To start or stop the timer service the methods start() and stop() from the
      * SchedulerService can be called.
      * 
-     * @param scheduler the scheduler configuration
+     * @param job
      * @return updated scheduler configuration
+     * @throws org.imixs.workflow.engine.scheduler.SchedulerException
      */
     public ItemCollection run(ItemCollection job) throws SchedulerException;
 }

@@ -2,7 +2,6 @@ package org.imixs.workflow.bpmn;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.List;
 
@@ -29,19 +28,13 @@ public class TestBPMNParserDataObject {
 
 	@Before
 	public void setUp() throws PluginException {
-		@SuppressWarnings("unused")
-		String VERSION = "1.0.0";
 
 		InputStream inputStream = getClass().getResourceAsStream("/bpmn/dataobject_example1.bpmn");
 
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
 		} catch (ModelException | ParseException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 

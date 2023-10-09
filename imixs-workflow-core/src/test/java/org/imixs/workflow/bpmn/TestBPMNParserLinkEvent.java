@@ -43,12 +43,8 @@ public class TestBPMNParserLinkEvent {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -133,7 +129,7 @@ public class TestBPMNParserLinkEvent {
 	 * @throws IOException
 	 * @throws ModelException 
 	 */
-	@Test
+	@Test(expected = ModelException.class)
 	public void testLinkEventFollowup() throws ParseException, ParserConfigurationException, SAXException, IOException, ModelException {
 
 		String VERSION = "1.0.0";
@@ -143,12 +139,8 @@ public class TestBPMNParserLinkEvent {
 		BPMNModel model = null;
 		try {
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 
@@ -214,12 +206,7 @@ public class TestBPMNParserLinkEvent {
 
 		Assert.assertEquals(1,model.findAllEventsByTask(1100).size());
 		// cross-test followup event
-		try {
-			activity=null;
-			activity = model.getEvent(1100, 99);
-		} catch (ModelException em) {
-			Assert.assertNull(activity);
-		}
+		model.getEvent(1100, 99);
 	}
 	
 	
@@ -244,12 +231,8 @@ public class TestBPMNParserLinkEvent {
         BPMNModel model = null;
         try {
             model = BPMNParser.parseModel(inputStream, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (ModelException e) {
-            e.printStackTrace();
-            Assert.fail();
+        } catch (UnsupportedEncodingException | ModelException e) {
+            Assert.fail(e.getMessage());
         }
         Assert.assertNotNull(model);
 
@@ -302,12 +285,8 @@ public class TestBPMNParserLinkEvent {
 		BPMNModel model = null;
 		try { 
 			model = BPMNParser.parseModel(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (ModelException e) {
-			e.printStackTrace();
-			Assert.fail();
+		} catch (UnsupportedEncodingException | ModelException e) {
+			Assert.fail(e.getMessage());
 		}
 		Assert.assertNotNull(model);
 	}

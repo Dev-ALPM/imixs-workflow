@@ -1,11 +1,11 @@
 package org.imixs.workflow.engine;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Vector;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
-import org.imixs.workflow.engine.plugins.AbstractPlugin;
 import org.imixs.workflow.exceptions.ModelException;
 import org.imixs.workflow.exceptions.PluginException;
 import org.junit.Before;
@@ -68,12 +68,10 @@ public class TestAdaptText {
 	 * 
 	 * @see issue #115
 	 */
-	@SuppressWarnings("unused")
 	@Test
 	public void testReplaceDynamicValuesFormatError() {
 
 		String testString = "Hello <itemvalue>txtname!";
-		String expectedString = "Hello Anna!";
 
 	
 		// prepare data
@@ -81,9 +79,8 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		documentContext.replaceItemValue("txtName", "Anna");
 
-		String resultString = null;
 		try {
-			resultString = workflowMockEnvironment.getWorkflowService().adaptText(testString, documentContext);
+			String resultString = workflowMockEnvironment.getWorkflowService().adaptText(testString, documentContext);
 			Assert.assertNotNull(resultString);
 			Assert.assertEquals(testString, resultString);
 		} catch (PluginException e) {
@@ -175,7 +172,7 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		logger.info("[TestAdaptText] setup test data...");
 
-		Vector<Integer> value = new Vector<Integer>();
+		List<Integer> value = new ArrayList<>();
 		value.add(1);
 		value.add(20);
 		value.add(300);
@@ -212,7 +209,7 @@ public class TestAdaptText {
 		// prepare data
 		documentContext = new ItemCollection();
 
-		documentContext.replaceItemValue("price", new Float(1199.99));
+		documentContext.replaceItemValue("price", 1199.99f);
 
 		String resultString = workflowMockEnvironment.getWorkflowService().adaptText(testString, documentContext);
 
@@ -248,7 +245,7 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		logger.info("[TestAdaptText] setup test data...");
 
-		Vector<Integer> value = new Vector<Integer>();
+		List<Integer> value = new ArrayList<>();
 		value.add(1);
 		value.add(20);
 		value.add(300);
@@ -285,7 +282,7 @@ public class TestAdaptText {
 		documentContext = new ItemCollection();
 		logger.info("[TestAdaptText] setup test data...");
 
-		Vector<Integer> values = new Vector<Integer>();
+		List<Integer> values = new ArrayList<>();
 		values.add(1);
 		values.add(20);
 		values.add(300);
@@ -311,25 +308,4 @@ public class TestAdaptText {
 
 	}
 
-	/**
-	 * This is a test plugin extending the AbstractPlugion to be used for several
-	 * tests in this jUnit test only
-	 * 
-	 * @author rsoika
-	 *
-	 */
-	class TestPlugin extends AbstractPlugin {
-
-		@Override
-		public ItemCollection run(ItemCollection documentContext, ItemCollection documentActivity)
-				throws PluginException {
-			return documentContext;
-		}
-
-		@Override
-		public void close(boolean rollbackTransaction) throws PluginException {
-			// no op
-		}
-
-	}
 }

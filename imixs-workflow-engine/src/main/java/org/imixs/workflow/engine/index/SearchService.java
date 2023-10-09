@@ -33,7 +33,6 @@ import java.util.List;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.exceptions.QueryException;
 
-import jakarta.ejb.Stateless;
 
 /**
  * This SearchService defines methods to search workitems or collections of
@@ -42,7 +41,6 @@ import jakarta.ejb.Stateless;
  * @version 1.0
  * @author rsoika
  */
-//@Stateless
 public interface SearchService {
 
 	public static final int DEFAULT_MAX_SEARCH_RESULT = 9999; // limiting the
@@ -87,10 +85,10 @@ public interface SearchService {
 	 * The optional param 'maxResult' can be set to overwrite the
 	 * DEFAULT_MAX_SEARCH_RESULT.
 	 * 
+	 * @param _searchTerm
+	 * @param _maxResult
+	 * @param defaultOperator
 	 * @see search(String, int, int, Sort, Operator)
-	 * 
-	 * @param sSearchTerm
-	 * @param maxResult   - max search result
 	 * @return total hits of search result
 	 * @throws QueryException in case the searchterm is not understandable.
 	 */
@@ -104,7 +102,6 @@ public interface SearchService {
 	 * 
 	 * @param categories - a list of categories.
 	 * @return total hits of search result
-	 * @throws QueryException in case the searchterm is not understandable.
 	 */
 	public List<Category> getTaxonomy(String... categories);
 	
@@ -115,7 +112,6 @@ public interface SearchService {
      * @param searchTerm - a lucene search term
      * @param categories - a list of categories.
      * @return total hits of search result
-     * @throws QueryException in case the searchterm is not understandable.
      */
 	public List<Category> getTaxonomyByQuery(String searchTerm, String... categories);
 }

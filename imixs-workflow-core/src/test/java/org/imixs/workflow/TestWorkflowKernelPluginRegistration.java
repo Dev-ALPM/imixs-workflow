@@ -66,8 +66,7 @@ public class TestWorkflowKernelPluginRegistration {
 		try {
 			kernel.registerPlugin(mokPlugin);
 		} catch (PluginException e) {
-			e.printStackTrace();
-			Assert.fail();
+                        Assert.fail(e.getMessage());
 		}
 		
 		// try plugin registration without conext..
@@ -76,8 +75,7 @@ public class TestWorkflowKernelPluginRegistration {
 			workflowContext=null;
 			kernel.registerPlugin(mokPlugin);
 		} catch (PluginException e) {
-			e.printStackTrace();
-			Assert.fail();
+                        Assert.fail(e.getMessage());
 		}
 		
 		List<Plugin> plugins = kernel.getPluginRegistry();
@@ -91,8 +89,7 @@ public class TestWorkflowKernelPluginRegistration {
 			Assert.assertNotNull(plugins);
 			Assert.assertEquals(0, plugins.size());
 		} catch (PluginException e) {
-			e.printStackTrace();
-			Assert.fail();
+                        Assert.fail(e.getMessage());
 		}
 		
 		// register 2 plugins
@@ -103,8 +100,7 @@ public class TestWorkflowKernelPluginRegistration {
 			Assert.assertNotNull(plugins);
 			Assert.assertEquals(2, plugins.size());
 		} catch (PluginException e) {
-			e.printStackTrace();
-			Assert.fail();
+                        Assert.fail(e.getMessage());
 		}
 	}
 

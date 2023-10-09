@@ -103,11 +103,6 @@ import jakarta.ejb.Stateless;
 @Stateless
 public class LuceneSearchService implements SearchService {
 
-    public static final int DEFAULT_MAX_SEARCH_RESULT = 9999; // limiting the
-                                                              // total
-    // number of hits
-    public static final int DEFAULT_PAGE_SIZE = 100; // default docs in one page
-
     @Inject
     private LuceneIndexService luceneIndexService;
 
@@ -173,7 +168,7 @@ public class LuceneSearchService implements SearchService {
         if (debug) {
             logger.log(Level.FINEST, "......lucene search: pageNumber={0} pageSize={1}", new Object[]{pageIndex, pageSize});
         }
-        ArrayList<ItemCollection> workitems = new ArrayList<ItemCollection>();
+        ArrayList<ItemCollection> workitems = new ArrayList<>();
 
         searchTerm = schemaService.getExtendedSearchTerm(searchTerm);
         // test if searchtem is provided
@@ -195,8 +190,7 @@ public class LuceneSearchService implements SearchService {
             }
 
             long lsearchtime = System.currentTimeMillis();
-            TopDocs topDocs = null;
-            TopDocsCollector<?> collector = null;
+            TopDocsCollector<?> collector;
             int startIndex = pageIndex * pageSize;
 
             // test it pageindex is above the DEFAULT_MAX_SEARCH_RESULT
@@ -241,7 +235,7 @@ public class LuceneSearchService implements SearchService {
             searcher.search(query, collector);
 
             // get one page
-            topDocs = collector.topDocs(startIndex, pageSize);
+            TopDocs topDocs = collector.topDocs(startIndex, pageSize);
             // Get an array of references to matched documents
             ScoreDoc[] scoreDosArray = topDocs.scoreDocs;
 
@@ -255,7 +249,7 @@ public class LuceneSearchService implements SearchService {
                 Document luceneDoc = searcher.doc(scoredoc.doc);
 
                 String sID = luceneDoc.get(WorkflowKernel.UNIQUEID);
-                ItemCollection imixsDoc = null;
+                ItemCollection imixsDoc;
                 if (loadStubs) {
                     // return only the fields form the Lucene document
                     imixsDoc = convertLuceneDocument(luceneDoc, luceneDateformat);
@@ -308,40 +302,40 @@ public class LuceneSearchService implements SearchService {
         List<Category> results = new ArrayList<>();
         try {
             IndexSearcher searcher = createIndexSearcher();
-            TaxonomyReader taxoReader = createTaxonomyReader();
-            FacetsConfig config = luceneIndexService.getFacetsConfig();
-            FacetsCollector fc = new FacetsCollector();
-
-            // MatchAllDocsQuery is for "browsing" (counts facets
-            // for all non-deleted docs in the index); normally
-            // you'd use a "normal" query:
-            if (searchTerm == null || searchTerm.isEmpty()) {
-                searcher.search(new MatchAllDocsQuery(), fc);
-            } else {
-                searchTerm = schemaService.getExtendedSearchTerm(searchTerm);
-                QueryParser parser = createQueryParser(DefaultOperator.OR);
-                // parser.setAllowLeadingWildcard(true);
-                Query query = parser.parse(searchTerm);
-                searcher.search(query, fc);
-            }
-            Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
-
-            // count each result
-            for (String cat : categories) {
-                // Count the dimensions (we use a index field prefix to avoid conflicts with
-                // existing indices.
-                FacetResult facetResult = facets.getTopChildren(10,
-                        cat + LuceneIndexService.TAXONOMY_INDEXFIELD_PRAFIX);
-                if (facetResult != null) {
-                    Category category = new Category(cat, facetResult.childCount);
-                    for (LabelAndValue lav : facetResult.labelValues) {
-                        category.setLabel(lav.label, lav.value.intValue());
-                    }
-                    results.add(category);
+            try (TaxonomyReader taxoReader = createTaxonomyReader()) {
+                FacetsConfig config = luceneIndexService.getFacetsConfig();
+                FacetsCollector fc = new FacetsCollector();
+                
+                // MatchAllDocsQuery is for "browsing" (counts facets
+                // for all non-deleted docs in the index); normally
+                // you'd use a "normal" query:
+                if (searchTerm == null || searchTerm.isEmpty()) {
+                    searcher.search(new MatchAllDocsQuery(), fc);
+                } else {
+                    searchTerm = schemaService.getExtendedSearchTerm(searchTerm);
+                    QueryParser parser = createQueryParser(DefaultOperator.OR);
+                    // parser.setAllowLeadingWildcard(true);
+                    Query query = parser.parse(searchTerm);
+                    searcher.search(query, fc);
                 }
+                Facets facets = new FastTaxonomyFacetCounts(taxoReader, config, fc);
+                
+                // count each result
+                for (String cat : categories) {
+                    // Count the dimensions (we use a index field prefix to avoid conflicts with
+                    // existing indices.
+                    FacetResult facetResult = facets.getTopChildren(10,
+                            cat + LuceneIndexService.TAXONOMY_INDEXFIELD_PRAFIX);
+                    if (facetResult != null) {
+                        Category category = new Category(cat, facetResult.childCount);
+                        for (LabelAndValue lav : facetResult.labelValues) {
+                            category.setLabel(lav.label, lav.value.intValue());
+                        }
+                        results.add(category);
+                    }
+                }
+                searcher.getIndexReader().close();
             }
-            searcher.getIndexReader().close();
-            taxoReader.close();
         } catch (IOException | QueryException | ParseException e) {
             // in case of an IOException we just print an error message and
             // return an empty result
@@ -362,8 +356,8 @@ public class LuceneSearchService implements SearchService {
      * 
      * @see search(String, int, int, Sort, Operator)
      * 
-     * @param sSearchTerm
-     * @param maxResult   - max search result
+     * @param _searchTerm
+     * @param _maxResult   - max search result
      * @return total hits of search result
      * @throws QueryException in case the searchterm is not understandable.
      */
@@ -396,11 +390,9 @@ public class LuceneSearchService implements SearchService {
                 parser.setDefaultOperator(org.apache.lucene.queryparser.classic.QueryParser.Operator.AND);
             }
 
-            TopDocsCollector<?> collector = null;
-
             Query query = parser.parse(sSearchTerm);
             // MAX_SEARCH_RESULT is limiting the total number of hits
-            collector = TopScoreDocCollector.create(maxResult);
+            TopDocsCollector<?> collector = TopScoreDocCollector.create(maxResult);
 
             // - ignore time limiting for now
             // Counter clock = Counter.newCounter(true);
@@ -550,11 +542,10 @@ public class LuceneSearchService implements SearchService {
     }
 
     private Sort buildLuceneSort(org.imixs.workflow.engine.index.SortOrder sortOrder) {
-        Sort sort = null;
         // we do not support multi values here - see
         // LuceneUpdateService.addItemValues
         // it would be possible if we use a SortedSetSortField class here
-        sort = new Sort(
+        Sort sort = new Sort(
                 new SortField[] { new SortField(sortOrder.getField(), SortField.Type.STRING, sortOrder.isReverse()) });
         return sort;
     }

@@ -41,11 +41,9 @@ public class TestJSONParserSimple {
 		try {
 			resultWorkitem = ImixsJSONParser.parse(responseDataStream).get(0);
 			
-			Assert.assertEquals( Float.valueOf(199.99f), resultWorkitem.getItemValueFloat("price"),0);
+			Assert.assertEquals( 199.99f, resultWorkitem.getItemValueFloat("price"),0);
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 		
 	}

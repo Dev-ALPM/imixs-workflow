@@ -36,8 +36,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import jakarta.inject.Inject;
@@ -51,7 +49,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -71,7 +68,6 @@ import org.imixs.workflow.xml.XMLDocument;
 import org.imixs.workflow.xml.XMLDocumentAdapter;
 
 import jakarta.ejb.Stateless;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.logging.Level;
 
 /**
@@ -101,14 +97,11 @@ public class DocumentRestService {
     // @Path("/") generates jersey warning
     public StreamingOutput getRoot() {
 
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<div class=\"root\">".getBytes());
-                out.write("<a href=\"/{uniqueid}\" type=\"application/xml\" rel=\"{uniqueid}\"/>".getBytes());
-
-                out.write("</div>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<div class=\"root\">".getBytes());
+            out.write("<a href=\"/{uniqueid}\" type=\"application/xml\" rel=\"{uniqueid}\"/>".getBytes());
+            
+            out.write("</div>".getBytes());
         };
 
     }
@@ -118,36 +111,33 @@ public class DocumentRestService {
     @Path("/help")
     public StreamingOutput getHelpHTML() {
 
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<html><head>".getBytes());
-                out.write("<style>".getBytes());
-                out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
-                out.write(
-                        "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
-                                .getBytes());
-                out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
-                        .getBytes());
-
-                out.write("table th,table td {font-size: 12px;}".getBytes());
-
-                out.write("table tr.a {background-color: #ddd;}".getBytes());
-
-                out.write("table tr.b {background-color: #eee;}".getBytes());
-
-                out.write("</style>".getBytes());
-                out.write("</head><body>".getBytes());
-
-                // body
-                out.write("<h1>Imixs-Document REST Service</h1>".getBytes());
-                out.write(
-                        "<p>See the <a href=\"http://www.imixs.org/xml/restservice/documentservice.html\" target=\"_blank\">Imixs REST Service API</a> for more information about this Service.</p>"
-                                .getBytes());
-
-                // end
-                out.write("</body></html>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<html><head>".getBytes());
+            out.write("<style>".getBytes());
+            out.write("table {padding:0px;width: 100%;margin-left: -2px;margin-right: -2px;}".getBytes());
+            out.write(
+                    "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
+                            .getBytes());
+            out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
+                    .getBytes());
+            
+            out.write("table th,table td {font-size: 12px;}".getBytes());
+            
+            out.write("table tr.a {background-color: #ddd;}".getBytes());
+            
+            out.write("table tr.b {background-color: #eee;}".getBytes());
+            
+            out.write("</style>".getBytes());
+            out.write("</head><body>".getBytes());
+            
+            // body
+            out.write("<h1>Imixs-Document REST Service</h1>".getBytes());
+            out.write(
+                    "<p>See the <a href=\"http://www.imixs.org/xml/restservice/documentservice.html\" target=\"_blank\">Imixs REST Service API</a> for more information about this Service.</p>"
+                            .getBytes());
+            
+            // end
+            out.write("</body></html>".getBytes());
         };
 
     }
@@ -164,24 +154,25 @@ public class DocumentRestService {
      * deprecated format : 132d37bfd51-9a7868
      * 
      * @param uniqueid
+     * @param items
+     * @param format
      * @return
      */
     @GET
     @Path("/{uniqueid : ([0-9a-f]{8}-.*|[0-9a-f]{11}-.*)}")
     public Response getDocument(@PathParam("uniqueid") String uniqueid, @QueryParam("items") String items,
             @QueryParam("format") String format) {
-        ItemCollection document = null;
         try {
-            document = documentService.load(uniqueid);
+            ItemCollection document = documentService.load(uniqueid);
             if (document == null) {
                 // document not found
                 return Response.status(Response.Status.NOT_FOUND).build();      
             }
+            return convertResult(document, items, format);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return null;
         }
-        return convertResult(document, items, format);
     }
  
     /**
@@ -190,7 +181,10 @@ public class DocumentRestService {
      * @param query
      * @param pageSize
      * @param pageIndex
+     * @param sortBy
+     * @param sortReverse
      * @param items
+     * @param format
      * @return
      */
     @GET
@@ -200,13 +194,12 @@ public class DocumentRestService {
             @DefaultValue("0") @QueryParam("pageIndex") int pageIndex, @QueryParam("sortBy") String sortBy,
             @QueryParam("sortReverse") boolean sortReverse, @QueryParam("items") String items,
             @QueryParam("format") String format) {
-        List<ItemCollection> result = null;
         try {
             // decode query...
             String decodedQuery = URLDecoder.decode(query, "UTF-8");
-            result = documentService.find(decodedQuery, pageSize, pageIndex, sortBy, sortReverse);
-
-        } catch (Exception e) {
+            List<ItemCollection> result = documentService.find(decodedQuery, pageSize, pageIndex, sortBy, sortReverse);
+            return convertResultList(result, items, format);
+        } catch (UnsupportedEncodingException | QueryException e) {
             logger.log(Level.WARNING, "Invalid Search Query: {0}", e.getMessage());
 
             ItemCollection error = new ItemCollection();
@@ -216,8 +209,6 @@ public class DocumentRestService {
                     .build();
 
         }
-
-        return convertResultList(result, items, format);
     }
 
     /**
@@ -227,6 +218,7 @@ public class DocumentRestService {
      * @param pageSize - page size
      * @param pageIndex - page index (default = 0)
      * @param items - optional list of items
+     * @param format
      * @return result set.
      */
     @GET
@@ -242,8 +234,8 @@ public class DocumentRestService {
             // compute first result....
             int firstResult = pageIndex * pageSize;
             result = documentService.getDocumentsByQuery(decodedQuery, firstResult, pageSize);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            logger.severe(e.getMessage());
         }
         return convertResultList(result, items, format);
     }
@@ -252,9 +244,8 @@ public class DocumentRestService {
      * Returns a total hits for a lucene Search Query
      * 
      * @param query
-     * @param pageSize
-     * @param pageIndex
-     * @param items
+     * @param maxResult
+     * @param format
      * @return
      */
     @GET
@@ -298,8 +289,7 @@ public class DocumentRestService {
      * 
      * @param query
      * @param pageSize
-     * @param pageIndex
-     * @param items
+     * @param format
      * @return
      */
     @GET
@@ -407,7 +397,7 @@ public class DocumentRestService {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.NOT_ACCEPTABLE).build();
         }
     }
@@ -432,6 +422,8 @@ public class DocumentRestService {
     /**
      * This method deletes an entity
      * 
+     * @param uniqueid
+     * @return 
      */
     @DELETE
     @Path("/{uniqueid : ([0-9a-f]{8}-.*|[0-9a-f]{11}-.*)}")
@@ -470,11 +462,8 @@ public class DocumentRestService {
             // decode query...
             String decodedQuery = URLDecoder.decode(query, "UTF-8");
             documentService.backup(decodedQuery, filepath,snapshots);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-        } catch (QueryException e) {
-            e.printStackTrace();
+        } catch (IOException | QueryException e) {
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
@@ -498,7 +487,7 @@ public class DocumentRestService {
         try {
             documentService.restore(filepath);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
@@ -509,6 +498,7 @@ public class DocumentRestService {
     /**
      * Returns the IndexFieldListNoAnalyse from the lucensUpdateService
      * 
+     * @param format
      * @return
      * @throws Exception
      */
@@ -533,7 +523,7 @@ public class DocumentRestService {
      * <p>
      * In case the result set is null, than the method returns an empty collection.
      * 
-     * @param result list of ItemCollection
+     * @param workitem
      * @param items  - optional item list
      * @param format - optional format string (json|xml)
      * @return jax-rs Response object.
@@ -579,7 +569,7 @@ public class DocumentRestService {
      */
     public Response convertResultList(List<ItemCollection> result, String items, String format) {
         if (result == null) {
-            result = new ArrayList<ItemCollection>();
+            result = new ArrayList<>();
         }
         if ("json".equals(format)) {
             return Response

@@ -73,8 +73,8 @@ public class WorkflowEvent {
     public static final int WORKITEM_BEFORE_PROCESS = 22;
     public static final int WORKITEM_AFTER_PROCESS = 23;
 
-    private int eventType;
-    private ItemCollection workitem;
+    private final int eventType;
+    private final ItemCollection workitem;
 
     public WorkflowEvent(ItemCollection workitem, int eventType) {
         this.eventType = eventType;

@@ -62,10 +62,12 @@ import org.imixs.workflow.xml.XMLDocumentAdapter;
 @Produces(MediaType.TEXT_HTML)
 public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
 
+    @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return XMLDocument.class.isAssignableFrom(type);
     }
 
+    @Override
     public void writeTo(XMLDocument xmlItemCollection, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException, WebApplicationException {
@@ -79,7 +81,7 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
 
             printXMLItemCollectionHTML(bw, xmlItemCollection);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             bw.write("ERROR<br>");
             // e.printStackTrace(bw.);
         }
@@ -90,6 +92,7 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
         bw.flush();
     }
 
+    @Override
     public long getSize(XMLDocument arg0, Class<?> arg1, Type arg2, Annotation[] arg3, MediaType arg4) {
         return -1;
     }
@@ -98,11 +101,10 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
      * This Method prints a single XMLItemCollection in html format. The items are
      * sorted by name
      * 
-     * @param out
-     * @param workItem
+     * @param bw
+     * @param xmlworkItem
      * @throws IOException
      */
-    @SuppressWarnings("rawtypes")
     public static void printXMLItemCollectionHTML(BufferedWriter bw, XMLDocument xmlworkItem) throws IOException {
         boolean trClass = false;
 
@@ -115,21 +117,17 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
         bw.write("<th>Name</th><th>Value</th></tr>");
 
         // sort values by using a treemap.....
-        Map<String, Object> map = new TreeMap<String, Object>(workItem.getAllItems());
-        Set set2 = map.entrySet();
-        Iterator iter = set2.iterator();
-        while (iter.hasNext()) {
+        Map<String, List<?>> map = new TreeMap<>(workItem.getAllItems());
+        Set<Map.Entry<String, List<?>>> set2 = map.entrySet();
+        for (Map.Entry<String, List<?>> mapEntry : set2) {
             // WorkItemAttribute da = new WorkItemAttribute();
-            Map.Entry mapEntry = (Map.Entry) iter.next();
-            String sName = mapEntry.getKey().toString();
-            List value = (List) mapEntry.getValue();
-
+            String sName = mapEntry.getKey();
+            List<?> value = mapEntry.getValue();
             if (trClass)
                 bw.write("<tr class=\"a\">");
             else
                 bw.write("<tr class=\"b\">");
             trClass = !trClass;
-
             bw.write("<td>" + sName + "</td><td>" + convertValuesToString(value) + "</td></tr>");
         }
         bw.write("</tbody></table>");
@@ -137,7 +135,7 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
     }
 
     /**
-     * This method converts the Values of a vector into a string representation.
+     * This method converts the Values of a List into a string representation.
      * 
      * Multivalues will be separated with '~' characters. Date Objects will be
      * converted into a short String representation taking the server locale
@@ -146,25 +144,23 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
      * @param values
      * @return
      */
-    @SuppressWarnings("rawtypes")
-    public static String convertValuesToString(List values) {
+    public static String convertValuesToString(List<?> values) {
         String convertedValue = "";
 
         if (values == null)
             return convertedValue;
 
         boolean bFirstValue = true;
-        // Iterate over vector list
-        Iterator iter = values.iterator();
+        // Iterate over list
+        Iterator<?> iter = values.iterator();
         while (iter.hasNext()) {
             Object o = iter.next();
             Date dateValue = null;
             // now test the objct type to date
-            if (o instanceof Date) {
-                dateValue = (Date) o;
+            if (o instanceof Date date) {
+                dateValue = date;
             }
-            if (o instanceof Calendar) {
-                Calendar cal = (Calendar) o;
+            if (o instanceof Calendar cal) {
                 dateValue = cal.getTime();
             }
 
@@ -197,6 +193,8 @@ public class XMLItemCollectionWriter implements MessageBodyWriter<XMLDocument> {
      * generated in case a contentType and encoding is provided.
      * 
      * @param bw
+     * @param contentType
+     * @param encoding
      * @throws IOException
      */
     public static void printHead(BufferedWriter bw, String contentType, String encoding) throws IOException {

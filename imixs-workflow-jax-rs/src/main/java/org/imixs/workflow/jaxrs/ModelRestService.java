@@ -31,7 +31,6 @@ package org.imixs.workflow.jaxrs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
@@ -46,7 +45,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -66,6 +64,8 @@ import org.imixs.workflow.xml.XMLDocumentAdapter;
 import jakarta.ejb.Stateless;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.logging.Level;
+import org.imixs.workflow.exceptions.AccessDeniedException;
+import org.imixs.workflow.exceptions.InvalidAccessException;
 
 /**
  * The WorkflowService Handler supports methods to process different kind of
@@ -80,9 +80,6 @@ import java.util.logging.Level;
 @Stateless
 public class ModelRestService {
     private static final Logger logger = Logger.getLogger(ModelRestService.class.getName());
-
-    static List<String> modelEntityTypes = Arrays.asList("WorkflowEnvironmentEntity", "processentity",
-            "activityentity");
 
     @Inject
     private DocumentService documentService;
@@ -102,39 +99,36 @@ public class ModelRestService {
     @GET
     @Produces({ MediaType.TEXT_HTML })
     public StreamingOutput getModelOverview() {
-        return new StreamingOutput() {
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-
-                out.write("<html><head>".getBytes());
-                out.write("<style>".getBytes());
-                out.write("table {padding:0px;width: 75%;margin-left: -2px;margin-right: -2px;}".getBytes());
-                out.write(
-                        "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
-                                .getBytes());
-                out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
-                        .getBytes());
-
-                out.write("table th,table td {font-size: 12px;}".getBytes());
-
-                out.write("table tr.a {background-color: #ddd;}".getBytes());
-
-                out.write("table tr.b {background-color: #eee;}".getBytes());
-
-                out.write("</style>".getBytes());
-                out.write("</head><body>".getBytes());
-
-                out.write("<h1>Imixs-Workflow Model Service</h1>".getBytes());
-                out.write("<p>".getBytes());
-                printVersionTable(out);
-                out.write("</p>".getBytes());
-                // footer
-                out.write(
-                        "<p>See the <a href=\"http://www.imixs.org/doc/restapi/modelservice.html\" target=\"_bank\">Imixs-Workflow REST API</a> for more information.</p>"
-                                .getBytes());
-
-                // end
-                out.write("</body></html>".getBytes());
-            }
+        return (OutputStream out) -> {
+            out.write("<html><head>".getBytes());
+            out.write("<style>".getBytes());
+            out.write("table {padding:0px;width: 75%;margin-left: -2px;margin-right: -2px;}".getBytes());
+            out.write(
+                    "body,td,select,input,li {font-family: Verdana, Helvetica, Arial, sans-serif;font-size: 13px;}"
+                            .getBytes());
+            out.write("table th {color: white;background-color: #bbb;text-align: left;font-weight: bold;}"
+                    .getBytes());
+            
+            out.write("table th,table td {font-size: 12px;}".getBytes());
+            
+            out.write("table tr.a {background-color: #ddd;}".getBytes());
+            
+            out.write("table tr.b {background-color: #eee;}".getBytes());
+            
+            out.write("</style>".getBytes());
+            out.write("</head><body>".getBytes());
+            
+            out.write("<h1>Imixs-Workflow Model Service</h1>".getBytes());
+            out.write("<p>".getBytes());
+            printVersionTable(out);
+            out.write("</p>".getBytes());
+            // footer
+            out.write(
+                    "<p>See the <a href=\"http://www.imixs.org/doc/restapi/modelservice.html\" target=\"_bank\">Imixs-Workflow REST API</a> for more information.</p>"
+                            .getBytes());
+            
+            // end
+            out.write("</body></html>".getBytes());
         };
 
     }
@@ -144,7 +138,7 @@ public class ModelRestService {
      */
     private void printVersionTable(OutputStream out) {
         try {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
 
             List<String> modelVersionList = modelService.getVersions();
 
@@ -165,17 +159,13 @@ public class ModelRestService {
 
                 if (modelEntity != null) {
 
-                    buffer.append("<td><a href=\"" + rootContext + "/model/" + modelVersion + "/bpmn\">" + modelVersion
-                            + "</a></td>");
+                    buffer.append("<td><a href=\"").append(rootContext).append("/model/").append(modelVersion).append("/bpmn\">").append(modelVersion).append("</a></td>");
 
-                    // print upload date...
-                    if (modelEntity != null) {
-                        Date dat = modelEntity.getItemValueDate("$Modified");
-                        SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        buffer.append("<td>" + formater.format(dat) + "</td>");
-                    }
+                    Date dat = modelEntity.getItemValueDate("$Modified");
+                    SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    buffer.append("<td>").append(formater.format(dat)).append("</td>");
                 } else {
-                    buffer.append("<td>" + modelVersion + "</td>");
+                    buffer.append("<td>").append(modelVersion).append("</td>");
                     buffer.append("<td> - </td>");
                 }
 
@@ -184,8 +174,7 @@ public class ModelRestService {
                 for (String group : groupList) {
                     // build a link for each group to get the Tasks
 
-                    buffer.append("<a href=\"" + rootContext + "/model/" + modelVersion + "/groups/" + group + "\">"
-                            + group + "</a></br>");
+                    buffer.append("<a href=\"").append(rootContext).append("/model/").append(modelVersion).append("/groups/").append(group).append("\">").append(group).append("</a></br>");
                 }
                 buffer.append("</td>");
                 buffer.append("</tr>");
@@ -199,8 +188,7 @@ public class ModelRestService {
             try {
                 out.write("No model definition found.".getBytes());
             } catch (IOException e1) {
-
-                e1.printStackTrace();
+                logger.severe(e1.getMessage());
             }
         }
     }
@@ -208,17 +196,16 @@ public class ModelRestService {
     @GET
     @Produces({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
     public String getModelXML() {
-        List<String> col = null;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("<model>");
         try {
-            col = modelService.getVersions();
+            List<String> col = modelService.getVersions();
 
             for (String aversion : col) {
-                sb.append("<version>" + aversion + "</version>");
+                sb.append("<version>").append(aversion).append("</version>");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
         sb.append("</model>");
         return sb.toString();
@@ -231,8 +218,8 @@ public class ModelRestService {
         List<ItemCollection> result = null;
         try {
             result = modelService.getModel(version).findAllTasks();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResultList(result, items, format);
     }
@@ -253,6 +240,10 @@ public class ModelRestService {
      * Returns the model definition containing general model information (e.g.
      * $ModelVersion).
      * 
+     * @param version
+     * @param items
+     * @param format
+     * @return 
      */
     @GET
     @Path("/{version}/definition")
@@ -261,8 +252,8 @@ public class ModelRestService {
         ItemCollection definition = null;
         try {
             definition = modelService.getModel(version).getDefinition();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResult(definition, items, format);
     }
@@ -274,8 +265,8 @@ public class ModelRestService {
         ItemCollection task = null;
         try {
             task = modelService.getModel(version).getTask(processid);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResult(task, items, format);
     }
@@ -287,8 +278,8 @@ public class ModelRestService {
         List<ItemCollection> result = null;
         try {
             result = modelService.getModel(version).findAllEventsByTask(processid);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResultList(result, items, format);
     }
@@ -297,17 +288,16 @@ public class ModelRestService {
      * Retuns a list of all Start Entities from each workflowgroup
      * 
      * @param version
+     * @param items
      * @return
      */
     @GET
     @Path("/{version}/groups")
     public List<String> getGroups(@PathParam("version") String version, @QueryParam("items") String items) {
-        List<String> col = null;
         try {
-            col = modelService.getModel(version).getGroups();
-            return col;
-        } catch (Exception e) {
-            e.printStackTrace();
+            return modelService.getModel(version).getGroups();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
         return null;
     }
@@ -316,6 +306,9 @@ public class ModelRestService {
      * Returns a list of all Tasks of a specific workflow group.
      * 
      * @param version
+     * @param group
+     * @param items
+     * @param format
      * @return
      */
     @GET
@@ -325,8 +318,8 @@ public class ModelRestService {
         List<ItemCollection> result = null;
         try {
             result = modelService.getModel(version).findTasksByGroup(group);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (ModelException e) {
+            logger.severe(e.getMessage());
         }
         return documentRestService.convertResultList(result, items, format);
     }
@@ -336,8 +329,8 @@ public class ModelRestService {
     public void deleteModel(@PathParam("version") String version) {
         try {
             modelService.deleteModel(version);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (InvalidAccessException e) {
+            logger.severe(e.getMessage());
         }
 
     }
@@ -346,7 +339,7 @@ public class ModelRestService {
      * This method consumes a Imixs BPMN model file and updates the corresponding
      * model information.
      * 
-     * @param model
+     * @param bpmnmodel
      * @return
      */
     @PUT
@@ -371,7 +364,8 @@ public class ModelRestService {
      * The filename param is used to store the file in the corresponding bpmn
      * document.
      * 
-     * @param model
+     * @param filename
+     * @param bpmnmodel
      * @return
      */
     @PUT
@@ -409,7 +403,7 @@ public class ModelRestService {
      * Next the method updates each Entity object with the property $ModelVersion.
      * An old version will be automatically removed before update.
      * 
-     * @param version - $modelversion
+     * @param _modelVersion
      * @param ecol    - model data
      */
     @PUT
@@ -433,8 +427,8 @@ public class ModelRestService {
                     modelService.removeModel(sModelVersion);
 
                 // save new entities into database and update modelversion.....
-                for (int i = 0; i < ecol.getDocument().length; i++) {
-                    entity = ecol.getDocument()[i];
+                for (XMLDocument document : ecol.getDocument()) {
+                    entity = document;
                     itemCollection = XMLDocumentAdapter.putDocument(entity);
                     // update model version
                     itemCollection.replaceItemValue("$modelVersion", sModelVersion);
@@ -443,8 +437,8 @@ public class ModelRestService {
                 }
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (AccessDeniedException e) {
+            logger.severe(e.getMessage());
         }
 
     }
@@ -467,26 +461,17 @@ public class ModelRestService {
     @PUT
     @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
     public void putModel(XMLDataCollection ecol) {
-        String sModelVersion = null;
-        XMLDocument entity;
-        ItemCollection itemCollection;
-        try {
-            if (ecol.getDocument().length > 0) {
-                /*
-                 * first we need get model version from first entity
-                 */
-                entity = ecol.getDocument()[0];
-                itemCollection = XMLDocumentAdapter.putDocument(entity);
-                sModelVersion = itemCollection.getItemValueString("$ModelVersion");
+        if (ecol != null && ecol.getDocument().length > 0) {
+            /*
+             * first we need get model version from first entity
+             */
+            XMLDocument entity = ecol.getDocument()[0];
+            ItemCollection itemCollection = XMLDocumentAdapter.putDocument(entity);
+            String sModelVersion = itemCollection.getItemValueString("$ModelVersion");
 
-                putModelByVersion(sModelVersion, ecol);
+            putModelByVersion(sModelVersion, ecol);
 
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
     }
 
     @POST

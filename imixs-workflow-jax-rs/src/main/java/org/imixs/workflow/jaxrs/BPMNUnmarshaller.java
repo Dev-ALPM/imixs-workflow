@@ -59,25 +59,19 @@ public class BPMNUnmarshaller implements MessageBodyReader<BPMNModel> {
 
     private static final Logger logger = Logger.getLogger(BPMNUnmarshaller.class.getName());
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public boolean isReadable(Class aClass, Type type, Annotation[] annotations, MediaType mediaType) {
-        if (aClass == BPMNModel.class)
-            return true;
-
-        return false;
+    public boolean isReadable(Class<?> aClass, Type type, Annotation[] annotations, MediaType mediaType) {
+        return aClass == BPMNModel.class;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public BPMNModel readFrom(Class aClass, Type type, Annotation[] annotations, MediaType mediaType,
-            MultivaluedMap multivaluedMap, InputStream bpmnInputStream) throws IOException, WebApplicationException {
+    public BPMNModel readFrom(Class<BPMNModel> aClass, Type type, Annotation[] annotations, MediaType mediaType,
+            MultivaluedMap<String,String> multivaluedMap, InputStream bpmnInputStream) throws IOException, WebApplicationException {
 
         try {
             return BPMNParser.parseModel(bpmnInputStream, "UTF-8");
         } catch (ModelException | ParseException | ParserConfigurationException | SAXException e) {
             logger.log(Level.WARNING, "Invalid Model: {0}", e.getMessage());
-            e.printStackTrace();
         }
 
         return null;

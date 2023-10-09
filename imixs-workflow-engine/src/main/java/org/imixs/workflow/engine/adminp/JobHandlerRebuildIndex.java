@@ -45,7 +45,6 @@ import org.imixs.workflow.engine.index.UpdateService;
 import org.imixs.workflow.engine.jpa.Document;
 import org.imixs.workflow.exceptions.AccessDeniedException;
 import org.imixs.workflow.exceptions.InvalidAccessException;
-import org.imixs.workflow.exceptions.PluginException;
 
 import jakarta.ejb.LocalBean;
 import jakarta.ejb.Stateless;
@@ -53,7 +52,7 @@ import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.util.logging.Level;
 
 /**
@@ -102,7 +101,6 @@ public class JobHandlerRebuildIndex implements JobHandler {
      * @param adminp
      * @return true when finished
      * @throws AccessDeniedException
-     * @throws PluginException
      */
 
     @Override
@@ -132,9 +130,9 @@ public class JobHandlerRebuildIndex implements JobHandler {
                 new Object[]{adminp.getUniqueID(), time_out});
         try {
             while (true) {
-                List<ItemCollection> resultList = new ArrayList<ItemCollection>();
+                List<ItemCollection> resultList = new ArrayList<>();
                 List<Document> documents = findNextDocumentsBySyncPoint(syncPoint);
-                if (documents != null && documents.size() > 0) {
+                if (documents != null && !documents.isEmpty()) {
                     for (Document doc : documents) {
                         // update syncpoint
                         syncPoint = doc.getCreated().getTimeInMillis();
@@ -195,7 +193,6 @@ public class JobHandlerRebuildIndex implements JobHandler {
             logger.log(Level.SEVERE,"...Job " + AdminPService.JOB_REBUILD_INDEX
                     + " ({0}) - failed - {1} last syncpoint  {2} - {3}  documents reindexed....",
                     new Object[]{adminp.getUniqueID(), e.getMessage(), syncPoint, totalCount});
-            e.printStackTrace();
             adminp.replaceItemValue(JobHandler.ISCOMPLETED, false);
             // update syncpoint
             Date syncDate = new Date(syncPoint);
@@ -237,7 +234,6 @@ public class JobHandlerRebuildIndex implements JobHandler {
      * @return a list of documents with the same creation timestamp after the given
      *         syncpoint. Returns null in case no more documents were found.
      */
-    @SuppressWarnings("unchecked")
     private List<Document> findNextDocumentsBySyncPoint(long lSyncpoint) {
 
         Date syncpoint = new Date(lSyncpoint);
@@ -249,19 +245,16 @@ public class JobHandlerRebuildIndex implements JobHandler {
         query += " AND NOT document.type LIKE 'workitemlob%' ";
         query += " AND document.type != 'event' ";
         query += " ORDER BY document.created ASC";
-        Query q = manager.createQuery(query);
+        TypedQuery<Document> q = manager.createQuery(query, Document.class);
         q.setFirstResult(0);
         q.setMaxResults(READ_AHEAD);
         List<Document> documentList = q.getResultList();
-        if (documentList != null && documentList.size() > 0) {
-            Document lastDocument = null;
-            Document nextToLastDocument = null;
-
+        if (documentList != null && !documentList.isEmpty()) {
             // test if we have two documents with the same creation date (in seldom cases
             // possible)
             if (documentList.size() == READ_AHEAD) {
-                lastDocument = documentList.get(READ_AHEAD - 1);
-                nextToLastDocument = documentList.get(READ_AHEAD - 2);
+                Document lastDocument = documentList.get(READ_AHEAD - 1);
+                Document nextToLastDocument = documentList.get(READ_AHEAD - 2);
                 // now test if we have more than one document with the same timestamp at the end
                 // of the list
                 if (lastDocument != null && nextToLastDocument != null
@@ -275,7 +268,7 @@ public class JobHandlerRebuildIndex implements JobHandler {
                     query += " AND NOT document.type LIKE 'workitemlob%' ";
                     query += " AND document.type != 'event' ";
                     query += " ORDER BY document.created ASC";
-                    q = manager.createQuery(query);
+                    q = manager.createQuery(query,Document.class);
                     q.setFirstResult(0);
                     q.setMaxResults(READ_AHEAD);
                     documentList.addAll(q.getResultList());

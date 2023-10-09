@@ -4,7 +4,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+import java.util.logging.Logger;
 
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.WorkflowKernel;
@@ -16,7 +16,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 /**
  * Test class for WorkflowService
@@ -28,6 +27,9 @@ import org.mockito.stubbing.Answer;
  * @author rsoika
  */
 public class TestWorkflowService {
+    
+        private final static Logger logger = Logger.getLogger(TestModelService.class.getName());
+        
 	protected WorkflowMockEnvironment workflowMockEnvironment;
 
 	@Before
@@ -48,6 +50,7 @@ public class TestWorkflowService {
 	 * 
 	 * @throws ProcessingErrorException
 	 * @throws AccessDeniedException
+         * @throws org.imixs.workflow.exceptions.PluginException
 	 * @throws ModelException
 	 */
 	@Test
@@ -74,15 +77,14 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(200);
 
-		List<ItemCollection> eventList = null;
 		try {
-			eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+			List<ItemCollection> eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+                        // only one event is public!
+                        Assert.assertEquals(1, eventList.size());
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
-		// only one event is public!
-		Assert.assertEquals(1, eventList.size());
 	}
 
 	/**
@@ -96,7 +98,7 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(100);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("");
 		members.add("manfred");
@@ -105,14 +107,13 @@ public class TestWorkflowService {
 		workitem.replaceItemValue("nammanager", members);
 		workitem.replaceItemValue("namassist", "");
 
-		List<ItemCollection> eventList = null;
 		try {
-			eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+                    List<ItemCollection> eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+                    Assert.assertEquals(3, eventList.size());
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
-		Assert.assertEquals(3, eventList.size());
 	}
 
 	/**
@@ -126,21 +127,20 @@ public class TestWorkflowService {
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(100);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("alex");
 		workitem.replaceItemValue("nammteam", "tom");
 		workitem.replaceItemValue("nammanager", members);
 		workitem.replaceItemValue("namassist", "");
 
-		List<ItemCollection> eventList = null;
 		try {
-			eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
-		} catch (ModelException e) {
-			e.printStackTrace();
+			List<ItemCollection> eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+			Assert.assertEquals(2, eventList.size());
+                } catch (ModelException e) {
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
-		Assert.assertEquals(2, eventList.size());
 	}
 
 	/**
@@ -153,34 +153,30 @@ public class TestWorkflowService {
 	@Test
 	public void testGetEventsReadRestrictedForManagerAccess() {
 
-		when(workflowMockEnvironment.workflowService.getUserNameList()).thenAnswer(new Answer<List<String>>() {
-			@Override
-			public List<String> answer(InvocationOnMock invocation) throws Throwable {
-				List<String> result = new ArrayList<>();
-				result.add("manfred");
-				result.add("org.imixs.ACCESSLEVEL.MANAGERACCESS");
-				return result;
-			}
-		});
+		when(workflowMockEnvironment.workflowService.getUserNameList()).thenAnswer((InvocationOnMock invocation) -> {
+                    List<String> result = new ArrayList<>();
+                    result.add("manfred");
+                    result.add("org.imixs.ACCESSLEVEL.MANAGERACCESS");
+                    return result;
+                });
 
 		// get workitem
 		ItemCollection workitem = workflowMockEnvironment.database.get("W0000-00001");
 		workitem.setTaskID(300);
 
-		Vector<String> members = new Vector<String>();
+		List<String> members = new ArrayList<>();
 		members.add("jo");
 		members.add("alex");
 		workitem.replaceItemValue("nammteam", "tom");
 		workitem.replaceItemValue("nammanager", members);
 		workitem.replaceItemValue("namassist", "");
 
-		List<ItemCollection> eventList = null;
 		try {
-			eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+			List<ItemCollection> eventList = workflowMockEnvironment.workflowService.getEvents(workitem);
+                        Assert.assertEquals(2, eventList.size());
 		} catch (ModelException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
-		Assert.assertEquals(2, eventList.size());
 	}
 }

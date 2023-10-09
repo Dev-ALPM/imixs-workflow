@@ -142,7 +142,7 @@ public class SchemaService {
             logger.log(Level.FINEST, "......lucene IndexFieldListCategory={0}", indexFieldsCategory);
         }
         // compute the normal search field list
-        fieldList = new ArrayList<String>();
+        fieldList = new ArrayList<>();
         // add all entries from the default field list
         fieldList.addAll(DEFAULT_SEARCH_FIELD_LIST);
         if (indexFields.isPresent() && !indexFields.get().isEmpty()) {
@@ -157,7 +157,7 @@ public class SchemaService {
         }
 
         // next we compute the NOANALYZE field list
-        fieldListNoAnalyze = new ArrayList<String>();
+        fieldListNoAnalyze = new ArrayList<>();
         // add all entries from the default field list
         fieldListNoAnalyze.addAll(DEFAULT_NOANALYZE_FIELD_LIST);
         if (indexFieldsNoAnalyze.isPresent() && !indexFieldsNoAnalyze.get().isEmpty()) {
@@ -172,7 +172,7 @@ public class SchemaService {
         }
 
         // finally compute Index ANALYZE field list
-        fieldListAnalyze = new ArrayList<String>();
+        fieldListAnalyze = new ArrayList<>();
         if (indexFieldsAnalyze.isPresent() && !indexFieldsAnalyze.get().isEmpty()) {
             StringTokenizer st = new StringTokenizer(indexFieldsAnalyze.get(), ",");
             while (st.hasMoreElements()) {
@@ -188,7 +188,7 @@ public class SchemaService {
         }
 
         // compute Index field list (Store)
-        fieldListStore = new ArrayList<String>();
+        fieldListStore = new ArrayList<>();
         // add all static default field list
         fieldListStore.addAll(DEFAULT_STORE_FIELD_LIST);
         if (indexFieldsStore.isPresent() && !indexFieldsStore.get().isEmpty()) {
@@ -215,7 +215,7 @@ public class SchemaService {
         
 
         // compute Index category list ()
-        fieldListCategory = new ArrayList<String>();
+        fieldListCategory = new ArrayList<>();
         // add all static default field list
         fieldListCategory.addAll(DEFAULT_CATEGORY_FIELD_LIST);
         if (indexFieldsCategory.isPresent() && !indexFieldsCategory.get().isEmpty()) {
@@ -229,7 +229,7 @@ public class SchemaService {
         }
 
         // build unique field list containing all field names
-        uniqueFieldList = new HashSet<String>();
+        uniqueFieldList = new HashSet<>();
         uniqueFieldList.add(WorkflowKernel.UNIQUEID);
         uniqueFieldList.add(DocumentService.READACCESS);
         uniqueFieldList.addAll(fieldListStore);

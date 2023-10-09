@@ -3,7 +3,6 @@ package org.imixs.workflow.xml;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -25,13 +24,12 @@ import org.junit.Test;
  */
 public class TestXMLItem {
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void testSimpleValue() {
 		XMLItem xmlItem = new XMLItem();
 		xmlItem.setName("name");
 
-		List values = new ArrayList<>();
+		List<String> values = new ArrayList<>();
 		values.add("a");
 		xmlItem.setValue(values.toArray());
 
@@ -44,19 +42,17 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void testDateValue() {
 		XMLItem xmlItem = new XMLItem();
 		xmlItem.setName("name");
 		Date date = new Date();
-		List values = new ArrayList<>();
+		List<Date> values = new ArrayList<>();
 		values.add(date);
 		xmlItem.setValue(values.toArray());
 
@@ -68,19 +64,17 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void testListSimpleValues() {
 		XMLItem xmlItem = new XMLItem();
 		xmlItem.setName("name");
 
-		List values = new ArrayList<>();
+		List<String> values = new ArrayList<>();
 		values.add("a");
 		values.add("b");
 		xmlItem.setValue(values.toArray());
@@ -95,8 +89,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 	}
@@ -104,7 +97,6 @@ public class TestXMLItem {
 	/**
 	 * Test conversion of Date objects in a list
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void testListDateValues() {
 		XMLItem xmlItem = new XMLItem();
@@ -113,7 +105,7 @@ public class TestXMLItem {
 		Date date1 = new Date();
 		Date date2 = new Date();
 
-		List values = new ArrayList<>();
+		List<Date> values = new ArrayList<>();
 		values.add(date1);
 		values.add(date2);
 		xmlItem.setValue(values.toArray());
@@ -128,8 +120,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 	}
@@ -144,7 +135,7 @@ public class TestXMLItem {
 		XMLItem xmlItem = new XMLItem();
 		xmlItem.setName("maps");
 
-		List<Map<String, List<Object>>> mapList = new ArrayList<Map<String, List<Object>>>();
+		List<Map<String, List<?>>> mapList = new ArrayList<>();
 
 		// add a list of maps as the value object...
 		ItemCollection i1 = new ItemCollection();
@@ -181,8 +172,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 	}
 	
@@ -198,8 +188,8 @@ public class TestXMLItem {
 		XMLItem xmlItem = new XMLItem();
 		xmlItem.setName("maps");
 		
-		Hashtable<String, ArrayList<String>> hashTable = new Hashtable<String, ArrayList<String>>();
-		ArrayList<String> arrayList=new ArrayList<String>();
+		Map<String, ArrayList<String>> hashTable = new HashMap<>();
+		ArrayList<String> arrayList=new ArrayList<>();
 		arrayList.add("a");
 		arrayList.add("b");
 		hashTable.put("mykey", arrayList);
@@ -212,8 +202,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 		
 		// repeat the test with an ItemCollection
@@ -240,12 +229,12 @@ public class TestXMLItem {
 		xmlItem.setName("maps");
 
 		Date date = new Date();
-		Double _double1= Double.valueOf(1.47);
+		Double _double1= 1.47d;
 		
 		
 		List<Map<String, Object>> commentList = new ArrayList<>();
 
-		Map<String, Object> log = new HashMap<String, Object>();
+		Map<String, Object> log = new HashMap<>();
 		log.put("date", date);
 		log.put("double1", _double1);
 		commentList.add(log);
@@ -254,8 +243,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// test values
@@ -309,7 +297,7 @@ public class TestXMLItem {
 		Date date = new Date();
 		List<Map<String, Object>> commentList = new ArrayList<>();
 
-		Map<String, Object> log = new HashMap<String, Object>();
+		Map<String, Object> log = new HashMap<>();
 		log.put("date", date);
 
 		// ad a non serializeable object.....
@@ -320,8 +308,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// test values
@@ -388,8 +375,7 @@ public class TestXMLItem {
 		try {
 			testMarshaling(xmlItem);
 		} catch (JAXBException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 	}
 

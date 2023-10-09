@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RunAs;
+import jakarta.ejb.EJBException;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -102,7 +103,6 @@ public class SchedulerService {
 
     public static final String DOCUMENT_TYPE = "scheduler";
 
-    @Resource
     SessionContext ctx;
 
     @Inject
@@ -124,6 +124,7 @@ public class SchedulerService {
      * Loads the scheduler configuration entity by name. The method returns null if
      * no scheduler configuration exits.
      * 
+     * @param name
      * @return
      */
     public ItemCollection loadConfiguration(String name) {
@@ -133,14 +134,14 @@ public class SchedulerService {
                     + "\" ) )";
             Collection<ItemCollection> col = documentService.find(sQuery, 1, 0);
             // check if we found a scheduler configuration
-            if (col.size() > 0) {
+            if (!col.isEmpty()) {
                 ItemCollection configuration = col.iterator().next();
                 // refresh timer details
                 updateTimerDetails(configuration);
                 return configuration;
             }
         } catch (QueryException e1) {
-            e1.printStackTrace();
+            logger.severe(e1.getMessage());
         }
         return null;
     }
@@ -156,6 +157,7 @@ public class SchedulerService {
      * </ul>
      * The method also updates the timer details of a running timer.
      * 
+     * @param configItemCollection
      * @return
      * @throws AccessDeniedException
      */
@@ -210,7 +212,7 @@ public class SchedulerService {
      * @throws ParseException
      */
     public ItemCollection start(ItemCollection configuration) throws AccessDeniedException, ParseException {
-        Timer timer = null;
+        Timer timer;
         if (configuration == null)
             return null;
 
@@ -221,7 +223,7 @@ public class SchedulerService {
             try {
                 timer.cancel();
                 timer = null;
-            } catch (Exception e) {
+            } catch (EJBException | IllegalStateException e) {
                 logger.log(Level.WARNING, "...failed to stop existing timer for ''{0}''!", configuration.getUniqueID());
                 throw new InvalidAccessException(SchedulerService.class.getName(), SchedulerException.INVALID_WORKITEM,
                         " failed to cancle existing timer!");
@@ -262,6 +264,8 @@ public class SchedulerService {
      * saved!
      * 
      * 
+     * @param configuration
+     * @return 
      */
     public ItemCollection stop(ItemCollection configuration) {
         Timer timer = findTimer(configuration.getUniqueID());
@@ -273,7 +277,7 @@ public class SchedulerService {
         if (timer != null) {
             try {
                 timer.cancel();
-            } catch (Exception e) {
+            } catch (EJBException | IllegalStateException e) {
                 logger.log(Level.INFO, "...failed to stop timer for ''{0}''!", configuration.getUniqueID());
             }
 
@@ -331,12 +335,11 @@ public class SchedulerService {
                         } else {
                             logger.log(Level.INFO, "...Scheduler Service {0} already running. ", schedulerConfig.getUniqueID());
                         }
-                    } catch (Exception e) {
+                    } catch (ParseException | AccessDeniedException e) {
                         logger.log(Level.SEVERE, "...start of Scheduler Service {0} failed! - {1}", new Object[]{schedulerConfig.getUniqueID(), e.getMessage()});
-                        e.printStackTrace();
                     }
                 } else {
-                    logger.log(Level.INFO, "...Scheduler Service {0} is not enabled. ", schedulerConfig.getUniqueID());
+                    logger.log(Level.INFO, "...Scheduler Service {0} is not enabled. ", schedulerConfig != null ? schedulerConfig.getUniqueID() : null);
                 }
             }
         //} catch (QueryException e1) {
@@ -350,7 +353,6 @@ public class SchedulerService {
      * 
      * @param id
      * @return Timer
-     * @throws Exception
      */
     public Timer findTimer(String id) {
         for (Object obj : timerService.getTimers()) {
@@ -384,7 +386,7 @@ public class SchedulerService {
                 configuration.removeItem("nextTimeout");
                 configuration.removeItem("timeRemaining");
             }
-        } catch (Exception e) {
+        } catch (EJBException | IllegalStateException e) {
             logger.log(Level.WARNING, "unable to updateTimerDetails: {0}", e.getMessage());
             configuration.removeItem("nextTimeout");
             configuration.removeItem("timeRemaining");
@@ -397,6 +399,7 @@ public class SchedulerService {
      * 
      * @param message
      * @param configuration
+     * @param workitem
      */
     public void logMessage(String message, ItemCollection configuration, ItemCollection workitem) {
         if (configuration != null) {
@@ -416,6 +419,7 @@ public class SchedulerService {
      * 
      * @param message
      * @param configuration
+     * @param workitem
      */
     public void logWarning(String message, ItemCollection configuration, ItemCollection workitem) {
         if (configuration != null) {
@@ -430,11 +434,11 @@ public class SchedulerService {
     }
 
     /**
-     * This method returns a n injected JobHandler by name or null if no JobHandler
+     * This method returns a scheduler by name
      * with the requested class name is injected.
      * 
-     * @param jobHandlerClassName
-     * @return jobHandler class or null if not found
+     * @param schedulerClassName
+     * @return Scheduler or null if not found
      */
     protected Scheduler findSchedulerByName(String schedulerClassName) {
         if (schedulerClassName == null || schedulerClassName.isEmpty()) {
@@ -469,8 +473,6 @@ public class SchedulerService {
      * be implemented by a subclass.
      * 
      * @param timer
-     * @throws Exception
-     * @throws QueryException
      */
     @Timeout
     protected void onTimeout(jakarta.ejb.Timer timer) {
@@ -514,9 +516,6 @@ public class SchedulerService {
             }
         } catch (SchedulerException e) {
             // in case of an SchedulerException we cancel the Timer service
-            if (logger.isLoggable(Level.FINEST)) {
-                e.printStackTrace();
-            }
             errorMes = e.getMessage();
             logger.log(Level.SEVERE, "Scheduler ''{0}'' failed: {1}", new Object[]{id, errorMes});
             configuration.appendItemValue(Scheduler.ITEM_LOGMESSAGE, "Error: " + errorMes);
@@ -524,7 +523,6 @@ public class SchedulerService {
             
         } catch (RuntimeException e) {
             // in case of an RuntimeException we did not cancel the Timer service
-            e.printStackTrace();
             errorMes = e.getMessage();
             logger.log(Level.SEVERE, "Scheduler ''{0}'' failed: {1}", new Object[]{id, errorMes});
             configuration.appendItemValue(Scheduler.ITEM_LOGMESSAGE, "Error: " + errorMes);
@@ -553,7 +551,7 @@ public class SchedulerService {
      *   year=*
      * </code>
      * 
-     * @param sConfiguation
+     * @param configItemCollection
      * @return
      * @throws ParseException
      */
@@ -564,8 +562,7 @@ public class SchedulerService {
 
         ScheduleExpression scheduerExpression = new ScheduleExpression();
 
-        @SuppressWarnings("unchecked")
-        List<String> calendarConfiguation = configItemCollection.getItemValue(Scheduler.ITEM_SCHEDULER_DEFINITION);
+        List<String> calendarConfiguation = configItemCollection.getItemValueList(Scheduler.ITEM_SCHEDULER_DEFINITION, String.class);
         // try to parse the configuration list....
         for (String confgEntry : calendarConfiguation) {
 

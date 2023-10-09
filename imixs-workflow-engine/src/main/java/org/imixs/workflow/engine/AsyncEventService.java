@@ -107,6 +107,7 @@ public class AsyncEventService {
      * The observer method verifies if the current task contains a AsyncEvent
      * definition.
      * 
+     * @param processingEvent
      * @throws ModelException
      * 
      */
@@ -157,7 +158,6 @@ public class AsyncEventService {
      * eventLogEntries not part of the current collection. We can assume that the
      * event was succefully processed by the ArchiveHandler
      * 
-     * @throws ArchiveException
      */
     @TransactionAttribute(value = TransactionAttributeType.REQUIRES_NEW)
     public void processEventLog() {
@@ -190,7 +190,7 @@ public class AsyncEventService {
                                     .equals(syncEventData.getItemValueString(WorkflowKernel.TRANSACTIONID))) {
                                 // set the event id....
                                 workitem.setEventID(syncEventData.getEventID());
-                                workitem = workflowService.processWorkItemByNewTransaction(workitem);
+                                workflowService.processWorkItemByNewTransaction(workitem);
                             } else {
                                 // just a normal log message
                                 logger.log(Level.INFO, "...AsyncEvent {0} for {1} is deprecated and will be removed. ({2} \u2260 {3}",

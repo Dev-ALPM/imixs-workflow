@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
-import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -44,15 +44,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -68,11 +67,11 @@ import org.imixs.workflow.xml.XMLItem;
  * this wrapper class to easy transport workflow data between the different
  * workflow modules. ValueObjects, particular in J2EE Applications, have the
  * advantage to improve performance of remote method calls. The Imixs
- * ItemCcollection enables a very flexibly and easy to use data structure.
+ * ItemCollection enables a very flexibly and easy to use data structure.
  * <p>
  * A ItemCollection contains various Items (attributes). Every Item exist of a
  * Name (String) and a list of values (List of Object). Internal every Value is
- * stored inside a Vector Class. All values are stored internally in a Map
+ * stored inside a List Class. All values are stored internally in a Map
  * containing key values pairs.
  * <p>
  * NOTE: An ItemCollection is not serializable and can not be stored into
@@ -85,19 +84,18 @@ import org.imixs.workflow.xml.XMLItem;
  * @see org.imixs.workflow.WorkflowManager
  */
 
-public class ItemCollection implements Cloneable {
+public final class ItemCollection implements Cloneable {
     // NOTE: ItemCollection is not serializable
 
     private static final Logger logger = Logger.getLogger(ItemCollection.class.getName());
 
-    private Map<String, List<Object>> hash = new Hashtable<String, List<Object>>();
+    private Map<String, List<?>> hash = new HashMap<>();
 
     /**
      * Creates a new empty ItemCollection
      * 
      */
     public ItemCollection() {
-        super();
     }
 
     /**
@@ -105,8 +103,7 @@ public class ItemCollection implements Cloneable {
      * 
      * @param map - with item values
      */
-    public ItemCollection(Map<String, List<Object>> map) {
-        super();
+    public ItemCollection(Map<String, List<?>> map) {
         this.replaceAllItems(map);
     }
 
@@ -117,7 +114,6 @@ public class ItemCollection implements Cloneable {
      * @param itemCol - ItemCollection with values
      */
     public ItemCollection(ItemCollection itemCol) {
-        super();
         this.replaceAllItems(itemCol.hash);
     }
 
@@ -130,7 +126,7 @@ public class ItemCollection implements Cloneable {
      * @param map - reference with item values
      * @return new reference
      */
-    public static ItemCollection createByReference(final Map<String, List<Object>> map) {
+    public static ItemCollection createByReference(final Map<String, List<?>> map) {
         ItemCollection reference = new ItemCollection();
         if (map != null) {
             reference.hash = map;
@@ -142,10 +138,10 @@ public class ItemCollection implements Cloneable {
      * This method clones the current ItemCollection. The method makes a deep copy
      * of the current instance.
      */
-    @Override
-    public Object clone() {
+    @SuppressWarnings({"override", "CloneDoesntCallSuperClone"})
+    public ItemCollection clone() {
         ItemCollection clone = new ItemCollection(this);
-        return clone;
+            return clone;
     }
 
     /**
@@ -162,11 +158,11 @@ public class ItemCollection implements Cloneable {
      * @return new ItemCollection
      */
     public ItemCollection clone(final List<String> itemNames) {
-        ItemCollection clone = (ItemCollection) this.clone();
+        ItemCollection clone = this.clone();
         // remove all undefined items if a list of itemNames is defined.
-        if (itemNames != null && itemNames.size() > 0) {
+        if (itemNames != null && !itemNames.isEmpty()) {
             // we build a list with all items to be cloned...
-            List<String> cloneItemList = new ArrayList<String>();
+            List<String> cloneItemList = new ArrayList<>();
             Set<String> originItemNameList = hash.keySet();
             for (String itemPattern : itemNames) {
                 // first test an exact match....
@@ -213,13 +209,12 @@ public class ItemCollection implements Cloneable {
      * complex data structure and can not be copied by reference. See also
      * deepCopyOfMap.
      * 
-     * @param itemvalue
-     * @return
+     * @param itemName
+     * @param source
      */
-    @SuppressWarnings("unchecked")
     public void cloneItem(String itemName, ItemCollection source) {
         try {
-            List<Object> sourceValue = source.getItemValue(itemName);
+            List<?> sourceValue = source.getItemValue(itemName);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             // serialize and pass the object
@@ -227,7 +222,8 @@ public class ItemCollection implements Cloneable {
             oos.flush();
             ByteArrayInputStream bais = new ByteArrayInputStream(bos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
-            List<Object> copy = (List<Object>) ois.readObject();
+            @SuppressWarnings("unchecked")
+            List<? super Object> copy = (List<? super Object>) ois.readObject();
             hash.put(itemName, copy);
         } catch (IOException | ClassNotFoundException e) {
             logger.log(Level.WARNING, "Unable to clone values of Item ''{0}'' - {1}", new Object[]{itemName, e});
@@ -235,13 +231,23 @@ public class ItemCollection implements Cloneable {
     }
 
     /**
-     * This method compares the values of two item collections by comparing the hash
-     * maps. This did not garantie that also embedded arrays are equal.
+     * {@inheritDoc}
      */
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof ItemCollection))
             return false;
         return hash.equals(((ItemCollection) o).hash);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        int hashCode = 7;
+        hashCode = 61 * hashCode + Objects.hashCode(this.hash);
+        return hashCode;
     }
 
     /**
@@ -371,8 +377,7 @@ public class ItemCollection implements Cloneable {
      * @param itemName The name of an item.
      * @return an untyped list of values contained by the item.
      */
-    @SuppressWarnings("rawtypes")
-    public List getItemValue(String itemName) {
+    public List<?> getItemValue(String itemName) {
         if (itemName == null) {
             return null;
         }
@@ -401,33 +406,34 @@ public class ItemCollection implements Cloneable {
      * null. The ItemName is not case sensitive. Use hasItem to verify the existence
      * of an item.
      * 
+     * @param <T> Type of result same as itemType
      * @param itemName The item Name.
      * @param itemType The type into which the resolve item value should get
      *                 converted
      * @return the resolved item value as an object of the requested type.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "UnnecessaryBoxing"})
     public <T> T getItemValue(String itemName, Class<T> itemType) {
         List<?> values = getItemValue(itemName);
-        if (values == null || values.size() == 0) {
+        if (values == null || values.isEmpty()) {
 
             // test for Integer
             if (itemType == Integer.class || itemType == int.class) {
-                return (T) new Integer(0);
+                return (T) Integer.valueOf(0);
             }
             // test for Float
             if (itemType == Float.class || itemType == float.class) {
-                return (T) new Float(0);
+                return (T) Float.valueOf(0.0f);
             }
 
             // test for Long
             if (itemType == Long.class || itemType == long.class) {
-                return (T) new Long(0);
+                return (T) Long.valueOf(0L);
             }
 
             // test for Double
             if (itemType == Double.class || itemType == double.class) {
-                return (T) new Double(0);
+                return (T) Double.valueOf(0.0d);
             }
 
             return null;
@@ -446,20 +452,92 @@ public class ItemCollection implements Cloneable {
      * The ItemName is not case sensitive. Use hasItem to verify the existence of an
      * item.
      * 
+     * @param <T> Type class for return
      * @param itemName The item Name.
      * @param itemType The type into which the resolved item values should get
      *                 converted
      * @return the resolved list of item values of the requested type.
      */
 
-    @SuppressWarnings("unchecked")
     public <T> List<T> getItemValueList(String itemName, Class<T> itemType) {
+        List<T> result = new ArrayList<>();
         List<?> values = getItemValue(itemName);
-        // convert values...
-        values.replaceAll(s -> convertValue(s, itemType));
-        return (List<T>) values;
+        for(Object value : values) {
+            result.add(convertValue(value, itemType));
+        }
+        
+        return result;
         // @see details here:
         // https://stackoverflow.com/questions/51937821/how-to-define-a-generic-list-of-types-in-java?noredirect=1#comment90825856_51937821
+    }
+
+    /**
+     * Returns the resolved list of list item values of the specified type. The method
+     * converts the values of the list to the specified type if possible.
+     * <p>
+     * If the item isn't present in the itemCollection the method returns an empty
+     * list.
+     * <p>
+     * The ItemName is not case sensitive. Use hasItem to verify the existence of an
+     * item.
+     * 
+     * @param <T> Type class for return
+     * @param itemName The item Name.
+     * @param itemType The type into which the resolved item values should get
+     *                 converted
+     * @return the resolved list of item values of the requested type.
+     */
+
+    public <T> List<List<T>> getItemValueListList(String itemName, Class<T> itemType) {
+        List<List<T>> result = new ArrayList<>();
+        List<?> values = getItemValue(itemName);
+        for(Object value : values) {
+            if(value instanceof List) {
+                List<T> partialResult = new ArrayList<>();
+                @SuppressWarnings("unchecked")
+                List<Object> listValues = (List<Object>) value;
+                for(Object listValue : listValues) {
+                    partialResult.add(convertValue(listValue, itemType));
+                }
+                result.add(partialResult);
+            }
+        }
+        
+        return result;
+        // @see details here:
+        // https://stackoverflow.com/questions/51937821/how-to-define-a-generic-list-of-types-in-java?noredirect=1#comment90825856_51937821
+    }
+
+    /**
+     * Returns the resolved map of item values of the specified type. The method
+     * converts the map values of the list to the specified type if possible.
+     * <p>
+     * If the item isn't present in the itemCollection the method returns an empty
+     * map.
+     * <p>
+     * The ItemName is not case sensitive. Use hasItem to verify the existence of an
+     * item.
+     * 
+     * @param <T> Type class for return
+     * @param itemName The item Name.
+     * @param itemType The type into which the resolved item values should get
+     *                 converted
+     * @return the resolved map of item values of the requested type.
+     */
+
+    public <T> Map<String, T> getItemValueMap(String itemName, Class<T> itemType) {
+        Map<String, T> result = new HashMap<>();
+        List<?> values = getItemValue(itemName);
+        for(Object value : values) {
+            if(value instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> mapValue = (Map<Object, Object>) value;
+                for(Entry<Object,Object> entry : mapValue.entrySet()) {
+                    result.put(entry.getKey().toString(), convertValue(entry.getValue(), itemType));
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -498,11 +576,8 @@ public class ItemCollection implements Cloneable {
      * @return - true if no value is assigned.
      */
     public boolean isItemEmpty(String itemName) {
-        if (!hasItem(itemName) || getItemValue(itemName).size() == 0
-                || (getItemValue(itemName).size() == 1 && getItemValueString(itemName).isEmpty())) {
-            return true;
-        }
-        return false;
+        return !hasItem(itemName) || getItemValue(itemName).isEmpty()
+                || (getItemValue(itemName).size() == 1 && getItemValueString(itemName).isEmpty());
     }
 
     /**
@@ -515,7 +590,7 @@ public class ItemCollection implements Cloneable {
      */
     public boolean isItemValueInteger(String aName) {
         List<?> v = getItemValue(aName);
-        if (v.size() == 0)
+        if (v.isEmpty())
             return false;
         else {
             // test for object type...
@@ -534,7 +609,7 @@ public class ItemCollection implements Cloneable {
      */
     public boolean isItemValueLong(String aName) {
         List<?> v = getItemValue(aName);
-        if (v.size() == 0)
+        if (v.isEmpty())
             return false;
         else {
             // test for object type...
@@ -553,7 +628,7 @@ public class ItemCollection implements Cloneable {
      */
     public boolean isItemValueDouble(String aName) {
         List<?> v = getItemValue(aName);
-        if (v.size() == 0)
+        if (v.isEmpty())
             return false;
         else {
             // test for object type...
@@ -572,7 +647,7 @@ public class ItemCollection implements Cloneable {
      */
     public boolean isItemValueFloat(String aName) {
         List<?> v = getItemValue(aName);
-        if (v.size() == 0)
+        if (v.isEmpty())
             return false;
         else {
             // test for object type...
@@ -590,7 +665,7 @@ public class ItemCollection implements Cloneable {
      */
     public boolean isItemValueNumeric(String aName) {
         List<?> v = getItemValue(aName);
-        if (v.size() == 0)
+        if (v.isEmpty())
             return false;
         else {
             // test for numeric type...
@@ -608,7 +683,7 @@ public class ItemCollection implements Cloneable {
      */
     public boolean isItemValueDate(String aName) {
         List<?> v = getItemValue(aName);
-        if (v.size() == 0)
+        if (v.isEmpty())
             return false;
         else {
             // test for object type...
@@ -622,7 +697,7 @@ public class ItemCollection implements Cloneable {
      * 
      * @return Map with all Items
      */
-    public Map<String, List<Object>> getAllItems() {
+    public Map<String, List<?>> getAllItems() {
         return hash;
 
     }
@@ -633,7 +708,7 @@ public class ItemCollection implements Cloneable {
      * 
      * @param aHash
      */
-    public void setAllItems(Map<String, List<Object>> aHash) {
+    public void setAllItems(Map<String, List<?>> aHash) {
         hash = aHash;
 
     }
@@ -644,7 +719,7 @@ public class ItemCollection implements Cloneable {
      * @return sorted list of item names
      */
     public List<String> getItemNames() {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         result.addAll(hash.keySet());
         // sort result
         Collections.sort(result);
@@ -692,7 +767,7 @@ public class ItemCollection implements Cloneable {
      */
     public String getItemValueString(String itemName) {
         List<?> v = (List<?>) getItemValue(itemName);
-        if (v.size() == 0) {
+        if (v.isEmpty()) {
             return "";
         } else {
             // verify if value is null
@@ -721,14 +796,12 @@ public class ItemCollection implements Cloneable {
     public int getItemValueInteger(String itemName) {
         try {
             List<?> v = getItemValue(itemName);
-            if (v.size() == 0) {
+            if (v.isEmpty()) {
                 return 0;
             }
             String sValue = v.get(0).toString();
-            return new Double(sValue).intValue();
-        } catch (NumberFormatException e) {
-            return 0;
-        } catch (ClassCastException e) {
+            return new BigDecimal(sValue).intValue();
+        } catch (NumberFormatException | ClassCastException e) {
             return 0;
         }
     }
@@ -748,14 +821,12 @@ public class ItemCollection implements Cloneable {
     public long getItemValueLong(String itemName) {
         try {
             List<?> v = getItemValue(itemName);
-            if (v.size() == 0) {
+            if (v.isEmpty()) {
                 return 0;
             }
             String sValue = v.get(0).toString();
-            return new Long(sValue).longValue();
-        } catch (NumberFormatException e) {
-            return 0;
-        } catch (ClassCastException e) {
+            return new BigDecimal(sValue).longValue();
+        } catch (NumberFormatException | ClassCastException e) {
             return 0;
         }
     }
@@ -768,13 +839,13 @@ public class ItemCollection implements Cloneable {
      * The ItemName is not case sensitive. Use hasItem to verify the existence of an
      * item.
      * 
-     * @param itemName The name of an item.
+     * @param aName The name of an item.
      * @return the Date value of the item
      */
     public Date getItemValueDate(String aName) {
         try {
             List<?> v = getItemValue(aName);
-            if (v.size() == 0) {
+            if (v.isEmpty()) {
                 return null;
             }
             Object o = v.get(0);
@@ -802,7 +873,7 @@ public class ItemCollection implements Cloneable {
      * The ItemName is not case sensitive. Use hasItem to verify the existence of an
      * item.
      * 
-     * @param itemName The name of an item.
+     * @param aName The name of an item.
      * @return the Date value of the item
      */
     public LocalDateTime getItemValueLocalDateTime(String aName) {
@@ -830,7 +901,7 @@ public class ItemCollection implements Cloneable {
      * The ItemName is not case sensitive. Use hasItem to verify the existence of an
      * item.
      * 
-     * @param itemName The name of an item.
+     * @param aName The name of an item.
      * @return the Date value of the item
      */
     public LocalDate getItemValueLocalDate(String aName) {
@@ -858,32 +929,17 @@ public class ItemCollection implements Cloneable {
     public double getItemValueDouble(String itemName) {
         try {
             List<?> v = getItemValue(itemName);
-            if (v.size() == 0)
-                return 0.0;
+            if (v.isEmpty())
+                return 0.0d;
             else {
-                // test for object type...
-                Object o = v.get(0);
-                if (o instanceof Double)
-                    return (Double) o;
-
-                if (o instanceof Float)
-                    return (Float) o;
-
-                if (o instanceof Long)
-                    return (Long) o;
-
-                if (o instanceof Integer)
-                    return (Integer) o;
-
-                // try to parse string.....
                 try {
-                    return Double.valueOf(v.get(0).toString());
+                    return new BigDecimal(v.get(0).toString()).doubleValue();
                 } catch (ClassCastException | NumberFormatException e) {
-                    return 0.0;
+                    return 0.0d;
                 }
             }
         } catch (ClassCastException e) {
-            return 0.0;
+            return 0.0d;
         }
     }
 
@@ -902,36 +958,19 @@ public class ItemCollection implements Cloneable {
     public float getItemValueFloat(String itemName) {
         try {
             List<?> v = getItemValue(itemName);
-            if (v.size() == 0)
+            if (v.isEmpty())
                 return (float) 0.0;
             else {
-                // test for object type...
-                Object o = v.get(0);
-
-                if (o instanceof Float)
-                    return (Float) o;
-
-                if (o instanceof Double) {
-                    Double d = (Double) o;
-                    return (float) d.doubleValue();
-                }
-
-                if (o instanceof Long)
-                    return (Long) o;
-
-                if (o instanceof Integer)
-                    return (Integer) o;
-
                 // try to parse string.....
                 try {
-                    return Float.valueOf(v.get(0).toString());
+                    return new BigDecimal(v.get(0).toString()).floatValue();
                 } catch (ClassCastException | NumberFormatException e) {
-                    return (float) 0.0;
+                    return 0.0f;
                 }
 
             }
         } catch (ClassCastException e) {
-            return (float) 0.0;
+            return 0.0f;
         }
     }
 
@@ -950,11 +989,11 @@ public class ItemCollection implements Cloneable {
     public boolean getItemValueBoolean(String itemName) {
         try {
             List<?> v = getItemValue(itemName);
-            if (v.size() == 0) {
+            if (v.isEmpty()) {
                 return false;
             }
             Object sValue = v.get(0);
-            return Boolean.valueOf(sValue.toString());
+            return Boolean.parseBoolean(sValue.toString());
         } catch (ClassCastException e) {
             return false;
         }
@@ -973,18 +1012,15 @@ public class ItemCollection implements Cloneable {
      * @see deepCopyOfMap
      * @param map
      */
-    @SuppressWarnings("unchecked")
-    public void replaceAllItems(Map<String, List<Object>> map) {
+    public void replaceAllItems(Map<String, List<?>> map) {
         if (map == null) {
             return;
         }
         // make a deep copy of the map
-        Map<String, List<Object>> clonedMap = (Map<String, List<Object>>) deepCopyOfMap(map);
+        Map<String, List<?>> clonedMap = deepCopyOfMap(map);
         if (clonedMap != null) {
-            Iterator<?> it = clonedMap.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, List<Object>> entry = (Map.Entry<String, List<Object>>) it.next();
-                replaceItemValue(entry.getKey().toString(), entry.getValue());
+            for (Entry<String, List<?>> entry : clonedMap.entrySet()) {
+                replaceItemValue(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -998,8 +1034,8 @@ public class ItemCollection implements Cloneable {
      * changes of attached entity beans with references in the data of an
      * ItemCollection.
      * 
+     * @param source
      * @see deepCopyOfMap
-     * @param map
      */
     public void copy(ItemCollection source) {
         replaceAllItems(source.getAllItems());
@@ -1019,21 +1055,17 @@ public class ItemCollection implements Cloneable {
      * @see deepCopyOfMap
      * @param map
      */
-    @SuppressWarnings("unchecked")
-    public void mergeItems(Map<String, List<Object>> map) {
+    public void mergeItems(Map<String, List<?>> map) {
         if (map == null) {
             return;
         }
         // make a deep copy of the map
-        Map<String, List<Object>> clonedMap = (Map<String, List<Object>>) deepCopyOfMap(map);
+        Map<String, List<?>> clonedMap = deepCopyOfMap(map);
         if (clonedMap != null) {
-            Iterator<?> it = clonedMap.entrySet().iterator();
-            while (it.hasNext()) {
-
-                Map.Entry<String, List<Object>> entry = (Map.Entry<String, List<Object>>) it.next();
+            for (Entry<String, List<?>> entry : clonedMap.entrySet()) {
                 // copy only the item if the hash map does not have an item with the same name
                 if (!hash.containsKey(entry.getKey())) {
-                    replaceItemValue(entry.getKey().toString(), entry.getValue());
+                    replaceItemValue(entry.getKey(), entry.getValue());
                 }
             }
         }
@@ -1044,13 +1076,12 @@ public class ItemCollection implements Cloneable {
      * 
      * @param itemName - item to be processed
      */
-    @SuppressWarnings("unchecked")
     public void purgeItemValue(String itemName) {
-        List<Object> valueList = this.getItemValue(itemName);
+        List<?> valueList = this.getItemValue(itemName);
         // remove null or empty entries...
         valueList.removeIf(item -> item == null || "".equals(item));
         // create a new instance of a List and distinct the List.
-        List<Object> purgedValueList = valueList.stream().distinct().collect(Collectors.toList());
+        List<?> purgedValueList = valueList.stream().distinct().collect(Collectors.toList());
         this.setItemValue(itemName, purgedValueList);
     }
 
@@ -1063,37 +1094,30 @@ public class ItemCollection implements Cloneable {
      */
     @SuppressWarnings("unchecked")
     public void addFileData(FileData filedata) {
-        Map<String, List<Object>> mapFiles = null;
+        
         // purge $file....
         purgeItemValue("$file");
         if (filedata != null) {
-            List<Object> vectorFileInfo = null;
-
+            Map<String, List<?>> mapFiles;
             // Store files using a map....
-
             List<?> vFiles = getItemValue("$file");
-            if (vFiles != null && vFiles.size() > 0)
-                mapFiles = (Map<String, List<Object>>) vFiles.get(0);
+            if (vFiles != null && !vFiles.isEmpty())
+                mapFiles = (Map<String, List<?>>) vFiles.get(0);
             else
-                mapFiles = new LinkedHashMap<String, List<Object>>();
+                mapFiles = new LinkedHashMap<>();
 
             // existing file will be overridden!
-            vectorFileInfo = new ArrayList<Object>();
+            List<Object> fileInfo = new ArrayList<>();
             // put file in a List containing the contentType, content, MD5Checksum and
             // optional attributes
-            vectorFileInfo.add(filedata.getContentType());
-            vectorFileInfo.add(filedata.getContent());
+            fileInfo.add(filedata.getContentType());
+            fileInfo.add(filedata.getContent());
             // add optional attributes
-            vectorFileInfo.add(filedata.getAttributes());
+            fileInfo.add(filedata.getAttributes());
 
-            mapFiles.put(filedata.getName(), vectorFileInfo);
+            mapFiles.put(filedata.getName(), fileInfo);
             replaceItemValue("$file", mapFiles);
 
-            // addFile(filedata.content, filedata.name, filedata.contentType);
-        }
-
-        // Update $file meta data...
-        if (mapFiles != null) {
             replaceItemValue("$file.count", mapFiles.size());
             replaceItemValue("$file.names", mapFiles.keySet());
         }
@@ -1114,8 +1138,6 @@ public class ItemCollection implements Cloneable {
     public void addFile(byte[] data, String fileName, String contentType) {
         logger.warning("method addFile() is deprecated - replace with addFileData()");
         if (data != null) {
-            List<Object> vectorFileInfo = null;
-
             // IE includes '\' characters! so remove all these characters....
             if (fileName.indexOf('\\') > -1)
                 fileName = fileName.substring(fileName.lastIndexOf('\\') + 1);
@@ -1126,27 +1148,25 @@ public class ItemCollection implements Cloneable {
                 contentType = "application/unknown";
 
             // Store files using a map....
-            Map<String, List<Object>> mapFiles = null;
+            Map<String, List<?>> mapFiles;
             List<?> vFiles = getItemValue("$file");
-            if (vFiles != null && vFiles.size() > 0)
-                mapFiles = (Map<String, List<Object>>) vFiles.get(0);
+            if (vFiles != null && !vFiles.isEmpty())
+                mapFiles = (Map<String, List<?>>) vFiles.get(0);
             else
-                mapFiles = new LinkedHashMap<String, List<Object>>();
+                mapFiles = new LinkedHashMap<>();
 
             // existing file will be overridden!
-            vectorFileInfo = new ArrayList<Object>();
-            // put file in a vector containing the byte array and also the
+            List<Object> fileInfo = new ArrayList<>();
+            // put file in a list containing the byte array and also the
             // content type
-            vectorFileInfo.add(contentType);
-            vectorFileInfo.add(data);
-            mapFiles.put(fileName, vectorFileInfo);
+            fileInfo.add(contentType);
+            fileInfo.add(data);
+            mapFiles.put(fileName, fileInfo);
             replaceItemValue("$file", mapFiles);
 
             // Update $file meta data...
-            if (mapFiles != null) {
-                replaceItemValue("$file.count", mapFiles.size());
-                replaceItemValue("$file.names", mapFiles.keySet());
-            }
+            replaceItemValue("$file.count", mapFiles.size());
+            replaceItemValue("$file.names", mapFiles.keySet());
         }
     }
 
@@ -1158,8 +1178,8 @@ public class ItemCollection implements Cloneable {
      * @return file data contentType (String) and the content (byte[])
      */
     @Deprecated
-    public List<Object> getFile(String filename) {
-        Map<String, List<Object>> files = this.getFiles();
+    public List<?> getFile(String filename) {
+        Map<String, List<?>> files = this.getFiles();
         if (files != null) {
             return files.get(filename);
         } else {
@@ -1197,12 +1217,12 @@ public class ItemCollection implements Cloneable {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public List<FileData> getFileData() {
         purgeItemValue("$file");
-        List<FileData> result = new ArrayList<FileData>();
+        List<FileData> result = new ArrayList<>();
         List<?> vFiles = getItemValue("$file");
-        if (vFiles != null && vFiles.size() > 0) {
-            Map<String, ?> testContent = (Map<String, ?>) vFiles.get(0);
-            for (Entry<String, ?> entry : testContent.entrySet()) {
-                List<Object> data = null;
+        if (vFiles != null && !vFiles.isEmpty()) {
+            Map<String, List<?>> testContent = (Map<String, List<?>>) vFiles.get(0);
+            for (Entry<String, List<?>> entry : testContent.entrySet()) {
+                List<Object> data;
                 String sFileName = entry.getKey();
                 Object obj = entry.getValue();
                 // test if the value part is a List or an Object[] ?
@@ -1216,10 +1236,10 @@ public class ItemCollection implements Cloneable {
                 // now we build the FileData object.
                 String contentType = (String) data.get(0);
                 byte[] content = (byte[]) data.get(1);
-                Map<String, List<Object>> attributes = null;
+                Map<String, List<?>> attributes = null;
                 // test if we have custom attributes?
                 if (data.size() >= 3) {
-                    attributes = (Map<String, List<Object>>) data.get(2);
+                    attributes = (Map<String, List<?>>) data.get(2);
                 }
                 if (attributes == null) {
                     // try to migrate deprecated 'dms' item......
@@ -1230,8 +1250,7 @@ public class ItemCollection implements Cloneable {
                     // test if we found a match....
                     for (Object aMetadataObject : vDMS) {
                         // issue #509
-                        if (aMetadataObject instanceof Map) {
-                            Map aMetadata = (Map) aMetadataObject;
+                        if (aMetadataObject instanceof Map aMetadata) {
                             String sName = getStringValueFromMap(aMetadata, "txtname");
                             if (sFileName.equals(sName)) {
                                 attributes = aMetadata;
@@ -1250,22 +1269,21 @@ public class ItemCollection implements Cloneable {
     /**
      * This method removes a single file attachment from the workitem
      * 
+     * @param aFilename
      */
     @SuppressWarnings("unchecked")
     public void removeFile(String aFilename) {
         /* delete attachment */
-        Map<String, List<Object>> mapFiles = null;
+        Map<String, List<Object>> mapFiles;
         List<?> vFiles = getItemValue("$file");
-        if (vFiles != null && vFiles.size() > 0) {
+        if (vFiles != null && !vFiles.isEmpty()) {
             mapFiles = (Map<String, List<Object>>) vFiles.get(0);
             mapFiles.remove(aFilename);
             replaceItemValue("$file", mapFiles);
 
             // Update $file meta data...
-            if (mapFiles != null) {
-                replaceItemValue("$file.count", mapFiles.size());
-                replaceItemValue("$file.names", mapFiles.keySet());
-            }
+            replaceItemValue("$file.count", mapFiles.size());
+            replaceItemValue("$file.names", mapFiles.keySet());
         }
 
     }
@@ -1280,15 +1298,15 @@ public class ItemCollection implements Cloneable {
      */
     @Deprecated
     @SuppressWarnings("unchecked")
-    public Map<String, List<Object>> getFiles() {
+    public Map<String, List<?>> getFiles() {
         logger.warning("method getFiles() is deprecated - replace with getFileData()");
         List<?> vFiles = getItemValue("$file");
-        if (vFiles != null && vFiles.size() > 0) {
+        if (vFiles != null && !vFiles.isEmpty()) {
             // test if the value part is a List or an Object[]. In case its an
             // Object[] we convert the array to a List
 
             Map<String, ?> testContent = (Map<String, ?>) vFiles.get(0);
-            Map<String, List<Object>> mapFiles = new LinkedHashMap<String, List<Object>>();
+            Map<String, List<?>> mapFiles = new LinkedHashMap<>();
             for (Entry<String, ?> entry : testContent.entrySet()) {
                 String sFileName = entry.getKey();
                 Object obj = entry.getValue();
@@ -1316,22 +1334,19 @@ public class ItemCollection implements Cloneable {
         if (!this.hasItem("$file.names")) {
             // This code is just for backward compatibility. Normally this case should not
             // be necessary if files were added with the version 5.2.0
-            List<String> files = new ArrayList<String>();
-            Map<String, List<Object>> mapFiles = null;
+            List<String> files = new ArrayList<>();
+            Map<String, List<?>> mapFiles;
             List<?> vFiles = getItemValue("$file");
-            if (vFiles != null && vFiles.size() > 0) {
-                mapFiles = (Map<String, List<Object>>) vFiles.get(0);
+            if (vFiles != null && !vFiles.isEmpty()) {
+                mapFiles = (Map<String, List<?>>) vFiles.get(0);
                 // files = new String[mapFiles.entrySet().size()];
-                Iterator<?> iter = mapFiles.entrySet().iterator();
-                while (iter.hasNext()) {
-                    Map.Entry<String, List<Object>> mapEntry = (Map.Entry<String, List<Object>>) iter.next();
-                    String aFileName = mapEntry.getKey().toString();
-                    files.add(aFileName);
+                for (Entry<String, List<?>> mapEntry : mapFiles.entrySet()) {
+                    files.add(mapEntry.getKey());
                 }
             }
             return files;
         } else {
-            return this.getItemValue("$file.names");
+            return this.getItemValueList("$file.names", String.class);
         }
     }
 
@@ -1470,6 +1485,7 @@ public class ItemCollection implements Cloneable {
 
     /**
      * set the $ModelVersion
+     * @param modelversion
      */
     public void setModelVersion(String modelversion) {
         replaceItemValue(WorkflowKernel.MODELVERSION, modelversion);
@@ -1489,6 +1505,7 @@ public class ItemCollection implements Cloneable {
 
     /**
      * set the $ModelVersion
+     * @param group
      */
     public void setWorkflowGroup(String group) {
         replaceItemValue(WorkflowKernel.WORKFLOWGROUP, group);
@@ -1543,7 +1560,7 @@ public class ItemCollection implements Cloneable {
     }
 
     /**
-     * This method converts the raw java types String, int, long, float and double.
+     * This method converts the raw java types String, int, long, float, double and BigDecimal.
      * 
      * The method returns null if the type is no raw type.
      * 
@@ -1551,8 +1568,8 @@ public class ItemCollection implements Cloneable {
      * @param type
      * @return
      */
-    @SuppressWarnings("unchecked")
-    private <T> T convertValue(Object value, Type type) {
+    @SuppressWarnings({"unchecked", "UnnecessaryBoxing"})
+    private <T> T convertValue(Object value, Class<T> type) {
 
         // test String
         if (type == String.class) {
@@ -1571,11 +1588,9 @@ public class ItemCollection implements Cloneable {
                     // return 0 if not present
                     return (T) Integer.valueOf(0);
                 }
-                int intvalue = new Double(value.toString()).intValue();
+                int intvalue = new BigDecimal(value.toString()).intValue();
                 return (T) Integer.valueOf(intvalue);
-            } catch (NumberFormatException e) {
-                return (T) Integer.valueOf(0);
-            } catch (ClassCastException e) {
+            } catch (NumberFormatException | ClassCastException e) {
                 return (T) Integer.valueOf(0);
             }
         }
@@ -1585,14 +1600,40 @@ public class ItemCollection implements Cloneable {
             try {
                 if (value == null) {
                     // return 0 if not present
-                    return (T) Long.valueOf(0);
+                    return (T) Long.valueOf(0L);
                 }
-                long longvalue = new Long(value.toString()).longValue();
+                long longvalue = new BigDecimal(value.toString()).longValue();
                 return (T) Long.valueOf(longvalue);
-            } catch (NumberFormatException e) {
-                return (T) Long.valueOf(0);
-            } catch (ClassCastException e) {
-                return (T) Long.valueOf(0);
+            } catch (NumberFormatException | ClassCastException e) {
+                return (T) Long.valueOf(0L);
+            }
+        }
+
+        // test Float/float
+        if (type == Float.class || type == float.class) {
+            try {
+                if (value == null) {
+                    // return 0 if not present
+                    return (T) Float.valueOf(0.0f);
+                }
+                float floatvalue = new BigDecimal(value.toString()).floatValue();
+                return (T) Float.valueOf(floatvalue);
+            } catch (NumberFormatException | ClassCastException e) {
+                return (T) Float.valueOf(0.0f);
+            }
+        }
+
+        // test Double/double
+        if (type == Double.class || type == double.class) {
+            try {
+                if (value == null) {
+                    // return 0 if not present
+                    return (T) Double.valueOf(0.0d);
+                }
+                double doublevalue = new BigDecimal(value.toString()).doubleValue();
+                return (T) Double.valueOf(doublevalue);
+            } catch (NumberFormatException | ClassCastException e) {
+                return (T) Double.valueOf(0.0d);
             }
         }
 
@@ -1608,7 +1649,7 @@ public class ItemCollection implements Cloneable {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void setItemValue(String itemName, Object itemValue, boolean append, boolean unique) {
-        List<Object> itemValueList = null;
+        List<Object> itemValueList;
 
         if (itemName == null)
             return;
@@ -1633,9 +1674,9 @@ public class ItemCollection implements Cloneable {
         }
 
         // test if value is a Set
-        if (itemValue instanceof Set) {
+        if (itemValue instanceof Set set) {
             // Let's do a conversion from a Set to a List
-            itemValue = new ArrayList<>((Set) itemValue);
+            itemValue = new ArrayList<>(set);
         }
 
         // test if value is serializable
@@ -1647,8 +1688,8 @@ public class ItemCollection implements Cloneable {
         }
 
         // test if value is a list and remove null values
-        if (itemValue instanceof List) {
-            itemValueList = (List<Object>) itemValue;
+        if (itemValue instanceof List list) {
+            itemValueList = list;
             // scan List for null values and remove them
             itemValueList.removeAll(Collections.singleton(null));
             // scan List for embedded ItemCollection objects
@@ -1662,7 +1703,7 @@ public class ItemCollection implements Cloneable {
             }
         } else {
             // create an instance of an ArrayList
-            itemValueList = new ArrayList<Object>();
+            itemValueList = new ArrayList<>();
             itemValueList.add(itemValue);
         }
 
@@ -1684,7 +1725,7 @@ public class ItemCollection implements Cloneable {
 
             if (unique) {
                 // build a unique list of values
-                List<Object> uniqueItemValueList = new ArrayList<Object>();
+                List<Object> uniqueItemValueList = new ArrayList<>();
                 for (Object entry : newValueList) {
                     // skip null|empty|dupplicates
                     if (entry == null || ((entry instanceof String) && ((String) entry).isEmpty())
@@ -1694,14 +1735,14 @@ public class ItemCollection implements Cloneable {
                     }
                     uniqueItemValueList.add(entry);
                 }
-                hash.put(itemName, (List<Object>) uniqueItemValueList);
+                hash.put(itemName, uniqueItemValueList);
             } else {
-                hash.put(itemName, (List<Object>) newValueList);
+                hash.put(itemName, newValueList);
             }
         } else {
             if (unique) {
                 // build a unique list of values
-                List<Object> uniqueItemValueList = new ArrayList<Object>();
+                List<Object> uniqueItemValueList = new ArrayList<>();
                 for (Object entry : itemValueList) {
                     // skip null|empty|duplicates
                     if (entry == null || ((entry instanceof String) && ((String) entry).isEmpty())
@@ -1711,7 +1752,7 @@ public class ItemCollection implements Cloneable {
                     }
                     uniqueItemValueList.add(entry);
                 }
-                hash.put(itemName, (List<Object>) uniqueItemValueList);
+                hash.put(itemName, uniqueItemValueList);
             } else {
                 hash.put(itemName, itemValueList);
             }
@@ -1730,25 +1771,19 @@ public class ItemCollection implements Cloneable {
      * @param itemValue
      * @return
      */
-    private void convertItemValue(List<Object> itemValues) {
+    private void convertItemValue(List<? super Object> itemValues) {
 
-        ListIterator<Object> iterator = itemValues.listIterator();
+        ListIterator<? super Object> iterator = itemValues.listIterator();
         while (iterator.hasNext()) {
             Object o = iterator.next();
-            if (o instanceof Calendar) {
-                Date date = ((Calendar) o).getTime();
-                iterator.set(date);
+            if (o instanceof Calendar calendar) {
+                iterator.set(calendar.getTime());
             }
-            if (o instanceof LocalDateTime) {
-                LocalDateTime ldt = (LocalDateTime) o;
-                Date date = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
-                iterator.set(date);
+            if (o instanceof LocalDateTime ldt) {
+                iterator.set(Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()));
             }
-            if (o instanceof LocalDate) {
-                // convert to date
-                LocalDate ld = (LocalDate) o;
-                Date date = Date.from(ld.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-                iterator.set(date);
+            if (o instanceof LocalDate ld) {
+                iterator.set(Date.from(ld.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
             }
         }
     }
@@ -1760,7 +1795,7 @@ public class ItemCollection implements Cloneable {
      * @param itemValue
      * @return
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "SuspiciousIndentAfterControlStatement"})
     private boolean validateItemValue(Object itemValue) {
 
         // first we test if basic type?
@@ -1812,7 +1847,6 @@ public class ItemCollection implements Cloneable {
      * 
      * @return
      */
-    @SuppressWarnings("rawtypes")
     private static boolean isBasicType(java.lang.Object o) {
 
         if (o == null) {
@@ -1826,15 +1860,11 @@ public class ItemCollection implements Cloneable {
         }
 
         // test package name
-        Class c = o.getClass();
+        Class<?> c = o.getClass();
         String name = c.getName();
-        if (name.startsWith("java.lang.") || name.startsWith("java.math.") || "java.util.Date".equals(name)
-                || "org.imixs.workflow.xml.XMLItem".equals(name) || "org.imixs.workflow.xml.XMLDocument".equals(name)) {
-            return true;
-        }
-
         // no basic type
-        return false;
+        return name.startsWith("java.lang.") || name.startsWith("java.math.") || "java.util.Date".equals(name)
+                || "org.imixs.workflow.xml.XMLItem".equals(name) || "org.imixs.workflow.xml.XMLDocument".equals(name);
     }
 
     /**
@@ -1848,7 +1878,8 @@ public class ItemCollection implements Cloneable {
      * @param map
      * @return
      */
-    private Object deepCopyOfMap(Map<String, List<Object>> map) {
+    @SuppressWarnings("unchecked")
+    private Map<String, List<?>> deepCopyOfMap(Map<String, List<?>> map) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(bos);
@@ -1857,11 +1888,8 @@ public class ItemCollection implements Cloneable {
             oos.flush();
             ByteArrayInputStream bais = new ByteArrayInputStream(bos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
-            return ois.readObject();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to clone values of ItemCollection - {0}", e);
-            return null;
-        } catch (ClassNotFoundException e) {
+            return (Map<String, List<?>>)ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
             logger.log(Level.WARNING, "Unable to clone values of ItemCollection - {0}", e);
             return null;
         }
@@ -1872,10 +1900,8 @@ public class ItemCollection implements Cloneable {
      * 
      * @return String object of a named key
      */
-    @SuppressWarnings({ "unchecked", "unused" })
+    @SuppressWarnings({ "unchecked" })
     private static String getStringValueFromMap(Map<String, List<Object>> hash, String aName) {
-
-        List<Object> v = null;
 
         if (aName == null) {
             return null;
@@ -1890,22 +1916,17 @@ public class ItemCollection implements Cloneable {
         if (obj instanceof List) {
 
             List<Object> oList = (List<Object>) obj;
-            if (oList == null)
-                v = new Vector<Object>();
-            else {
-                v = oList;
-                // scan vector for null values
-                for (int i = 0; i < v.size(); i++) {
-                    if (v.get(i) == null)
-                        v.remove(i);
-                }
+            // scan List for null values
+            for (int i = 0; i < oList.size(); i++) {
+                if (oList.get(i) == null)
+                    oList.remove(i);
             }
 
-            if (v.size() == 0)
+            if (oList.isEmpty())
                 return "";
             else {
                 // verify if value is null
-                Object o = v.get(0);
+                Object o = oList.get(0);
                 if (o == null)
                     return "";
                 else
@@ -1947,15 +1968,16 @@ public class ItemCollection implements Cloneable {
          * returns a single value out of the ItemCollection if the key does not exist
          * the method will create a value automatically
          */
+        @Override
         public Object get(Object key) {
             // check if a value for this key is available...
             // if not create a new empty value
             if (!itemCollection.hasItem(key.toString()))
                 itemCollection.replaceItemValue(key.toString(), "");
 
-            // return first value from vector if size >0
+            // return first value from List if size >0
             List<?> v = itemCollection.getItemValue(key.toString());
-            if (v.size() > 0)
+            if (!v.isEmpty())
                 return v.get(0);
             else
                 // otherwise return null
@@ -1965,6 +1987,7 @@ public class ItemCollection implements Cloneable {
         /**
          * puts a single value into the ItemCollection
          */
+        @Override
         public Object put(String key, Object value) {
             if (key == null)
                 return null;
@@ -1974,49 +1997,59 @@ public class ItemCollection implements Cloneable {
 
         /* ############### Default methods ################# */
 
+        @Override
         public void clear() {
             itemCollection.getAllItems().clear();
         }
 
+        @Override
         public boolean containsKey(Object key) {
             return itemCollection.getAllItems().containsKey(key);
         }
 
+        @Override
         public boolean containsValue(Object value) {
             return itemCollection.getAllItems().containsValue(value);
         }
 
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        public Set entrySet() {
-            return itemCollection.getAllItems().entrySet();
+        @Override
+        public Set<Map.Entry<String,Object>> entrySet() {
+            Map<String, Object> localMap = new HashMap<>(itemCollection.getAllItems());
+            return localMap.entrySet();
         }
 
+        @Override
         public boolean isEmpty() {
             return itemCollection.getAllItems().isEmpty();
         }
 
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        public Set keySet() {
+        @Override
+        public Set<String> keySet() {
             return itemCollection.getAllItems().keySet();
         }
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
+        @Override
         public void putAll(Map m) {
             itemCollection.getAllItems().putAll(m);
 
         }
 
+        @Override
         public Object remove(Object key) {
             return itemCollection.getAllItems().remove(key);
         }
 
+        @Override
         public int size() {
             return itemCollection.getAllItems().size();
         }
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        public Collection values() {
-            return itemCollection.getAllItems().values();
+        @Override
+        public Collection<Object> values() {
+            Map<String, Object> localMap = new HashMap<>(itemCollection.getAllItems());
+            return localMap.values();
         }
 
     }
@@ -2041,6 +2074,7 @@ public class ItemCollection implements Cloneable {
          * returns a multi value out of the ItemCollection if the key dos not exist the
          * method will create a value automatical
          */
+        @Override
         public Object get(Object key) {
             // check if a value for this key is available...
             // if not create a new empty value
@@ -2062,15 +2096,15 @@ public class ItemCollection implements Cloneable {
          * returns a multi value out of the ItemCollection if the key dos not exist the
          * method will create a value automatical
          */
-        @SuppressWarnings("rawtypes")
+        @Override
         public Object get(Object key) {
             // check if a value for this key is available...
             // if not create a new empty value
             if (!itemCollection.hasItem(key.toString()))
                 itemCollection.replaceItemValue(key.toString(), "");
-            // return new ArrayList Object containing values from vector
-            ArrayList<Object> aList = new ArrayList<Object>();
-            Collection col = itemCollection.getItemValue(key.toString());
+            // return new ArrayList Object containing values from itemValue
+            ArrayList<Object> aList = new ArrayList<>();
+            Collection<?> col = itemCollection.getItemValue(key.toString());
             for (Object aEntryValue : col) {
                 aList.add(aEntryValue);
             }
@@ -2082,6 +2116,7 @@ public class ItemCollection implements Cloneable {
          * puts a arraylist value into the ItemCollection
          */
         @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
         public Object put(String key, Object value) {
             if (key == null)
                 return null;
@@ -2091,20 +2126,20 @@ public class ItemCollection implements Cloneable {
                 itemCollection.replaceItemValue(key, new ArrayList());
                 return null;
             }
-            // convert List into Vector object
+            // convert value
             if (value instanceof List || value instanceof Object[]) {
-                List v = new ArrayList();
+                List aList = new ArrayList();
                 // check type of list (array and list are supported but need
                 // to be read in different ways
-                if (value instanceof List)
-                    for (Object aEntryValue : (List) value) {
-                        v.add(aEntryValue);
+                if (value instanceof List list) {
+                    for (Object aEntryValue : list) {
+                        aList.add(aEntryValue);
                     }
-                else if (value instanceof Object[])
-                    for (Object aEntryValue : (Object[]) value) {
-                        v.add(aEntryValue);
-                    }
-                itemCollection.replaceItemValue(key, v);
+                }
+                if (value instanceof Object[] objects) {
+                    aList.addAll(Arrays.asList(objects));
+                }
+                itemCollection.replaceItemValue(key, aList);
             } else
                 // non convertable object!
                 itemCollection.replaceItemValue(key, value);

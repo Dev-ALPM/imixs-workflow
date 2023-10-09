@@ -2,7 +2,7 @@
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
-         version="6.0" id="sywappWebApp_ID">
+         version="6.0">
 	<display-name>org.imixs.workflow.jax-rs</display-name>
 
 	<servlet>
@@ -30,9 +30,6 @@
 		<web-resource-collection>
 			<web-resource-name>restricted</web-resource-name>
 			<url-pattern>/*</url-pattern>
-			<http-method>GET</http-method>
-			<http-method>POST</http-method>
-			<http-method>PUT</http-method>
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>org.imixs.ACCESSLEVEL.READERACCESS</role-name>

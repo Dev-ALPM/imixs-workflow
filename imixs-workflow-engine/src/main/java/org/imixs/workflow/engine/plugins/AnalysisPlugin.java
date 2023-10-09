@@ -74,7 +74,7 @@ public class AnalysisPlugin extends AbstractPlugin {
 
     private static final Logger logger = Logger.getLogger(AnalysisPlugin.class.getName());
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     @Override
     public ItemCollection run(ItemCollection documentContext, ItemCollection documentActivity) throws PluginException {
 
@@ -88,8 +88,8 @@ public class AnalysisPlugin extends AbstractPlugin {
 
             if ("start".equals(point.type)) {
 
-                List valuesStart = documentContext.getItemValue("datMeasurePointStart_" + point.name);
-                List valuesStop = documentContext.getItemValue("datMeasurePointStop_" + point.name);
+                List<Date> valuesStart = (List<Date>)documentContext.getItemValue("datMeasurePointStart_" + point.name);
+                List<Date> valuesStop = (List<Date>)documentContext.getItemValue("datMeasurePointStop_" + point.name);
 
                 // the length of stop list must be the same as the start list
                 if (valuesStart.size() != valuesStop.size()) {
@@ -106,8 +106,8 @@ public class AnalysisPlugin extends AbstractPlugin {
 
             }
             if ("stop".equals(point.type)) {
-                List valuesStart = documentContext.getItemValue("datMeasurePointStart_" + point.name);
-                List valuesStop = documentContext.getItemValue("datMeasurePointStop_" + point.name);
+                List<Date> valuesStart = (List<Date>)documentContext.getItemValue("datMeasurePointStart_" + point.name);
+                List<Date> valuesStop = (List<Date>)documentContext.getItemValue("datMeasurePointStop_" + point.name);
 
                 if (valuesStop.size() != (valuesStart.size() - 1)) {
                     logger.log(Level.WARNING, "[AnalysisPlugin] Wrong measure point ''{0}'' stoptime without starttime!"
@@ -123,8 +123,8 @@ public class AnalysisPlugin extends AbstractPlugin {
 
                 // now we add the new time range....
                 int numTotal = documentContext.getItemValueInteger("numMeasurePoint_" + point.name);
-                Date start = (Date) valuesStart.get(0);
-                Date stop = (Date) valuesStop.get(0);
+                Date start = valuesStart.get(0);
+                Date stop = valuesStop.get(0);
 
                 long lStart = start.getTime() / 1000;
                 long lStop = stop.getTime() / 1000;
@@ -149,6 +149,8 @@ public class AnalysisPlugin extends AbstractPlugin {
      *   
      * </code>
      * 
+     * @param aString
+     * @param documentContext
      * @return - a list of measure points
      * @throws PluginException
      * 
@@ -157,20 +159,7 @@ public class AnalysisPlugin extends AbstractPlugin {
         int iTagStartPos;
         int iTagEndPos;
 
-        int iContentStartPos;
-        int iContentEndPos;
-
-        int iNameStartPos;
-        int iNameEndPos;
-
-        int iTypeStartPos;
-        int iTypeEndPos;
-
-        String sName = "";
-        String sType = " ";
-        String sItemValue;
-
-        List<MeasurePoint> result = new ArrayList<AnalysisPlugin.MeasurePoint>();
+         List<MeasurePoint> result = new ArrayList<>();
 
         if (aString == null || aString.isEmpty())
             return result;
@@ -185,21 +174,14 @@ public class AnalysisPlugin extends AbstractPlugin {
                 throw new PluginException(ResultPlugin.class.getSimpleName(), INVALID_FORMAT, "</item>  expected!");
 
             // reset pos vars
-            iContentStartPos = 0;
-            iContentEndPos = 0;
-            iNameStartPos = 0;
-            iNameEndPos = 0;
-            iTypeStartPos = 0;
-            iTypeEndPos = 0;
-            sName = "";
-            sType = " ";
-            sItemValue = "";
+            String sName = "";
+            String sType = "";
 
             // so we now search the beginning of the tag content
-            iContentEndPos = iTagEndPos;
+            int iContentEndPos = iTagEndPos;
             // start pos is the last > before the iContentEndPos
             String sTestString = aString.substring(0, iContentEndPos);
-            iContentStartPos = sTestString.lastIndexOf('>') + 1;
+            int iContentStartPos = sTestString.lastIndexOf('>') + 1;
 
             // if no end tag found return string unchanged...
             if (iContentStartPos >= iContentEndPos)
@@ -211,7 +193,7 @@ public class AnalysisPlugin extends AbstractPlugin {
             // start and end pos of the value
 
             // next we check if the start tag contains a 'name' attribute
-            iNameStartPos = aString.toLowerCase().indexOf("name=", iTagStartPos);
+            int iNameStartPos = aString.toLowerCase().indexOf("name=", iTagStartPos);
             // extract format string if available
             // ' can be used instead of " chars!
             // e.g.: name='txtName'> or name="txtName">
@@ -220,27 +202,27 @@ public class AnalysisPlugin extends AbstractPlugin {
                 String sNamePart = aString.substring(0, iContentStartPos);
                 sNamePart = sNamePart.replace("'", "\"");
                 iNameStartPos = sNamePart.indexOf("\"", iNameStartPos) + 1;
-                iNameEndPos = sNamePart.indexOf("\"", iNameStartPos + 1);
+                int iNameEndPos = sNamePart.indexOf("\"", iNameStartPos + 1);
                 sName = sNamePart.substring(iNameStartPos, iNameEndPos);
                 sName = sName.toLowerCase();
             }
 
             // next we check if the start tag contains a 'type'
             // attribute
-            iTypeStartPos = aString.toLowerCase().indexOf("type=", iTagStartPos);
+            int iTypeStartPos = aString.toLowerCase().indexOf("type=", iTagStartPos);
             // extract format string if available
             if (iTypeStartPos > -1 && iTypeStartPos < iContentStartPos) {
                 String sTypePart = aString.substring(0, iContentStartPos);
                 sTypePart = sTypePart.replace("'", "\"");
 
                 iTypeStartPos = sTypePart.indexOf("\"", iTypeStartPos) + 1;
-                iTypeEndPos = sTypePart.indexOf("\"", iTypeStartPos + 1);
+                int iTypeEndPos = sTypePart.indexOf("\"", iTypeStartPos + 1);
                 sType = sTypePart.substring(iTypeStartPos, iTypeEndPos);
                 sType = sType.toLowerCase();
             }
 
             // extract Item Value
-            sItemValue = aString.substring(iContentStartPos, iContentEndPos);
+            String sItemValue = aString.substring(iContentStartPos, iContentEndPos);
 
             // if name= measurepoint and type=start|stop then we can make a
             // measurePoint!
@@ -264,7 +246,7 @@ public class AnalysisPlugin extends AbstractPlugin {
      * @author rsoika
      * 
      */
-    private class MeasurePoint {
+    public class MeasurePoint {
 
         public String name;
         public String type;// start|stop

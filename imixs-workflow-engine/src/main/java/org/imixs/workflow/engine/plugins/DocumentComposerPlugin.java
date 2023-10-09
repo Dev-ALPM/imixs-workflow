@@ -34,8 +34,11 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.logging.Logger;
 import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
+import javax.xml.transform.TransformerException;
 import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.WorkflowContext;
 import org.imixs.workflow.exceptions.ModelException;
@@ -77,6 +80,7 @@ public class DocumentComposerPlugin extends AbstractPlugin {
 
     /**
      * This method adds the attachments of the blob workitem to the MimeMessage
+     * @param documentContext
      */
     @Override
     public ItemCollection run(ItemCollection documentContext, ItemCollection event) throws PluginException {
@@ -124,8 +128,7 @@ public class DocumentComposerPlugin extends AbstractPlugin {
      */
     private List<String> findDataObject(String objectName, ItemCollection task) throws PluginException {
 
-        @SuppressWarnings("unchecked")
-        List<List<String>> dataObjects = task.getItemValue("dataObjects");
+        List<List<String>> dataObjects = task.getItemValueListList("dataObjects", String.class);
 
         // iterate all objects...
         for (List<String> dataObj : dataObjects) {
@@ -152,6 +155,8 @@ public class DocumentComposerPlugin extends AbstractPlugin {
      * 
      * encoding is set to UTF-8
      * 
+     * @param documentContext
+     * @param xslTemplate
      * @return translated email body
      * @throws PluginException
      * 
@@ -177,14 +182,14 @@ public class DocumentComposerPlugin extends AbstractPlugin {
             XSLHandler.transform(writer.toString(), xslTemplate, encoding, outputStream);
             return outputStream.toString(encoding);
 
-        } catch (Exception e) {
+        } catch (JAXBException | UnsupportedEncodingException | TransformerException e) {
             logger.warning("Error processing XSL template!");
             throw new PluginException(this.getClass().getSimpleName(), INVALID_XSL_FORMAT, e.getMessage(), e);
         } finally {
             try {
                 outputStream.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
         }
 

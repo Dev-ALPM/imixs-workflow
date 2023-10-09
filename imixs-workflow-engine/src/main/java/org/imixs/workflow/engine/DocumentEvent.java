@@ -53,8 +53,8 @@ public class DocumentEvent {
     public static final int ON_DOCUMENT_LOAD = 2;
     public static final int ON_DOCUMENT_DELETE = 3;
 
-    private int eventType;
-    private ItemCollection document;
+    private final int eventType;
+    private final ItemCollection document;
 
     public DocumentEvent(ItemCollection document, int eventType) {
         this.eventType = eventType;

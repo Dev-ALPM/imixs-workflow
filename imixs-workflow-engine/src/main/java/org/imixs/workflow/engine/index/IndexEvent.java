@@ -48,9 +48,9 @@ public class IndexEvent {
 
     public static final int ON_INDEX_UPDATE = 1;
 
-    private int eventType;
+    private final int eventType;
     private String textContent;
-    private ItemCollection document;
+    private final ItemCollection document;
 
     public IndexEvent(int eventType, ItemCollection document) {
         this.eventType = eventType;
@@ -69,7 +69,7 @@ public class IndexEvent {
     /**
      * Update the textContent for the given document to be indexed.
      * 
-     * @return
+     * @param textContent
      */
     public void setTextContent(String textContent) {
         this.textContent = textContent;

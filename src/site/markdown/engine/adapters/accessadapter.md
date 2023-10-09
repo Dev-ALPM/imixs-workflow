@@ -25,13 +25,13 @@ The following attributes defined in the model element are evaluated by the plugi
 
  * keyupdateacl (Boolean): if false the ACL will not be changed
  
- * keyaddreadfields (Vector): a list of items of the current WorkItem to be applied to the read access
+ * keyaddreadfields (List): a list of items of the current WorkItem to be applied to the read access
  
- * keyaddwritefields (Vector): a list of items of the current WorkItem to be applied to the write access
+ * keyaddwritefields (List): a list of items of the current WorkItem to be applied to the write access
  
- * namaddreadaccess (Vector): Names & Groups to be applied to the read access
+ * namaddreadaccess (List): Names & Groups to be applied to the read access
  
- * namaddwriteaccess (Vector): Names & Groups to be applied to the write access
+ * namaddwriteaccess (List): Names & Groups to be applied to the write access
 
 The AccessPlugin  evaluates the ACL settings of the current Event element as also the  ACL settings of the next Task element. 
 If the current Event Element provides a ACL setting, the next Task element will be ignored. 

@@ -35,7 +35,7 @@ public class TestApproverResetPlugin {
 
 
 		// initialize @Mock annotations....
-		MockitoAnnotations.initMocks(this);
+		MockitoAnnotations.openMocks(this);
 
 		workflowMockEnvironment = new WorkflowMockEnvironment();
 		workflowMockEnvironment.setModelPath(MODEL_PATH);
@@ -58,7 +58,7 @@ public class TestApproverResetPlugin {
 		workitem.model(MODEL_VERSION).task(100).event(10);
 		
 	
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");
@@ -113,7 +113,7 @@ public class TestApproverResetPlugin {
 		workitem.model(MODEL_VERSION).task(100).event(10);
 		
 	
-		List<String> nameList = new ArrayList<String>();
+		List<String> nameList = new ArrayList<>();
 		nameList.add("anna");
 		nameList.add("manfred");
 		nameList.add("eddy");

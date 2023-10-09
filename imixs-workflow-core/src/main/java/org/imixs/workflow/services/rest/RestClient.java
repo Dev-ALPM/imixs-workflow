@@ -72,7 +72,7 @@ public class RestClient {
 
     public RestClient() {
         super();
-        requestFilterList = new ArrayList<RequestFilter>();
+        requestFilterList = new ArrayList<>();
     }
 
     public RestClient(String rootURL) {
@@ -119,6 +119,9 @@ public class RestClient {
      * @throws RestAPIException
      */
     void setServiceEndpoint(String uri) throws RestAPIException {
+        if(uri == null) {
+            throw new RestAPIException(0, "uri is null!");
+        }
         // test for protocoll
         if (uri.contains("://")) {
             this.serviceEndpoint = uri;
@@ -130,22 +133,22 @@ public class RestClient {
         }
 
         // test for double /
-        if (uri != null && uri.startsWith("/")) {
+        if (uri.startsWith("/")) {
             uri = uri.substring(1);
         }
 
         // add root URL
-        uri = rootURL + uri;
-
-        this.serviceEndpoint = uri;
+        this.serviceEndpoint = rootURL + uri;
     }
 
     /**
+     * @param key
      * Set a single header request property
+     * @param value
      */
     public void setRequestProperty(String key, String value) {
         if (requestProperties == null) {
-            requestProperties = new HashMap<String, String>();
+            requestProperties = new HashMap<>();
         }
         requestProperties.put(key, value);
     }
@@ -161,7 +164,6 @@ public class RestClient {
      * @param contentType - request MediaType
      * @return content
      * @throws RestAPIException
-     * @throws Exception
      */
     public String post(String uri, String dataString, String contentType) throws RestAPIException {
         return post(uri, dataString, contentType, null);
@@ -174,10 +176,10 @@ public class RestClient {
      * The parameter 'contnetType' and 'acceptType' can be used to request and
      * accept specific media types.
      * 
-     * @param uri         - Rest Endpoint URI
-     * @param dataString  - content
-     * @param contentType - request MediaType
-     * @param acceptType  - accept MediaType
+     * @param uri          - Rest Endpoint URI
+     * @param dataString   - content
+     * @param _contentType - request MediaType
+     * @param acceptType   - accept MediaType
      * @return content
      * @throws RestAPIException
      */
@@ -193,7 +195,7 @@ public class RestClient {
             acceptType = contentType;
         }
 
-        HttpURLConnection urlConnection = null;
+        HttpURLConnection urlConnection;
         try {
             serviceEndpoint = uri;
             iLastHTTPResult = 500;
@@ -220,7 +222,7 @@ public class RestClient {
 
             // compute length
             urlConnection.setRequestProperty("Content-Length",
-                    "" + Integer.valueOf(writer.toString().getBytes().length));
+                    Integer.toString(writer.toString().getBytes().length));
 
             printWriter = new PrintWriter(
                     new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), encoding)));
@@ -260,10 +262,9 @@ public class RestClient {
      * The parameter 'contnetType' and 'acceptType' can be used to request and
      * accept specific media types.
      * 
-     * @param uri         - Rest Endpoint URI
-     * @param data        - content
-     * @param contentType - request MediaType
-     * @param acceptType  - accept MediaType
+     * @param uri          - Rest Endpoint URI
+     * @param data         - content
+     * @param _contentType - request MediaType
      * @return content
      * @throws RestAPIException
      */
@@ -278,10 +279,10 @@ public class RestClient {
      * The parameter 'contnetType' and 'acceptType' can be used to request and
      * accept specific media types.
      * 
-     * @param uri         - Rest Endpoint URI
-     * @param data        - content
-     * @param contentType - request MediaType
-     * @param acceptType  - accept MediaType
+     * @param uri          - Rest Endpoint URI
+     * @param data         - content
+     * @param _contentType - request MediaType
+     * @param acceptType   - accept MediaType
      * @return content
      * @throws RestAPIException
      */
@@ -296,7 +297,7 @@ public class RestClient {
             acceptType = contentType;
         }
 
-        HttpURLConnection urlConnection = null;
+        HttpURLConnection urlConnection;
         try {
             serviceEndpoint = uri;
             iLastHTTPResult = 500;
@@ -372,6 +373,7 @@ public class RestClient {
      * 
      * @param uri - Rest Endpoint RUI
      * @return - content or null if no content is available.
+     * @throws org.imixs.workflow.services.rest.RestAPIException
      */
     public String get(String uri) throws RestAPIException {
 
@@ -449,7 +451,7 @@ public class RestClient {
                 writer.write(inputLine);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         } finally {
             if (in != null)
                 in.close();

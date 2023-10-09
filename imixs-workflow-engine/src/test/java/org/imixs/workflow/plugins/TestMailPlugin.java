@@ -39,8 +39,7 @@ public class TestMailPlugin {
 		try {
 			mailPlugin.init(workflowMockEnvironment.getWorkflowService());
 		} catch (PluginException e) {
-
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 		}
 
 		
@@ -67,7 +66,7 @@ public class TestMailPlugin {
 		try {
 			sBody = mailPlugin.getBody(documentContext, documentActivity);
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
@@ -92,8 +91,7 @@ public class TestMailPlugin {
 		ItemCollection documentActivity = new ItemCollection();
 
 		// create XSL template...
-		String xsl = "";
-		xsl = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<xsl:stylesheet xmlns=\"http://www.w3.org/1999/xhtml\""
+		String xsl = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<xsl:stylesheet xmlns=\"http://www.w3.org/1999/xhtml\""
 				+ "	xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">"
 				+ " <xsl:output method=\"html\" media-type=\"text/html\" indent=\"no\" encoding=\"ISO-8859-1\"" + " />";
 		xsl += "<xsl:template match=\"/\">";
@@ -110,16 +108,15 @@ public class TestMailPlugin {
 		
 		documentActivity.replaceItemValue("rtfMailBody", xsl);
 
-		String sBody = null;
 		try {
-			sBody = mailPlugin.getBody(documentContext, documentActivity);
+			String sBody = mailPlugin.getBody(documentContext, documentActivity);
+                        logger.info(sBody);
+                        Assert.assertTrue( sBody.contains("<h2>Anna</h2>"));
 		} catch (PluginException e) {
-			e.printStackTrace();
+			logger.severe(e.getMessage());
 			Assert.fail();
 		}
 
-		logger.info(sBody);
-		Assert.assertTrue( sBody.contains("<h2>Anna</h2>"));
 	}
 
 }

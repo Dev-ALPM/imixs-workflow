@@ -71,10 +71,9 @@ public interface WorkflowManager {
      *                                          workItem
      * @throws ProcessingErrorException         - thrown if the workitem could not
      *                                          be processed by the workflowKernel
-     * @throws AdapterExceptionAdapterException - thrown if processing by an adapter
-     *                                          fails
      * @throws PluginException                  - thrown if processing by a plugin
      *                                          fails
+     * @throws ModelException                   - thrown with invalid model
      */
     public ItemCollection processWorkItem(ItemCollection workitem)
             throws AccessDeniedException, ProcessingErrorException, PluginException, ModelException;
@@ -95,7 +94,7 @@ public interface WorkflowManager {
      * The Method throws an InvalidWorkitemException if the provided Workitem is
      * invalid.
      * 
-     * @param uniqueid of the WorkItem to be removed
+     * @param workitem
      * @throws AccessDeniedException
      */
     public void removeWorkItem(ItemCollection workitem) throws AccessDeniedException;

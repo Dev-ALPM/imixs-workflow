@@ -46,9 +46,8 @@ import java.util.List;
 public interface PluginDependency {
 
     /**
-     * Returns a String list of plugin class names which the currend implementation
+     * @return a String list of plugin class names which the currend implementation
      * depends on.
-     * 
      */
     public List<String> dependsOn();
 

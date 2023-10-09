@@ -37,7 +37,7 @@ package org.imixs.workflow.exceptions;
 public class PluginException extends WorkflowException {
 
     private static final long serialVersionUID = 1L;
-    private java.lang.Object[] params = null;
+    private transient Object[] params = null;
 
     public PluginException(String aErrorContext, String aErrorCode, String message) {
         super(aErrorContext, aErrorCode, message);

@@ -57,7 +57,7 @@ Imixs-Faces includes some utility classes to support typical UI flows in a JSF a
  * LoginController - A  @RequestScoped CDI bean providing information about the current user session
  * ErrorHandler - this bean can be used to translate Imixs-Workflow PluginExceptions into a JSF Message
  * ValidationExcepiton - a custom exception type to handle Imixs-Workflow exceptions. 
- * VectorConverter - translates a String into a List
+ * ListConverter - translates a String into a List
  * ViewExpiredExceptionHandler -  handle expired JSF sessions
 
 

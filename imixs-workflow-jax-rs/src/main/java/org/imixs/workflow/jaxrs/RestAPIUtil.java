@@ -1,9 +1,9 @@
 package org.imixs.workflow.jaxrs;
 
 import java.util.List;
-import java.util.Vector;
 
 import com.ibm.icu.util.StringTokenizer;
+import java.util.ArrayList;
 
 /**
  * This Utility class provides methods to convert Item Values in Rest API calls.
@@ -23,7 +23,7 @@ public class RestAPIUtil {
     public static List<String> getItemList(String items) {
         if (items == null || "".equals(items))
             return null;
-        Vector<String> v = new Vector<String>();
+        List<String> v = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(items, ",");
         while (st.hasMoreTokens())
             v.add(st.nextToken());

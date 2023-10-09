@@ -29,6 +29,7 @@ public class TestReadWriteByteArray {
 	 */
 	@Test
 
+        @SuppressWarnings("AssertEqualsBetweenInconvertibleTypes")
 	public void testWriteRead() {
 		byte[] empty = { 0 };
 		// PHASE I.
@@ -37,14 +38,14 @@ public class TestReadWriteByteArray {
 		itemColSource.replaceItemValue("txtTitel", "Hello");
 
 		// create list of list...
-		List<List<String>> valueList = new ArrayList<List<String>>();
+		List<List<String>> valueList = new ArrayList<>();
 
-		List<String> list1 = new ArrayList<String>();
+		List<String> list1 = new ArrayList<>();
 		list1.add("Berlin");
 		list1.add("Munich");
 		valueList.add(list1);
 
-		List<String> list2 = new ArrayList<String>();
+		List<String> list2 = new ArrayList<>();
 		list2.add("John");
 		list2.add("Sam");
 		valueList.add(list2);
@@ -52,7 +53,7 @@ public class TestReadWriteByteArray {
 		itemColSource.replaceItemValue("_listdata", valueList);
 
 		// create list of map...
-		List<Map<String, List<Object>>> mapList = new ArrayList<Map<String, List<Object>>>();
+		List<Map<String, List<?>>> mapList = new ArrayList<>();
 
 		ItemCollection i1 = new ItemCollection();
 		i1.replaceItemValue("_name", "some data");
@@ -76,8 +77,7 @@ public class TestReadWriteByteArray {
 			// test if we found some data
 			Assert.assertTrue(data.length > 100);
 		} catch (JAXBException | IOException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 		// PHASE III.
@@ -102,11 +102,10 @@ public class TestReadWriteByteArray {
 			
 		
 			Assert.assertEquals("application/unknown",afileData.getContentType());
-			Assert.assertEquals(empty, afileData.getContent());
+			Assert.assertArrayEquals(empty, afileData.getContent());
 
 		} catch (JAXBException | IOException e) {
-			e.printStackTrace();
-			Assert.fail();
+			Assert.fail(e.getMessage());
 		}
 
 	}

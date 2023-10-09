@@ -136,31 +136,31 @@ public class BPMNModelHandler extends DefaultHandler {
         super();
         model = new BPMNModel();
         // initalize cache objects
-        taskCache = new HashMap<String, ItemCollection>();
-        eventCache = new HashMap<String, ItemCollection>();
-        messageCache = new HashMap<String, String>();
-        annotationCache = new HashMap<String, String>();
-        dataObjectCache = new HashMap<String, List<String>>();
-        signalCache = new HashMap<String, String>();
-        conditionCache = new HashMap<String, String>();
-        conditionDefaultFlows = new HashMap<String, String>();
+        taskCache = new HashMap<>();
+        eventCache = new HashMap<>();
+        messageCache = new HashMap<>();
+        annotationCache = new HashMap<>();
+        dataObjectCache = new HashMap<>();
+        signalCache = new HashMap<>();
+        conditionCache = new HashMap<>();
+        conditionDefaultFlows = new HashMap<>();
 
-        linkThrowEventCache = new HashMap<String, String>();
-        linkCatchEventCache = new HashMap<String, String>();
+        linkThrowEventCache = new HashMap<>();
+        linkCatchEventCache = new HashMap<>();
 
-        conditionalGatewayCache = new ArrayList<String>();
-        parallelGatewayCache = new ArrayList<String>();
-        boundaryEventCache = new ArrayList<ItemCollection>();
+        conditionalGatewayCache = new ArrayList<>();
+        parallelGatewayCache = new ArrayList<>();
+        boundaryEventCache = new ArrayList<>();
 
-        startEvents = new ArrayList<String>();
-        endEvents = new ArrayList<String>();
+        startEvents = new ArrayList<>();
+        endEvents = new ArrayList<>();
 
-        sequenceCache = new HashMap<String, SequenceFlow>();
-        associationCache = new HashMap<String, SequenceFlow>();
+        sequenceCache = new HashMap<>();
+        associationCache = new HashMap<>();
 
         // define items to be ignored for import
         String[] array = { "txtname", "txtworkflowgroup", "numprocessid", "numactivityid", "type" };
-        ignoreItemList = new ArrayList<String>(Arrays.asList(array));
+        ignoreItemList = new ArrayList<>(Arrays.asList(array));
 
     }
 
@@ -430,12 +430,10 @@ public class BPMNModelHandler extends DefaultHandler {
                 String svalue = characterStream.toString();
                 List valueList = currentEntity.getItemValue(currentItemName);
 
-                if ("xs:boolean".equals(currentItemType.toLowerCase())) {
-                    valueList.add(Boolean.valueOf(svalue));
-                } else if ("xs:integer".equals(currentItemType.toLowerCase())) {
-                    valueList.add(Integer.valueOf(svalue));
-                } else {
-                    valueList.add(svalue);
+                switch(currentItemType.toLowerCase()) {
+                    case "xs:boolean" -> valueList.add(Boolean.valueOf(svalue));
+                    case "xs:integer" -> valueList.add(Integer.valueOf(svalue));
+                    default -> valueList.add(svalue);
                 }
 
                 // item will only be added if it is not listed in the ignoreItem
@@ -470,7 +468,7 @@ public class BPMNModelHandler extends DefaultHandler {
             // bpmn2:dataObject?
             if (bDataObject) {
                 // cache the dataObject
-                List<String> dataobject = new ArrayList<String>();
+                List<String> dataobject = new ArrayList<>();
                 dataobject.add(currentDataObjectName);
                 dataobject.add(characterStream.toString());
                 dataObjectCache.put(currentDataObjectID, dataobject);
@@ -540,7 +538,6 @@ public class BPMNModelHandler extends DefaultHandler {
 
     }
 
-    // @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void characters(char ch[], int start, int length) throws SAXException {
 
@@ -577,6 +574,7 @@ public class BPMNModelHandler extends DefaultHandler {
      * The method tests the model for bpmn2:message elements and replace links in
      * Activity elements attribute 'rtfMailBody'
      * 
+     * @return 
      * @throws ModelException
      */
     public BPMNModel buildModel() throws ModelException {
@@ -599,7 +597,7 @@ public class BPMNModelHandler extends DefaultHandler {
         }
 
         // add all Imixs tasks into the model and validate the processids
-        List<Integer> processIDList = new ArrayList<Integer>();
+        List<Integer> processIDList = new ArrayList<>();
         for (String key : taskCache.keySet()) {
             ItemCollection task = taskCache.get(key);
             // check if numProcessID is unique...
@@ -738,13 +736,13 @@ public class BPMNModelHandler extends DefaultHandler {
      * @return - a list of arrays containing the dataObjectID and the documentation
      **/
     private List<List<String>> getDataObjectsForElement(String elementID) {
-        List<List<String>> result = new ArrayList<List<String>>();
+        List<List<String>> result = new ArrayList<>();
 
         // check all annotations....
         for (Map.Entry<String, List<String>> entry : dataObjectCache.entrySet()) {
             String id = entry.getKey();
             List<String> dataobject = entry.getValue();
-            if (dataobject == null || dataobject.size() == 0) {
+            if (dataobject == null || dataobject.isEmpty()) {
                 continue;
             }
             // test if the elementID is connected to this annotation....
@@ -756,7 +754,7 @@ public class BPMNModelHandler extends DefaultHandler {
             }
         }
 
-        if (result.size() > 0) {
+        if (!result.isEmpty()) {
             return result;
         } else {
             return null;
@@ -767,7 +765,7 @@ public class BPMNModelHandler extends DefaultHandler {
     // check if this task is connected to a start event....
     private boolean isStartTask(String taskID) {
         List<SequenceFlow> inFlows = findIncomingFlows(taskID);
-        if (inFlows != null && inFlows.size() > 0) {
+        if (inFlows != null && !inFlows.isEmpty()) {
             for (SequenceFlow aFlow : inFlows) {
                 String id = new ElementResolver().findStartEvent(aFlow, true);
                 if (id != null) {
@@ -781,7 +779,7 @@ public class BPMNModelHandler extends DefaultHandler {
     // check if this event is connected to a start event....
     private boolean isStartEvent(String eventID) {
         List<SequenceFlow> inFlows = findIncomingFlows(eventID);
-        if (inFlows != null && inFlows.size() > 0) {
+        if (inFlows != null && !inFlows.isEmpty()) {
             for (SequenceFlow aFlow : inFlows) {
                 String id = new ElementResolver().findStartEvent(aFlow, false);
                 if (id != null) {
@@ -797,15 +795,15 @@ public class BPMNModelHandler extends DefaultHandler {
         List<SequenceFlow> inFlows = findIncomingFlows(eventID);
         if (inFlows != null) {
 
-            if (inFlows.size() == 0) {
+            if (inFlows.isEmpty()) {
                 // this is a loop event
                 return true;
             }
 
             for (SequenceFlow aFlow : inFlows) {
-                List<ItemCollection> sourceTaskList = new ArrayList<ItemCollection>();
+                List<ItemCollection> sourceTaskList = new ArrayList<>();
                 sourceTaskList = new ElementResolver().findAllImixsSourceTasks(aFlow, sourceTaskList);
-                if (sourceTaskList != null && sourceTaskList.size() > 0) {
+                if (sourceTaskList != null && !sourceTaskList.isEmpty()) {
                     return true;
                 }
             }
@@ -816,7 +814,7 @@ public class BPMNModelHandler extends DefaultHandler {
     // check if this task is connected to an end event....
     private boolean isEndTask(String taskID) {
         List<SequenceFlow> outFlows = findOutgoingFlows(taskID);
-        if (outFlows != null && outFlows.size() > 0) {
+        if (outFlows != null && !outFlows.isEmpty()) {
             for (SequenceFlow aFlow : outFlows) {
                 String id = new ElementResolver().findEndEvent(aFlow);
                 if (id != null) {
@@ -840,18 +838,18 @@ public class BPMNModelHandler extends DefaultHandler {
      * @throws ModelException
      */
     private List<ItemCollection> findSourceTasks(String eventID) throws ModelException {
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
         boolean isFollowUp = false;
 
         // first we lookup all possible incoming flows to identify direct source
         // tasks
         List<SequenceFlow> inFlows = findIncomingFlows(eventID);
 
-        if (inFlows != null && inFlows.size() > 0) {
+        if (inFlows != null && !inFlows.isEmpty()) {
             for (SequenceFlow aFlow : inFlows) {
-                List<ItemCollection> sourceTaskList = new ArrayList<ItemCollection>();
+                List<ItemCollection> sourceTaskList = new ArrayList<>();
                 sourceTaskList = new ElementResolver().findAllImixsSourceTasks(aFlow, sourceTaskList);
-                if (sourceTaskList.size() > 0) {
+                if (!sourceTaskList.isEmpty()) {
                     result.addAll(sourceTaskList);
                 } else {
                     // we found no source task. Test if the incoming flow is a
@@ -859,8 +857,6 @@ public class BPMNModelHandler extends DefaultHandler {
                     ItemCollection sourceEvent = new ElementResolver().findImixsSourceEvent(aFlow);
                     if (sourceEvent != null) {
                         isFollowUp = true;
-                        // ignore
-                        continue;
                     } else {
                         // now as we found no task or event we check if we got a
                         // start event!
@@ -868,7 +864,7 @@ public class BPMNModelHandler extends DefaultHandler {
                             // all possible target Tasks are the source tasks
                             // for this event!
                             List<SequenceFlow> outFlows = findOutgoingFlows(eventID);
-                            List<String> targetTaskList = new ArrayList<String>();
+                            List<String> targetTaskList = new ArrayList<>();
 
                             for (SequenceFlow outgoingFlow : outFlows) {
                                 targetTaskList = new ElementResolver().findAllImixsTargetTaskIDs(outgoingFlow,
@@ -884,7 +880,7 @@ public class BPMNModelHandler extends DefaultHandler {
             }
 
             // finish?
-            if (result.size() > 0) {
+            if (!result.isEmpty()) {
                 // we do not test for loop events
                 return result;
             }
@@ -896,7 +892,7 @@ public class BPMNModelHandler extends DefaultHandler {
         if (!isFollowUp) {
 
             List<SequenceFlow> outFlows = findOutgoingFlows(eventID);
-            if (outFlows != null && outFlows.size() != 1) {
+            if (outFlows.size() != 1) {
                 // invalid model!!
                 throw new ModelException(ModelException.INVALID_MODEL,
                         "Imixs BPMN Event '" + eventID + "' has none or more than one targets!");
@@ -969,7 +965,7 @@ public class BPMNModelHandler extends DefaultHandler {
         logger.log(Level.FINEST, "......adding event ''{0}''", eventName);
 
         List<SequenceFlow> outFlows = findOutgoingFlows(eventID);
-        if (outFlows == null || outFlows.size() == 0) {
+        if (outFlows.isEmpty()) {
             // invalid model!!
             throw new ModelException(ModelException.INVALID_MODEL,
                     "Imixs BPMN Event '" + eventName + "' has no target!");
@@ -977,7 +973,7 @@ public class BPMNModelHandler extends DefaultHandler {
 
         // test if the element has multiple targets. In this case the event is
         // handled as a loop event
-        List<String> targetList = new ArrayList<String>();
+        List<String> targetList = new ArrayList<>();
         for (SequenceFlow outgoingFlow : outFlows) {
             targetList = new ElementResolver().findAllImixsTargetIDs(outgoingFlow, targetList);
         }
@@ -989,8 +985,8 @@ public class BPMNModelHandler extends DefaultHandler {
 
             // test if this is a conditional event - search for conditional gateways...
             List<SequenceFlow> outgoingList = this.findOutgoingFlows(eventID);
-            if (outgoingList != null && outgoingList.size() > 0) {
-                Map<String, String> conditions = new HashMap<String, String>();
+            if (!outgoingList.isEmpty()) {
+                Map<String, String> conditions = new HashMap<>();
                 String defaultCondition = null;
                 for (SequenceFlow flow : outgoingList) {
                     // lookup for a exclusive gateway....
@@ -1067,8 +1063,8 @@ public class BPMNModelHandler extends DefaultHandler {
 
             // test if this is a split event - search for parallel gateway...
             outgoingList = this.findOutgoingFlows(eventID);
-            if (outgoingList != null && outgoingList.size() > 0) {
-                Map<String, String> conditions = new HashMap<String, String>();
+            if (!outgoingList.isEmpty()) {
+                Map<String, String> conditions = new HashMap<>();
                 for (SequenceFlow flow : outgoingList) {
                     if (parallelGatewayCache.contains(flow.target)) {
 
@@ -1268,7 +1264,7 @@ public class BPMNModelHandler extends DefaultHandler {
      */
     private List<SequenceFlow> findIncomingFlows(String elementID) {
 
-        List<SequenceFlow> result = new ArrayList<BPMNModelHandler.SequenceFlow>();
+        List<SequenceFlow> result = new ArrayList<>();
         for (String aFlowID : sequenceCache.keySet()) {
             SequenceFlow aFlow = sequenceCache.get(aFlowID);
             if (aFlow.target.equals(elementID)) {
@@ -1286,7 +1282,7 @@ public class BPMNModelHandler extends DefaultHandler {
      * @return
      */
     private List<SequenceFlow> findOutgoingFlows(String elementID) {
-        List<SequenceFlow> result = new ArrayList<BPMNModelHandler.SequenceFlow>();
+        List<SequenceFlow> result = new ArrayList<>();
         for (String aFlowID : sequenceCache.keySet()) {
             SequenceFlow aFlow = sequenceCache.get(aFlowID);
             if (aFlow.source.equals(elementID)) {
@@ -1304,7 +1300,7 @@ public class BPMNModelHandler extends DefaultHandler {
      */
     private List<SequenceFlow> findIncomingAssociations(String elementID) {
 
-        List<SequenceFlow> result = new ArrayList<BPMNModelHandler.SequenceFlow>();
+        List<SequenceFlow> result = new ArrayList<>();
         for (String aFlowID : associationCache.keySet()) {
             SequenceFlow aFlow = associationCache.get(aFlowID);
             if (aFlow.target.equals(elementID)) {
@@ -1312,24 +1308,6 @@ public class BPMNModelHandler extends DefaultHandler {
             }
         }
 
-        return result;
-    }
-
-    /**
-     * This method returns all outgoing Associations flows for a given element ID
-     * 
-     * @param elementID
-     * @return
-     */
-    @SuppressWarnings("unused")
-    private List<SequenceFlow> findOutgoingAssociations(String elementID) {
-        List<SequenceFlow> result = new ArrayList<BPMNModelHandler.SequenceFlow>();
-        for (String aFlowID : associationCache.keySet()) {
-            SequenceFlow aFlow = associationCache.get(aFlowID);
-            if (aFlow.source.equals(elementID)) {
-                result.add(aFlow);
-            }
-        }
         return result;
     }
 
@@ -1497,7 +1475,7 @@ public class BPMNModelHandler extends DefaultHandler {
         // timer
         if (!eventEntity.hasItem(BPMNModel.EVENT_ITEM_TIMER_ACTIVE)) {
             eventEntity.setItemValue(BPMNModel.EVENT_ITEM_TIMER_ACTIVE,
-                     Boolean.valueOf("1".equals(eventEntity.getItemValueString("keyscheduledactivity"))));
+                    "1".equals(eventEntity.getItemValueString("keyscheduledactivity")));
         }
         if (!eventEntity.hasItem("keyscheduledactivity")) {
             if (eventEntity.getItemValueBoolean(BPMNModel.EVENT_ITEM_TIMER_ACTIVE)) {
@@ -1559,7 +1537,7 @@ public class BPMNModelHandler extends DefaultHandler {
 
         public ElementResolver() {
             // initalize loop dedection
-            loopFlowCache = new ArrayList<String>();
+            loopFlowCache = new ArrayList<>();
         }
 
         /**
@@ -1925,7 +1903,7 @@ public class BPMNModelHandler extends DefaultHandler {
         public List<String> findAllImixsTargetIDs(SequenceFlow flow, List<String> targetList) {
 
             if (targetList == null) {
-                targetList = new ArrayList<String>();
+                targetList = new ArrayList<>();
             }
 
             if (flow.source == null) {
@@ -1976,7 +1954,7 @@ public class BPMNModelHandler extends DefaultHandler {
         public List<String> findAllImixsTargetTaskIDs(SequenceFlow flow, List<String> targetList) {
 
             if (targetList == null) {
-                targetList = new ArrayList<String>();
+                targetList = new ArrayList<>();
             }
 
             if (flow.source == null) {

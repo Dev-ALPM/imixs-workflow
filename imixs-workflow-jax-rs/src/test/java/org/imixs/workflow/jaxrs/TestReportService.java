@@ -169,7 +169,6 @@ public class TestReportService {
 
 		DateFormat f = new SimpleDateFormat("yyyyMMdd");
 		String exprectedDateResult = f.format(cal.getTime());
-		;
 		System.out.println("expected test-date =" + exprectedDateResult);
 
 		// parse string and compute result

@@ -55,7 +55,10 @@ public class LogPlugin extends AbstractPlugin {
     /**
      * the log entries generated form the kernel will be cut if the attribute
      * numWorkflowLogLength was provided
+     * @param documentContext
+     * @param adocumentActivity
      */
+    @Override
     public ItemCollection run(ItemCollection documentContext, ItemCollection adocumentActivity) throws PluginException {
         List<?> vActivityLog;
 

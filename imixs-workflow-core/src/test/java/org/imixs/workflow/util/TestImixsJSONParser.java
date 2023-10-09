@@ -29,8 +29,7 @@ public class TestImixsJSONParser {
     try {
       result = ImixsJSONParser.parse(inputStream);
     } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-      Assert.fail();
+      Assert.fail(e.getMessage());
     }
 
     Assert.assertNotNull(result);
@@ -58,8 +57,7 @@ public class TestImixsJSONParser {
     try {
       result = ImixsJSONParser.parse(inputStream);
     } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-      Assert.fail();
+      Assert.fail(e.getMessage());
     }
 
     Assert.assertNotNull(result);
@@ -100,8 +98,7 @@ public class TestImixsJSONParser {
     try {
       result = ImixsJSONParser.parse(inputStream);
     } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-      Assert.fail();
+      Assert.fail(e.getMessage());
     }
     Assert.assertNotNull(result);
     ItemCollection itemCol = result.get(0);
@@ -139,7 +136,7 @@ public class TestImixsJSONParser {
       result = ImixsJSONParser.parse(targetStream);
 
       Assert.assertNotNull(result);
-      Assert.assertTrue(result.size() > 0);
+      Assert.assertTrue(!result.isEmpty());
 
     } catch (UnsupportedEncodingException e) {
       Assert.fail();

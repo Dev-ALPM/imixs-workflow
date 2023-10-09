@@ -116,9 +116,9 @@ public class BPMNModel implements Model {
     private static final Logger logger = Logger.getLogger(BPMNModel.class.getName());
 
     public BPMNModel() {
-        taskList = new TreeMap<Integer, ItemCollection>();
-        eventList = new TreeMap<Integer, List<ItemCollection>>();
-        workflowGroups = new ArrayList<String>();
+        taskList = new TreeMap<>();
+        eventList = new TreeMap<>();
+        workflowGroups = new ArrayList<>();
     }
 
     /**
@@ -133,7 +133,7 @@ public class BPMNModel implements Model {
     /**
      * Set the raw data of the bpmn source file
      * 
-     * @param rawData
+     * @param data
      */
     public void setRawData(byte[] data) {
         this.rawData = data;
@@ -152,6 +152,7 @@ public class BPMNModel implements Model {
      * 
      * @return
      */
+    @Override
     public ItemCollection getDefinition() {
         return new ItemCollection(definition);
     }
@@ -197,6 +198,7 @@ public class BPMNModel implements Model {
      * In case of none event is connected to the BPMN:startEvent then the method
      * returns all events which are not follow up events
      * 
+     * @param taskID
      * @return
      */
     public List<ItemCollection> getStartEvents(int taskID) {
@@ -214,7 +216,7 @@ public class BPMNModel implements Model {
         List<ItemCollection> result = eventsOfTask.stream() // convert list to stream
                 .filter(event -> event.getItemValueBoolean("startEvent")) // we care only for startEvent
                 .collect(Collectors.toList()); // collect the output and convert streams to a List
-        if (result != null && result.size() > 0) {
+        if (result != null && !result.isEmpty()) {
             // yes there are true start events!
             return result;
         }
@@ -251,6 +253,7 @@ public class BPMNModel implements Model {
                 "BPMN Event " + processid + "." + activityid + " not defined by version '" + this.getVersion() + "'");
     }
 
+    @Override
     public List<String> getGroups() {
         return new ArrayList<>(workflowGroups);
     }
@@ -264,9 +267,9 @@ public class BPMNModel implements Model {
      */
     @Override
     public List<ItemCollection> findAllTasks() {
-        List<ItemCollection> _tasks = new ArrayList<ItemCollection>(taskList.values());
+        List<ItemCollection> _tasks = new ArrayList<>(taskList.values());
         // clone task list
-        ArrayList<ItemCollection> result = new ArrayList<ItemCollection>();
+        ArrayList<ItemCollection> result = new ArrayList<>();
         for (ItemCollection _task : _tasks) {
             result.add(new ItemCollection(_task));
         }
@@ -278,16 +281,17 @@ public class BPMNModel implements Model {
      * Returns a list of all events for a given taskID. The result set is sorted by
      * event id (numactivityID)
      * 
+     * @param processid
      * @return list of tasks
      */
     @Override
     public List<ItemCollection> findAllEventsByTask(int processid) {
         List<ItemCollection> _events = eventList.get(processid);
         if (_events == null) {
-            return new ArrayList<ItemCollection>();
+            return new ArrayList<>();
         }
         // clone event list
-        ArrayList<ItemCollection> result = new ArrayList<ItemCollection>();
+        ArrayList<ItemCollection> result = new ArrayList<>();
         for (ItemCollection _event : _events) {
             result.add(new ItemCollection(_event));
         }
@@ -300,7 +304,7 @@ public class BPMNModel implements Model {
      */
     @Override
     public List<ItemCollection> findTasksByGroup(String group) {
-        List<ItemCollection> result = new ArrayList<ItemCollection>();
+        List<ItemCollection> result = new ArrayList<>();
         if (group != null && !group.isEmpty()) {
             List<ItemCollection> allTasks = findAllTasks();
             for (ItemCollection task : allTasks) {
@@ -325,6 +329,7 @@ public class BPMNModel implements Model {
      * In case a $taskID or $eventID is already assigned, the method did not modify
      * the $taskID or $eventID.
      * 
+     * @param workitem
      * @throws ModelException
      */
     public void initStartEvent(ItemCollection workitem) throws ModelException {
@@ -345,7 +350,7 @@ public class BPMNModel implements Model {
         if (workitem.getTaskID() == 0) {
             // no so we take the first startTask from the model
             List<ItemCollection> startTasks = this.getStartTasks();
-            if (startTasks == null || startTasks.size() == 0) {
+            if (startTasks == null || startTasks.isEmpty()) {
                 throw new ModelException(ModelException.INVALID_MODEL, "Model does not define a StartTask");
             }
             workitem.setTaskID(startTasks.get(0).getItemValueInteger("numprocessid"));
@@ -360,7 +365,7 @@ public class BPMNModel implements Model {
                 throw new ModelException(ModelException.INVALID_MODEL, "$taskid " + taskID + " not defined by model!");
             }
             List<ItemCollection> startEvents = this.getStartEvents(task.getItemValueInteger("numprocessid"));
-            if (startEvents == null || startEvents.size() == 0) {
+            if (startEvents == null || startEvents.isEmpty()) {
                 throw new ModelException(ModelException.INVALID_MODEL,
                         "Task " + taskID + " does not define a StartEvent!");
             }
@@ -400,7 +405,8 @@ public class BPMNModel implements Model {
     /**
      * Adds a ProcessEntiy into the process list
      * 
-     * @param entity
+     * @param aentity
+     * @throws org.imixs.workflow.exceptions.ModelException
      */
     protected void addEvent(ItemCollection aentity) throws ModelException {
         if (aentity == null)

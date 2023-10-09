@@ -58,28 +58,31 @@ public class ImixsExceptionHandler {
      * a WorkflowException or InvalidAccessException.
      * 
      * @param pe
+     * @param aworkitem
+     * @return 
      */
+    // call findCauseUsingPlainJava throw NullPointerException if pe is null
+    @SuppressWarnings("null")
     public static ItemCollection addErrorMessage(Exception pe, ItemCollection aworkitem) {
 
         Throwable rootCause = findCauseUsingPlainJava(pe);
 
-        if (pe instanceof WorkflowException) {
+        if (pe instanceof WorkflowException workflowException) {
             // String message = ((WorkflowException) pe).getErrorCode();
             String message = pe.getMessage();
 
             // parse message for params
-            if (pe instanceof PluginException) {
-                PluginException p = (PluginException) pe;
+            if (pe instanceof PluginException p) {
                 if (p.getErrorParameters() != null && p.getErrorParameters().length > 0) {
                     for (int i = 0; i < p.getErrorParameters().length; i++) {
                         message = message.replace("{" + i + "}", p.getErrorParameters()[i].toString());
                     }
                 }
             }
-            aworkitem.replaceItemValue("$error_code", ((WorkflowException) pe).getErrorCode());
+            aworkitem.replaceItemValue("$error_code", workflowException.getErrorCode());
             aworkitem.replaceItemValue("$error_message", message);
-        } else if (rootCause instanceof InvalidAccessException) {
-            aworkitem.replaceItemValue("$error_code", ((InvalidAccessException) rootCause).getErrorCode());
+        } else if (rootCause instanceof InvalidAccessException invalidAccessException) {
+            aworkitem.replaceItemValue("$error_code", invalidAccessException.getErrorCode());
             aworkitem.replaceItemValue("$error_message", rootCause.getMessage());
         } else {
             aworkitem.replaceItemValue("$error_code", "INTERNAL ERROR");
@@ -102,8 +105,7 @@ public class ImixsExceptionHandler {
      * @return
      */
     public static Throwable findCauseUsingPlainJava(Throwable throwable) {
-        Objects.requireNonNull(throwable);
-        Throwable rootCause = throwable;
+        Throwable rootCause = Objects.requireNonNull(throwable);
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
             rootCause = rootCause.getCause();
         }
