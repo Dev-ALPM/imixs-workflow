@@ -47,8 +47,6 @@ import org.imixs.workflow.engine.scheduler.SchedulerController;
 @RequestScoped
 public class WorkflowSchedulerController extends SchedulerController {
 
-    private static final long serialVersionUID = 1L;
-
     @Override
     public String getName() {
         return WorkflowScheduler.NAME;

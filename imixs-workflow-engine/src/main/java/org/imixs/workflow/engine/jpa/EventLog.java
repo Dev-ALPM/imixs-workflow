@@ -214,7 +214,7 @@ public class EventLog implements java.io.Serializable {
      * point of time (see setModified) independent from the value of the item
      * $modified. The item $modified will be updated by the DocumentService on read.
      * 
-     * @param data
+     * @param itemCol
      * @throws InvalidAccessException if $modified is missing
      */
     public void setData(Map<String, List<?>> itemCol) {
