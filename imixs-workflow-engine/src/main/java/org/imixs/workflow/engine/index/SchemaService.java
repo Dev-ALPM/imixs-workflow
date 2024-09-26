@@ -38,6 +38,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.security.PermitAll;
 import jakarta.ejb.Singleton;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -66,6 +67,7 @@ import org.imixs.workflow.exceptions.QueryException;
  * @author rsoika
  */
 @Singleton
+@PermitAll
 public class SchemaService {
 
     /*

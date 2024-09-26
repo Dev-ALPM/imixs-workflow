@@ -28,6 +28,7 @@
 
 package org.imixs.workflow.engine;
 
+import jakarta.annotation.security.PermitAll;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -50,6 +51,7 @@ import org.imixs.workflow.util.XMLParser;
  *
  */
 @Stateless
+@PermitAll
 public class TextPropertyValueAdapter {
 
     @Inject

@@ -39,6 +39,7 @@ import java.util.logging.Logger;
 
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RunAs;
 import jakarta.ejb.EJBException;
 import jakarta.enterprise.inject.Any;
@@ -312,6 +313,7 @@ public class SchedulerService {
      * is called for example by the SchedulerStartupServlet.
      * 
      */
+    @PermitAll
     public void startAllSchedulers() {
         logger.info("...starting Imixs Schedulers....");
         //try {

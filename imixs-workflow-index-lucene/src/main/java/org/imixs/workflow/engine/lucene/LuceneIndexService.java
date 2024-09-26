@@ -28,6 +28,7 @@
 
 package org.imixs.workflow.engine.lucene;
 
+import jakarta.annotation.security.PermitAll;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,6 +86,7 @@ import java.lang.reflect.InvocationTargetException;
  * @author rsoika
  */
 @Stateless
+@PermitAll
 public class LuceneIndexService {
 
     public static final int EVENTLOG_ENTRY_FLUSH_COUNT = 16;

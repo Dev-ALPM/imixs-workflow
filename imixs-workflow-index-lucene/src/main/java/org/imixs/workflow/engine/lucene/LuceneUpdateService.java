@@ -28,6 +28,7 @@
 
 package org.imixs.workflow.engine.lucene;
 
+import jakarta.annotation.security.PermitAll;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -67,6 +68,7 @@ import java.util.logging.Level;
  * @author rsoika
  */
 @Singleton
+@PermitAll
 public class LuceneUpdateService implements UpdateService {
 
     @Inject

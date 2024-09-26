@@ -87,7 +87,7 @@ public class MailPlugin extends AbstractPlugin {
 
     public static final String ERROR_INVALID_XSL_FORMAT = "INVALID_XSL_FORMAT";
     public static final String ERROR_MAIL_MESSAGE = "ERROR_MAIL_MESSAGE";
-    public static final String MAIL_SESSION_NAME = "mail/org.imixs.workflow.mail";
+    public static final String MAIL_SESSION_NAME = "java:app/GestProd-EE-ear/mail/org.imixs.workflow.mail";
     public static final String CONTENTTYPE_TEXT_PLAIN = "text/plain";
     public static final String CONTENTTYPE_TEXT_HTML = "text/html";
     public static final String INVALID_ADDRESS = "INVALID_ADDRESS";

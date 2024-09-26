@@ -37,6 +37,7 @@ import org.imixs.workflow.ItemCollection;
 import org.imixs.workflow.util.XMLParser;
 
 import jakarta.annotation.Priority;
+import jakarta.annotation.security.PermitAll;
 import jakarta.ejb.Stateless;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
@@ -98,6 +99,7 @@ import java.util.ArrayList;
  *
  */
 @Stateless
+@PermitAll
 public class TextForEachAdapter {
 
     private static final Logger logger = Logger.getLogger(TextForEachAdapter.class.getName());

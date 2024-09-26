@@ -28,6 +28,7 @@
 
 package org.imixs.workflow.engine;
 
+import jakarta.annotation.security.PermitAll;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -51,6 +52,7 @@ import org.imixs.workflow.util.XMLParser;
  *
  */
 @Stateless
+@PermitAll
 public class TextItemValueAdapter {
 
     private static final Logger logger = Logger.getLogger(TextItemValueAdapter.class.getName());
