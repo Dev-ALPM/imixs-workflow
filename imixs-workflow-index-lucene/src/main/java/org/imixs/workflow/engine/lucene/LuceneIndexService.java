@@ -28,7 +28,9 @@
 
 package org.imixs.workflow.engine.lucene;
 
+import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,8 +87,13 @@ import java.lang.reflect.InvocationTargetException;
  * @version 1.0
  * @author rsoika
  */
+@DeclareRoles({ "org.imixs.ACCESSLEVEL.NOACCESS", "org.imixs.ACCESSLEVEL.READERACCESS",
+        "org.imixs.ACCESSLEVEL.AUTHORACCESS", "org.imixs.ACCESSLEVEL.EDITORACCESS",
+        "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
+@RolesAllowed({ "org.imixs.ACCESSLEVEL.NOACCESS", "org.imixs.ACCESSLEVEL.READERACCESS",
+        "org.imixs.ACCESSLEVEL.AUTHORACCESS", "org.imixs.ACCESSLEVEL.EDITORACCESS",
+        "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
 @Stateless
-@PermitAll
 public class LuceneIndexService {
 
     public static final int EVENTLOG_ENTRY_FLUSH_COUNT = 16;

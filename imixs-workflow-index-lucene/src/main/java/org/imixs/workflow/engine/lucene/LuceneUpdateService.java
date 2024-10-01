@@ -28,7 +28,9 @@
 
 package org.imixs.workflow.engine.lucene;
 
+import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -67,8 +69,13 @@ import java.util.logging.Level;
  * @version 1.2
  * @author rsoika
  */
+@DeclareRoles({ "org.imixs.ACCESSLEVEL.NOACCESS", "org.imixs.ACCESSLEVEL.READERACCESS",
+        "org.imixs.ACCESSLEVEL.AUTHORACCESS", "org.imixs.ACCESSLEVEL.EDITORACCESS",
+        "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
+@RolesAllowed({ "org.imixs.ACCESSLEVEL.NOACCESS", "org.imixs.ACCESSLEVEL.READERACCESS",
+        "org.imixs.ACCESSLEVEL.AUTHORACCESS", "org.imixs.ACCESSLEVEL.EDITORACCESS",
+        "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
 @Singleton
-@PermitAll
 public class LuceneUpdateService implements UpdateService {
 
     @Inject
