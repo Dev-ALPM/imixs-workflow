@@ -291,7 +291,7 @@ public class ModelService implements ModelManager {
         List<String> result = new ArrayList<>();
         List<String> groups = getGroups();
         for (String group : groups) {
-            List<String> versions = findVersionsByGroup(group);
+            List<String> versions = findVersionsByGroup(group, "");
             if (versions != null && !versions.isEmpty()) {
                 // add the latest version
                 String version = versions.get(0);
@@ -334,6 +334,10 @@ public class ModelService implements ModelManager {
      * @return
      */
     public List<String> findVersionsByGroup(String group) {
+        return findVersionsByGroup(group, "");
+    }
+    
+    public List<String> findVersionsByGroup(String group, String prefix) {
         boolean debug = logger.isLoggable(Level.FINE);
         List<String> result = new ArrayList<>();
         if (debug) {
@@ -342,7 +346,7 @@ public class ModelService implements ModelManager {
         // try to find matching model version by group
         Collection<Model> models = getModelStore().values();
         for (Model amodel : models) {
-            if (amodel.getGroups().contains(group)) {
+            if (amodel.getVersion().startsWith(prefix) && amodel.getGroups().contains(group)) {
                 result.add(amodel.getVersion());
             }
         }
@@ -360,6 +364,10 @@ public class ModelService implements ModelManager {
      * @return
      */
     public List<String> findVersionsByRegEx(String modelRegex) {
+        return findVersionsByRegEx(modelRegex, "");
+    }
+    
+    public List<String> findVersionsByRegEx(String modelRegex, String prefix) {
         boolean debug = logger.isLoggable(Level.FINE);
         List<String> result = new ArrayList<>();
         if (debug) {
@@ -368,7 +376,7 @@ public class ModelService implements ModelManager {
         // try to find matching model version by regex
         Collection<Model> models = getModelStore().values();
         for (Model amodel : models) {
-            if (Pattern.compile(modelRegex).matcher(amodel.getVersion()).find()) {
+            if (amodel.getVersion().startsWith(prefix) && Pattern.compile(modelRegex).matcher(amodel.getVersion().replaceFirst(prefix, "")).find()) {
                 result.add(amodel.getVersion());
             }
         }
