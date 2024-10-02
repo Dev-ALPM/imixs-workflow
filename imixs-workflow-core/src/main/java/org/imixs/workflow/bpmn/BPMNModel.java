@@ -147,6 +147,12 @@ public class BPMNModel implements Model {
         return null;
     }
 
+    public void setVersion(String version) {
+        if (definition != null) {
+            definition.setModelVersion(version);
+        }
+    }
+
     /**
      * Returns the model profile entity
      * 
