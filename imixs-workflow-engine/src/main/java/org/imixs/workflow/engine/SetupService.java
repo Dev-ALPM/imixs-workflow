@@ -64,6 +64,7 @@ import org.xml.sax.SAXException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.security.RunAs;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
@@ -103,6 +104,7 @@ import java.util.logging.Level;
  * @version 1.0
  */
 @DeclareRoles({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
+@RolesAllowed({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
 @RunAs("org.imixs.ACCESSLEVEL.MANAGERACCESS")
 @Startup
 @Singleton

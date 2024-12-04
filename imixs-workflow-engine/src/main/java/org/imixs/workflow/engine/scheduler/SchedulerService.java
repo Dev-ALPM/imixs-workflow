@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.security.RunAs;
 import jakarta.ejb.EJBException;
 import jakarta.enterprise.inject.Any;
@@ -98,6 +99,7 @@ import jakarta.ejb.TimerConfig;
  * @version 1.0
  */
 @DeclareRoles({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
+@RolesAllowed({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
 @RunAs("org.imixs.ACCESSLEVEL.MANAGERACCESS")
 @Stateless
 public class SchedulerService {

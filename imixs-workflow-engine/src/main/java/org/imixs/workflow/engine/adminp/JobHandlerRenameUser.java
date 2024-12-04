@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.security.RunAs;
 import jakarta.inject.Inject;
 
@@ -91,6 +92,7 @@ import java.util.logging.Level;
  * 
  */
 @DeclareRoles({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
+@RolesAllowed({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
 @RunAs("org.imixs.ACCESSLEVEL.MANAGERACCESS")
 @Stateless
 @LocalBean

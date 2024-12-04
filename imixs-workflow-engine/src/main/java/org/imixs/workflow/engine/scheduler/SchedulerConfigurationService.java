@@ -31,6 +31,7 @@ package org.imixs.workflow.engine.scheduler;
 import java.util.logging.Logger;
 
 import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.security.RunAs;
 import jakarta.inject.Inject;
 
@@ -51,6 +52,7 @@ import jakarta.ejb.TransactionAttributeType;
  * @version 1.0
  */
 @DeclareRoles({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
+@RolesAllowed({ "org.imixs.ACCESSLEVEL.MANAGERACCESS" })
 @RunAs("org.imixs.ACCESSLEVEL.MANAGERACCESS")
 @Stateless
 public class SchedulerConfigurationService {
