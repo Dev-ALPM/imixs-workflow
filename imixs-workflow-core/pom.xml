@@ -20,6 +20,7 @@ Imixs-Workflow Core provides various components in a Java framework that allow t
 	      <groupId>org.graalvm.js</groupId>
 	      <artifactId>js</artifactId>
 	      <version>${graalvm.version}</version>
+              <type>pom</type>
 	    </dependency>  
 	    <dependency>
 	      <groupId>org.graalvm.js</groupId>

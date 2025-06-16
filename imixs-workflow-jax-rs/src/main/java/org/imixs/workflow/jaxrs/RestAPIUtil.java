@@ -2,7 +2,7 @@ package org.imixs.workflow.jaxrs;
 
 import java.util.List;
 
-import com.ibm.icu.util.StringTokenizer;
+import java.util.StringTokenizer;
 import java.util.ArrayList;
 
 /**
